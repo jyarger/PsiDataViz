@@ -1,0 +1,39 @@
+# Production stack for a public VPS: the MolViz app behind Caddy (automatic HTTPS).
+#
+#   1. Point a DNS A record at the VPS, then set MOLVIZ_DOMAIN to that hostname.
+#   2. (optional) Set GITHUB_TOKEN to raise the GitHub API rate limit.
+#   3. docker compose up -d --build
+#
+# Caddy obtains and renews a Let's Encrypt certificate automatically for MOLVIZ_DOMAIN.
+
+services:
+  app:
+    build: .
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - MOLVIZ_CACHE_DIR=/data/cache
+    volumes:
+      - molviz-cache:/data/cache
+    expose:
+      - "8050"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    environment:
+      - MOLVIZ_DOMAIN=${MOLVIZ_DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  molviz-cache:
+  caddy-data:
+  caddy-config:
