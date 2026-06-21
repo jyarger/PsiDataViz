@@ -45,6 +45,8 @@ function Quick() {
   const [selected, setSelected] = useState<string[]>([]); // ordered record keys
   const [datasets, setDatasets] = useState<Record<string, DatasetData>>({});
   const [compare, setCompare] = useState<CompareResult | null>(null);
+  const [filter, setFilter] = useState("");
+  const [normalize, setNormalize] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -114,6 +116,12 @@ function Quick() {
   const selectedDatasets = selected.map((k) => datasets[k]).filter(Boolean);
   const soleRecord = selected.length === 1 ? records.find((r) => r.key === selected[0]) : null;
   const canCompare = !!soleRecord && soleRecord.formats.length > 1;
+  const needle = filter.trim().toLowerCase();
+  const shown = needle
+    ? records.filter(
+        (r) => r.description.toLowerCase().includes(needle) || (r.date ?? "").includes(needle),
+      )
+    : records;
 
   return (
     <>
@@ -166,9 +174,19 @@ function Quick() {
 
       {records.length > 0 && (
         <div className="card">
-          <p className="section-title">
-            {technique} datasets ({records.length}) <span className="muted">— click to overlay</span>
-          </p>
+          <div className="toolbar">
+            <span className="section-title" style={{ margin: 0 }}>
+              {technique} datasets ({needle ? `${shown.length} of ${records.length}` : records.length}){" "}
+              <span className="muted">— click to overlay</span>
+            </span>
+            <input
+              type="text"
+              className="filter"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="filter by sample or date…"
+            />
+          </div>
           <div className="scroll">
             <table>
               <thead>
@@ -180,7 +198,7 @@ function Quick() {
                 </tr>
               </thead>
               <tbody>
-                {records.map((r) => (
+                {shown.map((r) => (
                   <tr
                     key={r.key}
                     className={selected.includes(r.key) ? "selected" : ""}
@@ -209,7 +227,15 @@ function Quick() {
             <span className="section-title" style={{ margin: 0 }}>
               {selectedDatasets.length} dataset{selectedDatasets.length === 1 ? "" : "s"} overlaid
             </span>
-            <div className="row" style={{ gap: 8 }}>
+            <div className="row" style={{ gap: 12 }}>
+              <label className="toggle">
+                <input
+                  type="checkbox"
+                  checked={normalize}
+                  onChange={(e) => setNormalize(e.target.checked)}
+                />
+                Normalize
+              </label>
               {canCompare && (
                 <button className="btn ghost" onClick={doCompare} disabled={!!busy}>
                   Compare formats
@@ -220,7 +246,7 @@ function Quick() {
               </button>
             </div>
           </div>
-          <SpectrumPlot datasets={selectedDatasets} />
+          <SpectrumPlot datasets={selectedDatasets} normalize={normalize} />
           {compare && (
             <div className="cmp-panel">
               <CompareView result={compare} />

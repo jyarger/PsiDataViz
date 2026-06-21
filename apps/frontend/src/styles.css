@@ -127,3 +127,9 @@ input[type="checkbox"] { accent-color: var(--accent-dim); cursor: pointer; }
 .export-row { display: flex; align-items: center; gap: 8px; margin: 16px 0 4px;
   border-top: 1px solid var(--border); padding-top: 14px; }
 .btn.sm { padding: 5px 11px; font-size: 12.5px; text-decoration: none; display: inline-block; }
+
+input[type="text"].filter {
+  flex: 0 0 auto; min-width: 0; width: 240px; padding: 6px 10px; font-size: 13px;
+}
+.toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--dim);
+  cursor: pointer; user-select: none; }

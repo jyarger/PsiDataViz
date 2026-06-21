@@ -11,7 +11,24 @@ function axisTitle(a: { label: string; unit: string | null }): string {
   return a.unit ? `${a.label} (${a.unit})` : a.label;
 }
 
-export function SpectrumPlot({ datasets }: { datasets: DatasetData[] }) {
+function normalizeY(ys: number[]): number[] {
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const v of ys) {
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+  }
+  const span = hi - lo || 1;
+  return ys.map((v) => (v - lo) / span);
+}
+
+export function SpectrumPlot({
+  datasets,
+  normalize = false,
+}: {
+  datasets: DatasetData[];
+  normalize?: boolean;
+}) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -23,9 +40,10 @@ export function SpectrumPlot({ datasets }: { datasets: DatasetData[] }) {
       return ds.signals.map((s) => {
         const segLabel = s.segment ?? s.name;
         const name = multi ? `${label} · ${segLabel}` : segLabel;
+        const ys = s.points.map((p) => p[1]);
         return {
           x: s.points.map((p) => p[0]),
-          y: s.points.map((p) => p[1]),
+          y: normalize ? normalizeY(ys) : ys,
           type: "scattergl",
           mode: "lines",
           name,
@@ -36,6 +54,7 @@ export function SpectrumPlot({ datasets }: { datasets: DatasetData[] }) {
 
     const x0 = datasets[0].signals[0]?.x;
     const y0 = datasets[0].signals[0]?.y;
+    const yTitle = y0 ? (normalize ? `${y0.label} (normalized)` : axisTitle(y0)) : "";
     const layout = {
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",
@@ -47,7 +66,7 @@ export function SpectrumPlot({ datasets }: { datasets: DatasetData[] }) {
         gridcolor: "#21262d",
         zeroline: false,
       },
-      yaxis: { title: y0 ? axisTitle(y0) : "", gridcolor: "#21262d", zeroline: false },
+      yaxis: { title: yTitle, gridcolor: "#21262d", zeroline: false },
       legend: { orientation: "h", y: -0.18 },
       showlegend: traces.length > 1,
     };
@@ -56,7 +75,7 @@ export function SpectrumPlot({ datasets }: { datasets: DatasetData[] }) {
       displaylogo: false,
       modeBarButtonsToRemove: ["lasso2d", "select2d"],
     });
-  }, [datasets]);
+  }, [datasets, normalize]);
 
   return <div ref={ref} style={{ width: "100%", height: 480 }} />;
 }
