@@ -101,6 +101,17 @@ def compare(payload: dict = Body(...)) -> dict:
     return compare_record_formats(record, services.load_dataset)
 
 
+# Serve the built React frontend (single-service deploy) when its dist is present. Mounted last so
+# the /api routes above take precedence; html=True serves index.html for the SPA.
+import pathlib  # noqa: E402
+
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+
+_static = os.environ.get("PSIDATA_STATIC_DIR") or str(pathlib.Path(__file__).parent / "static")
+if os.path.isdir(_static):
+    app.mount("/", StaticFiles(directory=_static, html=True), name="frontend")
+
+
 def main() -> None:
     import uvicorn
     uvicorn.run(app, host=os.environ.get("HOST", "127.0.0.1"),

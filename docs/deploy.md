@@ -1,6 +1,6 @@
 # Deploying ΨDataViz on a public VPS
 
-ΨDataViz ships as a small Docker stack: the app (served by gunicorn) behind
+ΨDataViz ships as a small Docker stack: the v2 app — React UI + FastAPI JSON API in one container (uvicorn) behind
 [Caddy](https://caddyserver.com/), which terminates TLS and obtains a free Let's Encrypt
 certificate automatically.
 
@@ -36,7 +36,7 @@ docker compose down             # stop
 
 - **Cache:** fetched files and repo listings are cached in the `psidata-cache` volume. Remove it
   (`docker volume rm psidata_psidata-cache`) to force a cold re-fetch.
-- **Scaling:** increase gunicorn workers in the `Dockerfile` `CMD` (`--workers`) for more
+- **Scaling:** increase uvicorn `--workers` in the `Dockerfile` `CMD` for more
   concurrency; the app is stateless, so you can also run multiple replicas behind Caddy.
 
 ## Local smoke test (no domain needed)
@@ -49,7 +49,7 @@ docker compose up --build      # PSIDATA_DOMAIN defaults to localhost
 Or run just the app container directly:
 
 ```bash
-docker build -t psidataviz .
-docker run --rm -p 8050:8050 psidataviz
-# open http://localhost:8050
+docker build -t psidataviz:v2 .
+docker run --rm -p 8000:8000 psidataviz:v2
+# open http://localhost:8000
 ```

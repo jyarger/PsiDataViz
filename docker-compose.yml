@@ -8,14 +8,11 @@
 
 services:
   app:
-    build: .
+    build: .            # v2 single image: React UI + FastAPI API on one port (8000)
     environment:
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
-      - PSIDATA_CACHE_DIR=/data/cache
-    volumes:
-      - psidata-cache:/data/cache
     expose:
-      - "8050"
+      - "8000"
     restart: unless-stopped
 
   caddy:
@@ -34,6 +31,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  psidata-cache:
   caddy-data:
   caddy-config:
