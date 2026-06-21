@@ -43,10 +43,29 @@ def test_parses_xy_pairs(nmr_txt):
     assert sig.frame["Chemical shift"].iloc[0] > sig.frame["Chemical shift"].iloc[-1]
 
 
-def test_compressed_asdf_fails_loudly():
-    asdf = (
-        "##TITLE=compressed\n##JCAMP-DX=6.00\n##DATA TYPE= NMR SPECTRUM\n"
-        "##.OBSERVE NUCLEUS=1H\n##NPOINTS=4\n##XYDATA=(X++(Y..Y))\n0 A0J1\n##END=\n"
-    )
-    with pytest.raises(ValueError, match="ASDF"):
-        read(Candidate(filename="bruker.jdx", text=asdf))
+# A tiny hand-encoded (X++(Y..Y)) block exercising SQZ / DIF(+,-,0) / DUP.
+# "6A0Lk%UN" -> leadX=6, ordinates [10, 13, 11, 11, 11, 11, 16].
+_ASDF = (
+    "##TITLE=synthetic compressed\n##JCAMP-DX=5.01\n##DATA TYPE= NMR SPECTRUM\n"
+    "##.OBSERVE NUCLEUS= ^13C\n##.OBSERVE FREQUENCY= 125.0\n"
+    "##XUNITS=HZ\n##XFACTOR=1\n##YFACTOR=1\n##FIRSTX=0\n##LASTX=6\n"
+    "##NPOINTS=7\n##FIRSTY=10\n##XYDATA=(X++(Y..Y))\n6A0Lk%UN\n##END=\n"
+)
+
+
+def test_decodes_compressed_asdf():
+    ds = read(Candidate(filename="bruker.jdx", text=_ASDF))
+    assert ds.technique == "NMR"
+    sig = ds.signals[0]
+    assert sig.npoints == 7
+    assert list(sig.frame["Intensity"]) == [10, 13, 11, 11, 11, 11, 16]
+    assert list(sig.frame["Frequency"]) == [6, 5, 4, 3, 2, 1, 0]
+    assert sig.x.unit == "Hz"
+    assert ds.metadata.nucleus == "13C"
+
+
+def test_asdf_rejects_mismatched_npoints():
+    # validation guard: a decode that disagrees with the header must raise, not emit wrong data
+    bad = _ASDF.replace("##NPOINTS=7", "##NPOINTS=99")
+    with pytest.raises(ValueError, match="NPOINTS"):
+        read(Candidate(filename="bruker.jdx", text=bad))

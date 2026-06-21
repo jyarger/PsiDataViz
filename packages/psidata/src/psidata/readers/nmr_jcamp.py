@@ -4,9 +4,13 @@ JCAMP-DX is a labeled-text standard: ``##LABEL= value`` header records (LDRs) fo
 section. Validated against real files in ``github.com/yargerlab/Data/NMR``:
 
 * **Agilent/Varian** exports (the bulk of the repo) use ``##XYDATA= (XY..XY)`` — plain
-  ``x, y`` pairs already in ppm. Fully supported.
-* **Bruker/TopSpin** exports use ``##XYDATA= (X++(Y..Y))`` — ASDF-compressed. Detected and
-  rejected with a clear error (rather than risk silently-wrong data) until the ASDF decoder lands.
+  ``x, y`` pairs already in ppm.
+* **Bruker/TopSpin** exports use ``##XYDATA= (X++(Y..Y))`` — ASDF-compressed (SQZ/DIF/DUP); decoded
+  by :mod:`psidata.readers._asdf` and emitted only after validating against the header (NPOINTS,
+  FIRSTY), so a mis-decode never produces a silently-wrong spectrum.
+
+Abscissa is reported in the file's ``XUNITS`` (Hz for many Bruker exports, ppm for others);
+absolute Hz→ppm referencing is a future refinement.
 """
 
 from __future__ import annotations
@@ -59,15 +63,12 @@ class JcampNmrReader(BaseReader):
         ldrs, data_marker, data_lines = _split_ldrs_and_data(lines)
 
         form = _data_form(ldrs.get("XYDATA") or ldrs.get("XYPOINTS") or data_marker or "")
-        if form == _ASDF_FORM:
-            raise ValueError(
-                "Compressed JCAMP-DX (X++(Y..Y)) ASDF data is not yet supported by nmr_jcamp; "
-                "re-export the spectrum as XY pairs."
-            )
-
         xfactor = _as_float(ldrs.get("XFACTOR"), 1.0)
         yfactor = _as_float(ldrs.get("YFACTOR"), 1.0)
-        x, y = _parse_xy_pairs(data_lines, xfactor, yfactor)
+        if form == _ASDF_FORM:
+            x, y = _read_asdf(ldrs, data_lines, xfactor, yfactor)
+        else:
+            x, y = _parse_xy_pairs(data_lines, xfactor, yfactor)
 
         x_unit = (ldrs.get("XUNITS") or "ppm").strip().lower()
         x_label, x_unit_disp = ("Frequency", "Hz") if x_unit in ("hz", "hertz") \
@@ -88,6 +89,30 @@ class JcampNmrReader(BaseReader):
             metadata=_build_metadata(ldrs, candidate, npoints=len(frame)),
             signals=[signal],
         )
+
+
+def _read_asdf(ldrs: dict[str, str], data_lines: list[str], xfactor: float, yfactor: float
+               ) -> tuple[list[float], list[float]]:
+    """Decode compressed ``(X++(Y..Y))`` ordinates into (x, y).
+
+    Emits data only if it validates against the header (NPOINTS, FIRSTY); otherwise raises, so a
+    mis-decode can never silently produce a wrong spectrum.
+    """
+    from ._asdf import decode_xpp_yy
+
+    x0, direction, ordinates = decode_xpp_yy(data_lines)
+    if x0 is None or not ordinates:
+        raise ValueError("ASDF block contained no decodable ordinates")
+    npoints = ldrs.get("NPOINTS")
+    if npoints and len(ordinates) != int(float(npoints)):
+        raise ValueError(f"ASDF decoded {len(ordinates)} points but NPOINTS={npoints}")
+    firsty = ldrs.get("FIRSTY")
+    if firsty not in (None, "") and abs(ordinates[0] - float(firsty)) > 0.5:
+        raise ValueError(f"ASDF FIRSTY mismatch: decoded {ordinates[0]} != {firsty}")
+
+    x = [(x0 + direction * j) * xfactor for j in range(len(ordinates))]
+    y = [v * yfactor for v in ordinates]
+    return x, y
 
 
 def _split_ldrs_and_data(lines: list[str]) -> tuple[dict[str, str], str | None, list[str]]:
