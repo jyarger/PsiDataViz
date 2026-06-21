@@ -1,74 +1,76 @@
-# MolViz — Visualize Experimental & Computational Molecular Science Data
+# Ψ PsiData — Scientific Data
 
-A public, deployable web app that lets anyone point at a public repository of molecular-science
-data (e.g. [`github.com/yargerlab/Data`](https://github.com/yargerlab/Data)), smartly summarizes
-what's there, and visualizes selected datasets with interactive Plotly charts — with one-click
-**export to marimo or Google Colab**.
+**PsiData** is a toolkit for **organizing, parsing, converting, and visualizing experimental &
+computational scientific data**. Point it at a public repository of instrument/computational data
+(e.g. [`github.com/yargerlab/Data`](https://github.com/yargerlab/Data)), and it makes sense of the
+sprawl of formats every lab accumulates.
 
-Under the hood is a reusable, framework-agnostic Python library for **ingesting, parsing, reading,
-and converting** a wide variety of scientific/computational data formats. The web app is a thin,
-swappable layer on top.
+The name: *sci* and *psi* are homophones, and **Ψ** is a science-coded Greek letter — so the project,
+library, and apps share the **Psi** prefix and the **Ψ** mark.
 
-## Status: v1 (work in progress)
+- **`psidata`** — the framework-agnostic Python library (parsing / model / conversion). Standalone and
+  pip-installable; works in marimo / Jupyter. *"Scientific Data."*
+- **PsiDataViz** — the visualization web app on top of it. *"Scientific Data Visualization."*
 
-v1 is deliberately narrow to prove the extensible framework:
+## Monorepo layout (uv workspace)
 
-- **Source type:** public GitHub repos.
-- **Stateless:** no accounts, no database.
-- **Supported formats:**
-  - **DSC** — TA Instruments Trios exports, both `.txt` (tab-delimited) and `.csv` (comma-delimited);
-    delimiter auto-detected.
-  - **NMR** — JCAMP-DX spectra (`.jdx` / `.dx` / Agilent-Varian `.txt`) with plain `(XY..XY)` data.
-    Compressed `(X++(Y..Y))` ASDF data is detected and rejected with a clear message (not yet decoded).
-  - **FTIR** — Bruker `.dpt` data-point tables (and `.csv`/`.txt`/`.asc` in an FTIR folder).
-  - **Raman** — `.csv` spectra (`shift, intensity[, …]`); extra intensity columns become separate traces.
+```
+psidata/
+├── packages/
+│   └── psidata/              # ★ the standalone, pip-installable science library
+│       └── src/psidata/      # model · registry · readers/ · sources/ · export · convert/
+├── apps/
+│   └── psidataviz-dash/      # interim Dash app (retired once the FastAPI + React UI lands)
+│   # backend/ (FastAPI) and frontend/ (React+TS) arrive in a later phase
+├── docs/                     # ROADMAP, adding-a-reader, deploy
+├── serve.py                  # run the interim app locally
+└── Dockerfile, docker-compose.yml, deploy/
+```
+
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full v2 direction (dashboard UX, multi-format dataset
+grouping, HDF5/Zarr/CSDM conversion, deeper NMR, FastAPI + React, an embedded 3D molecular viewer, and
+more data types).
+
+## Supported formats (today)
+- **DSC** — TA Trios exports, `.txt` (tab) **and** `.csv` (comma); delimiter auto-detected.
+- **NMR** — JCAMP-DX (`.jdx`/`.dx`/Agilent-Varian `.txt`), plain `(XY..XY)` data. Compressed
+  `(X++(Y..Y))` ASDF is detected and rejected with a clear message (decoder is on the roadmap).
+- **FTIR** — Bruker `.dpt` data-point tables (and `.csv`/`.txt`/`.asc`).
+- **Raman** — `.csv` spectra (`shift, intensity[, …]`); extra intensity columns become separate traces.
 
 Headerless formats (Raman/FTIR `.csv`) are disambiguated by the instrument folder they live in.
-Adding a new technique (DFT, XRD, …) means writing one new *reader* and registering it — no changes
-to the data model or the app.
-
-## Architecture
-
-```
-src/molviz/
-├── core/      # the durable, framework-agnostic ingestion library
-│   ├── model.py      # Dataset / Signal / Axis / Metadata — universal container
-│   ├── registry.py   # reader registry + confidence-scored auto-detection
-│   ├── readers/      # one module per technique (dsc_trios.py, ...)
-│   ├── filename.py   # YYYY_MM_DD_<desc> filename-convention parser
-│   └── export.py     # Dataset(s) -> marimo .py / Colab .ipynb
-├── sources/   # where files come from (GitHub first; abstract interface)
-└── app/       # Plotly Dash app (Home -> Browse -> Visualize)
-```
 
 ## Quick start (development)
 
-Using [uv](https://docs.astral.sh/uv/) (recommended — resolves the project on any interpreter):
-
 ```bash
-uv sync --extra dev --extra app
-uv run pytest                  # run the test suite
-uv run python -m molviz.app    # run the Dash app at http://127.0.0.1:8050
+uv sync --all-packages --all-extras     # creates .venv, installs both packages
+python serve.py                          # PsiDataViz at http://127.0.0.1:8050  (dark mode)
 ```
 
-Plain pip/venv works too:
+Run the tests:
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev,app]"
-pytest
-python -m molviz.app
+uv run pytest packages/psidata/tests apps/psidataviz-dash/tests
 ```
 
-If your interpreter doesn't honor editable installs (some Anaconda-based setups don't), run the
-app with the bundled launcher, which needs no install:
+Use the library on its own (e.g. in a notebook):
 
-```bash
-python serve.py
+```python
+import psidata
+ds = psidata.read(psidata.Candidate(filename="run.txt", text=open("run.txt").read()))
+print(ds.technique, ds.summary())
 ```
+
+> On machines whose interpreter doesn't reliably honor editable installs (some Anaconda setups),
+> `serve.py` injects the workspace `src/` dirs so the app runs regardless; tests set `pythonpath`.
+
+## Deploy
+
+`docker compose up -d --build` runs PsiDataViz behind Caddy (automatic HTTPS). See
+[`docs/deploy.md`](docs/deploy.md).
 
 ## Adding a new data reader
 
-See [`docs/adding-a-reader.md`](docs/adding-a-reader.md). In short: subclass `BaseReader`,
-implement `sniff()` (return a 0–1 confidence) and `read()` (return a `Dataset`), and decorate the
-class with `@register_reader`. The registry and app pick it up automatically.
+See [`docs/adding-a-reader.md`](docs/adding-a-reader.md): subclass `BaseReader`, implement `sniff()`
+(0–1 confidence) and `read()` (return a `Dataset`), decorate with `@register_reader`. The registry and
+app pick it up automatically.

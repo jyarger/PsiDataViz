@@ -1,19 +1,19 @@
-# Production stack for a public VPS: the MolViz app behind Caddy (automatic HTTPS).
+# Production stack for a public VPS: PsiDataViz behind Caddy (automatic HTTPS).
 #
-#   1. Point a DNS A record at the VPS, then set MOLVIZ_DOMAIN to that hostname.
+#   1. Point a DNS A record at the VPS, then set PSIDATA_DOMAIN to that hostname.
 #   2. (optional) Set GITHUB_TOKEN to raise the GitHub API rate limit.
 #   3. docker compose up -d --build
 #
-# Caddy obtains and renews a Let's Encrypt certificate automatically for MOLVIZ_DOMAIN.
+# Caddy obtains and renews a Let's Encrypt certificate automatically for PSIDATA_DOMAIN.
 
 services:
   app:
     build: .
     environment:
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
-      - MOLVIZ_CACHE_DIR=/data/cache
+      - PSIDATA_CACHE_DIR=/data/cache
     volumes:
-      - molviz-cache:/data/cache
+      - psidata-cache:/data/cache
     expose:
       - "8050"
     restart: unless-stopped
@@ -21,7 +21,7 @@ services:
   caddy:
     image: caddy:2
     environment:
-      - MOLVIZ_DOMAIN=${MOLVIZ_DOMAIN:-localhost}
+      - PSIDATA_DOMAIN=${PSIDATA_DOMAIN:-localhost}
     ports:
       - "80:80"
       - "443:443"
@@ -34,6 +34,6 @@ services:
     restart: unless-stopped
 
 volumes:
-  molviz-cache:
+  psidata-cache:
   caddy-data:
   caddy-config:

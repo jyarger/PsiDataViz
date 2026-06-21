@@ -1,48 +1,9 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+# uv workspace root for the PsiData monorepo (virtual root — not a package itself).
+#   packages/psidata        — the standalone, pip-installable science library
+#   apps/psidataviz-dash     — interim Dash app (retired once the FastAPI+React UI lands)
+#   apps/backend, apps/frontend — added in Phase 5
+[tool.uv.workspace]
+members = ["packages/*", "apps/*"]
 
-[project]
-name = "molviz"
-version = "0.1.0"
-description = "Visualize Experimental & Computational Molecular Science Data"
-readme = "README.md"
-requires-python = ">=3.11"
-license = { text = "MIT" }
-authors = [{ name = "Yarger Lab" }]
-keywords = ["science", "data", "visualization", "dsc", "molecular", "spectroscopy"]
-
-dependencies = [
-    "pydantic>=2.6",
-    "pandas>=2.1",
-    "plotly>=5.20",
-    "dash>=2.16",
-    "dash-mantine-components>=0.14",
-    "httpx>=0.27",
-    "platformdirs>=4.2",
-    "nbformat>=5.10",
-]
-
-[project.optional-dependencies]
-app = ["gunicorn>=21.2"]
-dev = ["pytest>=8.0", "ruff>=0.4", "respx>=0.21"]
-marimo = ["marimo>=0.7"]
-
-[project.scripts]
-molviz = "molviz.app.server:main"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/molviz"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-q"
-pythonpath = ["src"]
-
-[tool.ruff]
-line-length = 100
-target-version = "py311"
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
-ignore = ["E501"]
+[tool.uv.sources]
+psidata = { workspace = true }

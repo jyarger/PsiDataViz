@@ -1,7 +1,7 @@
 # Adding a data reader
 
-A *reader* teaches MolViz how to parse one file format into the universal
-[`Dataset`](../src/molviz/core/model.py) container. Once registered, it works everywhere — the
+A *reader* teaches PsiData how to parse one file format into the universal
+[`Dataset`](../packages/psidata/src/psidata/model.py) container. Once registered, it works everywhere — the
 catalog flags matching files, the app plots them, and the marimo/Colab exports reproduce them.
 **You never edit the registry, the app, or the data model** — you just add one file.
 
@@ -27,7 +27,7 @@ Set these class attributes:
 ## Skeleton: an FTIR reader
 
 ```python
-# src/molviz/core/readers/ftir_csv.py
+# packages/psidata/src/psidata/readers/ftir_csv.py
 from __future__ import annotations
 
 import io
@@ -75,20 +75,20 @@ class FtirCsvReader(BaseReader):
 Add one import so the module loads (which runs the `@register_reader` decorator):
 
 ```python
-# src/molviz/core/readers/__init__.py
+# packages/psidata/src/psidata/readers/__init__.py
 from . import dsc_trios, ftir_csv  # noqa: F401
 ```
 
 ## Test it
 
-Drop a small real export under `tests/fixtures/` and assert on the parsed `Dataset` — mirror the
-style of [`tests/test_dsc_reader.py`](../tests/test_dsc_reader.py). At minimum: the registry detects
+Drop a small real export under `packages/psidata/tests/fixtures/` and assert on the parsed `Dataset` — mirror the
+style of [`tests/test_dsc_reader.py`](../packages/psidata/tests/test_dsc_reader.py). At minimum: the registry detects
 it (`detect`/`read`), metadata fields are populated, and the signal frames hold numeric data.
 
 ## Tips
 
 - **Header-heavy formats (DSC, NMR):** parse the header into metadata; put critical context
   (units, segments, acquisition params) on a technique-specific `Metadata` subclass — see
-  `DSCMetadata` in [`dsc_trios.py`](../src/molviz/core/readers/dsc_trios.py).
+  `DSCMetadata` in [`dsc_trios.py`](../packages/psidata/src/psidata/readers/dsc_trios.py).
 - **Multi-trace data:** emit one `Signal` per curve/segment (DSC uses one per thermal ramp).
 - **Keep `read` pure:** no network, no global state. The source layer fetches bytes; you parse them.
