@@ -57,12 +57,29 @@ class Catalog:
     def supported(self) -> list[CatalogEntry]:
         return [e for e in self.entries if e.supported]
 
+    def records(self):
+        """Collapse files into datasets: one :class:`DataRecord` per base name, many formats."""
+        from .records import build_records  # local import avoids a circular dependency
+        return build_records(self.entries)
+
+    def record_groups(self) -> dict[str, list]:
+        """Records grouped by technique (the dataset-centric view of the catalog)."""
+        grouped: dict[str, list] = defaultdict(list)
+        for record in self.records():
+            grouped[record.technique].append(record)
+        return dict(sorted(grouped.items()))
+
     def summary(self) -> dict:
         groups = self.groups()
+        records = self.records()
+        data_records = [r for r in records if r.is_data_record]
         return {
             "source": self.source_label,
             "n_files": len(self.entries),
             "n_supported": len(self.supported()),
+            "n_records": len(records),
+            "n_data_records": len(data_records),
+            "n_supported_records": sum(r.supported for r in records),
             "groups": {
                 tech: {
                     "n_files": len(items),

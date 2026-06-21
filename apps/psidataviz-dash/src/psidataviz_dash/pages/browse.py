@@ -5,6 +5,7 @@ from __future__ import annotations
 import dash
 import dash_mantine_components as dmc
 from dash import Input, Output, State, callback, dash_table, dcc, html, no_update
+from psidata.sources.records import IMAGE
 
 from psidataviz_dash.services import scan_repo
 
@@ -13,8 +14,7 @@ dash.register_page(__name__, path="/browse", name="Browse")
 _COLUMNS = [
     {"name": "Date", "id": "date"},
     {"name": "Sample / description", "id": "description"},
-    {"name": "File", "id": "name"},
-    {"name": "Ext", "id": "ext"},
+    {"name": "Formats", "id": "formats"},
 ]
 
 
@@ -70,11 +70,11 @@ def populate_techniques(url):
         return [], None, dmc.Alert("No repository scanned yet — go to Home and scan one.",
                                    color="yellow")
     catalog = scan_repo(url)
-    groups = catalog.groups()
+    groups = catalog.record_groups()
     options = [
-        {"value": tech, "label": f"{tech} ({sum(e.supported for e in items)} supported)"}
-        for tech, items in groups.items()
-        if any(e.supported for e in items)
+        {"value": tech, "label": f"{tech} ({sum(r.supported for r in recs)} datasets)"}
+        for tech, recs in groups.items()
+        if any(r.supported for r in recs)
     ]
     if not options:
         return [], None, dmc.Alert("No datasets with a matching reader were found.", color="yellow")
@@ -92,16 +92,22 @@ def fill_table(url, technique):
         return []
     catalog = scan_repo(url)
     rows = []
-    for entry in catalog.groups().get(technique, []):
-        if not entry.supported:
+    for record in catalog.record_groups().get(technique, []):
+        if not record.supported:          # needs at least one parseable data format
             continue
-        d = entry.as_dict()
+        data_exts = sorted({v.ext for v in record.data_variants})
+        extras = []
+        if record.sidecars:
+            extras.append("params")
+        if any(v.info.role == IMAGE for v in record.variants):
+            extras.append("img")
+        formats = ", ".join(data_exts) + (f"  (+{', '.join(extras)})" if extras else "")
         rows.append({
-            "date": d["date"] or "",
-            "description": d["description"],
-            "name": d["name"],
-            "ext": d["ext"],
-            "download_url": d["download_url"],
+            "date": record.parsed.date.isoformat() if record.parsed.date else "",
+            "description": record.parsed.description,
+            "formats": formats,
+            "name": record.primary.file.name,            # the variant we'll actually parse
+            "download_url": record.primary.file.download_url,
         })
     rows.sort(key=lambda r: r["date"])
     return rows

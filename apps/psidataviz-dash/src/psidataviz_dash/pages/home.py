@@ -58,24 +58,36 @@ def on_scan(_clicks, url):
                                     title="Scan failed")
 
     summary = catalog.summary()
-    groups = summary["groups"]
+    # Per-technique dataset (record) counts — files grouped into one dataset per base name.
+    rec_groups = catalog.record_groups()
+    tech_counts = {
+        tech: (sum(r.supported for r in recs), sum(r.is_data_record for r in recs))
+        for tech, recs in rec_groups.items()
+    }
     badges = [
         dmc.Badge(
-            f"{tech} · {info['n_supported']}/{info['n_files']}",
-            variant="filled" if info["n_supported"] else "light",
-            color="blue" if info["n_supported"] else "gray",
+            f"{tech} · {viz}/{data} datasets",
+            variant="filled" if viz else "light",
+            color="blue" if viz else "gray",
             size="lg",
         )
-        for tech, info in sorted(groups.items(), key=lambda kv: (-kv[1]["n_supported"], kv[0]))
+        for tech, (viz, data) in sorted(tech_counts.items(), key=lambda kv: (-kv[1][0], kv[0]))
+        if data
     ]
     body = dmc.Stack(
         [
             dmc.Text(
-                f"Found {summary['n_files']} files across {len(groups)} folders — "
-                f"{summary['n_supported']} are visualizable with current readers.",
+                f"Found {summary['n_files']} files → grouped into {summary['n_data_records']} "
+                f"datasets across {len(tech_counts)} instruments — "
+                f"{summary['n_supported_records']} visualizable with current readers.",
                 fw=600,
             ),
-            dmc.Text("Folders (supported / total):", size="sm", c="dimmed"),
+            dmc.Text(
+                "Files sharing a base name across formats (e.g. .csv/.txt/.tri/.xls) count as one "
+                "dataset; sidecar files (e.g. Raman _spec.txt) are not treated as data.",
+                size="xs", c="dimmed",
+            ),
+            dmc.Text("Instruments (visualizable / total datasets):", size="sm", c="dimmed"),
             dmc.Group(badges, gap="xs"),
             dcc.Link(dmc.Button("Browse datasets →", mt="sm"), href="/browse"),
         ],
