@@ -95,3 +95,8 @@ export const api = {
   compare: (url: string, technique: string, key: string) =>
     post<CompareResult>(`/api/compare`, { url, technique, key }),
 };
+
+// Direct download URL for converting a dataset to a standard format (csdf | h5).
+export function convertUrl(url: string, name: string, technique: string, fmt: string): string {
+  return `${BASE}/api/convert?url=${q(url)}&name=${q(name)}&technique=${q(technique)}&fmt=${fmt}`;
+}

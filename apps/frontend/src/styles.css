@@ -123,3 +123,7 @@ input[type="checkbox"] { accent-color: var(--accent-dim); cursor: pointer; }
 .badge.diff { background: #3a2a14; color: #ffc078; }
 .difflist { margin: 8px 0 0; padding-left: 18px; color: var(--dim); font-size: 12.5px; line-height: 1.7; }
 .difflist li { font-family: ui-monospace, monospace; }
+
+.export-row { display: flex; align-items: center; gap: 8px; margin: 16px 0 4px;
+  border-top: 1px solid var(--border); padding-top: 14px; }
+.btn.sm { padding: 5px 11px; font-size: 12.5px; text-decoration: none; display: inline-block; }

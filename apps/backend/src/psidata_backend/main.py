@@ -11,10 +11,14 @@ Endpoints (all read-only):
 from __future__ import annotations
 
 import os
+import tempfile
 
 from fastapi import Body, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, Response
 from psidata import __version__, compare_record_formats, get_readers
+from psidata.convert import to_csdm, to_hdf5
+from starlette.background import BackgroundTask
 
 from . import services
 
@@ -58,6 +62,31 @@ def dataset(url: str, name: str, technique: str | None = None, max_points: int =
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f"Could not load {name!r}: {exc}") from exc
     return services.dataset_json(ds, max_points=max_points)
+
+
+@app.get("/api/convert")
+def convert(url: str, name: str, technique: str | None = None, fmt: str = "csdf"):
+    """Convert a dataset to a standard format and return it as a download (CSDM or HDF5)."""
+    try:
+        ds = services.load_dataset(name, url, technique=technique)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail=f"Could not load {name!r}: {exc}") from exc
+    stem = (ds.source.filename or "dataset").rsplit(".", 1)[0]
+    fmt = fmt.lower()
+    if fmt in ("csdf", "csdm"):
+        return Response(
+            to_csdm(ds), media_type="application/json",
+            headers={"Content-Disposition": f'attachment; filename="{stem}.csdf"'},
+        )
+    if fmt in ("h5", "hdf5"):
+        tmp = tempfile.NamedTemporaryFile(suffix=".h5", delete=False)
+        tmp.close()
+        to_hdf5(ds, tmp.name)
+        return FileResponse(
+            tmp.name, media_type="application/x-hdf5", filename=f"{stem}.h5",
+            background=BackgroundTask(lambda: os.unlink(tmp.name)),
+        )
+    raise HTTPException(status_code=400, detail=f"unsupported format {fmt!r} (use csdf or hdf5)")
 
 
 @app.post("/api/compare")

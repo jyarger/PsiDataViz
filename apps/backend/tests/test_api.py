@@ -46,6 +46,18 @@ def test_scan_endpoint_summarizes_records():
     assert any(t["technique"] == "DSC" for t in body["techniques"])
 
 
+@respx.mock
+def test_convert_endpoint_returns_csdm_download():
+    raw = "https://raw.githubusercontent.com/o/r/main/Raman/2026_01_01_x.csv"
+    respx.get(raw).mock(return_value=httpx.Response(200, text="10,100\n9,200\n8,150\n"))
+    resp = client.get("/api/convert", params={"url": raw, "name": "2026_01_01_x.csv",
+                                              "technique": "Raman", "fmt": "csdf"})
+    assert resp.status_code == 200
+    assert "attachment" in resp.headers.get("content-disposition", "")
+    import json
+    assert json.loads(resp.content)["csdm"]["version"] == "1.0"
+
+
 def test_dataset_endpoint_reports_errors():
     # missing required params -> 422 from FastAPI
     assert client.get("/api/dataset").status_code == 422

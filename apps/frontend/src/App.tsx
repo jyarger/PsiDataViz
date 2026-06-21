@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   api,
+  convertUrl,
   type CompareResult,
   type DatasetData,
   type RecordRow,
@@ -96,7 +97,7 @@ function Quick() {
       });
       return;
     }
-    const ds = await run("Parsing dataset…", () => api.dataset(repo, r.name, r.technique));
+    const ds = await run("Parsing dataset…", () => api.dataset(r.url, r.name, r.technique));
     if (ds) {
       setSelected((s) => [...s, r.key]);
       setDatasets((d) => ({ ...d, [r.key]: ds }));
@@ -226,7 +227,20 @@ function Quick() {
             </div>
           )}
           {soleRecord && datasets[soleRecord.key] && (
-            <Metadata meta={datasets[soleRecord.key].metadata} />
+            <>
+              <div className="export-row">
+                <span className="muted">Convert to standard format:</span>
+                <a className="btn ghost sm" download
+                   href={convertUrl(soleRecord.url, soleRecord.name, soleRecord.technique, "csdf")}>
+                  ⬇ CSDM
+                </a>
+                <a className="btn ghost sm" download
+                   href={convertUrl(soleRecord.url, soleRecord.name, soleRecord.technique, "h5")}>
+                  ⬇ HDF5
+                </a>
+              </div>
+              <Metadata meta={datasets[soleRecord.key].metadata} />
+            </>
           )}
         </div>
       )}
