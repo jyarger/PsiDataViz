@@ -11,21 +11,31 @@ function axisTitle(a: { label: string; unit: string | null }): string {
   return a.unit ? `${a.label} (${a.unit})` : a.label;
 }
 
-export function SpectrumPlot({ data }: { data: DatasetData }) {
+export function SpectrumPlot({ datasets }: { datasets: DatasetData[] }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!ref.current) return;
-    const traces = data.signals.map((s, i) => ({
-      x: s.points.map((p) => p[0]),
-      y: s.points.map((p) => p[1]),
-      type: "scattergl",
-      mode: "lines",
-      name: s.segment ?? s.name,
-      line: { color: PALETTE[i % PALETTE.length], width: 1.4 },
-    }));
-    const x0 = data.signals[0]?.x;
-    const y0 = data.signals[0]?.y;
+    if (!ref.current || datasets.length === 0) return;
+    const multi = datasets.length > 1;
+    let color = 0;
+    const traces = datasets.flatMap((ds) => {
+      const label = ds.metadata.sample_name ? String(ds.metadata.sample_name) : ds.filename;
+      return ds.signals.map((s) => {
+        const segLabel = s.segment ?? s.name;
+        const name = multi ? `${label} · ${segLabel}` : segLabel;
+        return {
+          x: s.points.map((p) => p[0]),
+          y: s.points.map((p) => p[1]),
+          type: "scattergl",
+          mode: "lines",
+          name,
+          line: { color: PALETTE[color++ % PALETTE.length], width: 1.4 },
+        };
+      });
+    });
+
+    const x0 = datasets[0].signals[0]?.x;
+    const y0 = datasets[0].signals[0]?.y;
     const layout = {
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",
@@ -33,20 +43,20 @@ export function SpectrumPlot({ data }: { data: DatasetData }) {
       margin: { l: 64, r: 16, t: 12, b: 48 },
       xaxis: {
         title: x0 ? axisTitle(x0) : "",
-        autorange: REVERSED.has(data.technique) ? "reversed" : true,
+        autorange: REVERSED.has(datasets[0].technique) ? "reversed" : true,
         gridcolor: "#21262d",
         zeroline: false,
       },
       yaxis: { title: y0 ? axisTitle(y0) : "", gridcolor: "#21262d", zeroline: false },
       legend: { orientation: "h", y: -0.18 },
-      showlegend: data.signals.length > 1,
+      showlegend: traces.length > 1,
     };
     Plotly.react(ref.current, traces as never, layout as never, {
       responsive: true,
       displaylogo: false,
       modeBarButtonsToRemove: ["lasso2d", "select2d"],
     });
-  }, [data]);
+  }, [datasets]);
 
   return <div ref={ref} style={{ width: "100%", height: 480 }} />;
 }

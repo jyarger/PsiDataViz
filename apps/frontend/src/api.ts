@@ -44,6 +44,22 @@ export interface DatasetData {
   signals: SignalData[];
 }
 
+export interface FormatComparison {
+  identical?: boolean;
+  summary?: string;
+  differences?: string[];
+  error?: string;
+}
+export interface CompareResult {
+  comparable: boolean;
+  reason?: string;
+  technique?: string;
+  primary?: string;
+  formats: string[];
+  comparisons?: Record<string, FormatComparison>;
+  summary?: string;
+}
+
 const BASE = import.meta.env.VITE_API_BASE ?? "";
 
 async function get<T>(path: string): Promise<T> {
@@ -51,6 +67,19 @@ async function get<T>(path: string): Promise<T> {
   if (!res.ok) {
     const body = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(body.detail ?? res.statusText);
+  }
+  return res.json() as Promise<T>;
+}
+
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const b = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(b.detail ?? res.statusText);
   }
   return res.json() as Promise<T>;
 }
@@ -63,4 +92,6 @@ export const api = {
     get<RecordRow[]>(`/api/records?url=${q(url)}&technique=${q(technique)}`),
   dataset: (url: string, name: string, technique: string) =>
     get<DatasetData>(`/api/dataset?url=${q(url)}&name=${q(name)}&technique=${q(technique)}`),
+  compare: (url: string, technique: string, key: string) =>
+    post<CompareResult>(`/api/compare`, { url, technique, key }),
 };

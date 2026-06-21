@@ -1,8 +1,15 @@
 import { useState } from "react";
-import { api, type DatasetData, type RecordRow, type ScanResult } from "./api";
+import {
+  api,
+  type CompareResult,
+  type DatasetData,
+  type RecordRow,
+  type ScanResult,
+} from "./api";
 import { Header, type View } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { SpectrumPlot } from "./components/SpectrumPlot";
+import { CompareView } from "./components/CompareView";
 
 const DEFAULT_REPO = "https://github.com/yargerlab/Data";
 
@@ -23,7 +30,7 @@ function Coming({ view }: { view: View }) {
       <p className="coming">
         <b>{view}</b> — advanced {view.toLowerCase()} features are coming soon.
         <br />
-        Start from <b>QUICK</b> to point at a data source and visualize.
+        Start from <b>QUICK</b> to point at a data source, overlay datasets, and compare formats.
       </p>
     </div>
   );
@@ -34,8 +41,9 @@ function Quick() {
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [technique, setTechnique] = useState<string | null>(null);
   const [records, setRecords] = useState<RecordRow[]>([]);
-  const [selected, setSelected] = useState<RecordRow | null>(null);
-  const [dataset, setDataset] = useState<DatasetData | null>(null);
+  const [selected, setSelected] = useState<string[]>([]); // ordered record keys
+  const [datasets, setDatasets] = useState<Record<string, DatasetData>>({});
+  const [compare, setCompare] = useState<CompareResult | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,8 +59,17 @@ function Quick() {
     }
   }
 
+  function clearSelection() {
+    setSelected([]);
+    setDatasets({});
+    setCompare(null);
+  }
+
   async function doScan() {
-    setScan(null); setTechnique(null); setRecords([]); setSelected(null); setDataset(null);
+    setScan(null);
+    setTechnique(null);
+    setRecords([]);
+    clearSelection();
     const result = await run("Scanning repository…", () => api.scan(repo));
     if (result) {
       setScan(result);
@@ -62,22 +79,46 @@ function Quick() {
   }
 
   async function pickTechnique(t: string) {
-    setTechnique(t); setSelected(null); setDataset(null);
+    setTechnique(t);
+    clearSelection();
     const rows = await run("Loading datasets…", () => api.records(repo, t));
     if (rows) setRecords(rows);
   }
 
-  async function pickRecord(r: RecordRow) {
-    setSelected(r);
+  async function toggleRecord(r: RecordRow) {
+    setCompare(null);
+    if (selected.includes(r.key)) {
+      setSelected(selected.filter((k) => k !== r.key));
+      setDatasets((d) => {
+        const next = { ...d };
+        delete next[r.key];
+        return next;
+      });
+      return;
+    }
     const ds = await run("Parsing dataset…", () => api.dataset(repo, r.name, r.technique));
-    if (ds) setDataset(ds);
+    if (ds) {
+      setSelected((s) => [...s, r.key]);
+      setDatasets((d) => ({ ...d, [r.key]: ds }));
+    }
   }
+
+  async function doCompare() {
+    const r = selected.length === 1 ? records.find((x) => x.key === selected[0]) : null;
+    if (!r) return;
+    const res = await run("Comparing formats…", () => api.compare(repo, r.technique, r.key));
+    if (res) setCompare(res);
+  }
+
+  const selectedDatasets = selected.map((k) => datasets[k]).filter(Boolean);
+  const soleRecord = selected.length === 1 ? records.find((r) => r.key === selected[0]) : null;
+  const canCompare = !!soleRecord && soleRecord.formats.length > 1;
 
   return (
     <>
       <h1>Point at a data source</h1>
       <p className="subtitle">
-        Scan a public repository of scientific data and visualize it instantly.
+        Scan a public repository, overlay datasets, and compare formats — instantly.
       </p>
 
       <div className="row">
@@ -124,19 +165,29 @@ function Quick() {
 
       {records.length > 0 && (
         <div className="card">
-          <p className="section-title">{technique} datasets ({records.length})</p>
+          <p className="section-title">
+            {technique} datasets ({records.length}) <span className="muted">— click to overlay</span>
+          </p>
           <div className="scroll">
             <table>
               <thead>
-                <tr><th>Date</th><th>Sample / description</th><th>Formats</th></tr>
+                <tr>
+                  <th style={{ width: 28 }}></th>
+                  <th>Date</th>
+                  <th>Sample / description</th>
+                  <th>Formats</th>
+                </tr>
               </thead>
               <tbody>
                 {records.map((r) => (
                   <tr
                     key={r.key}
-                    className={selected?.key === r.key ? "selected" : ""}
-                    onClick={() => pickRecord(r)}
+                    className={selected.includes(r.key) ? "selected" : ""}
+                    onClick={() => toggleRecord(r)}
                   >
+                    <td>
+                      <input type="checkbox" readOnly checked={selected.includes(r.key)} />
+                    </td>
                     <td>{r.date ?? ""}</td>
                     <td>{r.description}</td>
                     <td className="fmt">
@@ -151,15 +202,32 @@ function Quick() {
         </div>
       )}
 
-      {dataset && (
+      {selectedDatasets.length > 0 && (
         <div className="card">
-          <p className="section-title">
-            {dataset.filename} · {dataset.technique} · {dataset.signals.length} signal
-            {dataset.signals.length === 1 ? "" : "s"}{" "}
-            <span className="muted">(reader: {dataset.reader})</span>
-          </p>
-          <SpectrumPlot data={dataset} />
-          <Metadata meta={dataset.metadata} />
+          <div className="toolbar">
+            <span className="section-title" style={{ margin: 0 }}>
+              {selectedDatasets.length} dataset{selectedDatasets.length === 1 ? "" : "s"} overlaid
+            </span>
+            <div className="row" style={{ gap: 8 }}>
+              {canCompare && (
+                <button className="btn ghost" onClick={doCompare} disabled={!!busy}>
+                  Compare formats
+                </button>
+              )}
+              <button className="btn ghost" onClick={clearSelection}>
+                Clear
+              </button>
+            </div>
+          </div>
+          <SpectrumPlot datasets={selectedDatasets} />
+          {compare && (
+            <div className="cmp-panel">
+              <CompareView result={compare} />
+            </div>
+          )}
+          {soleRecord && datasets[soleRecord.key] && (
+            <Metadata meta={datasets[soleRecord.key].metadata} />
+          )}
         </div>
       )}
     </>
