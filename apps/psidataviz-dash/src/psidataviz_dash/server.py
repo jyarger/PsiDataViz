@@ -13,7 +13,7 @@ import dash
 import dash_mantine_components as dmc
 from dash import Dash, dcc
 
-BRAND = "PsiDataViz"
+BRAND = "ΨDataViz"  # display wordmark (spelled "PsiDataViz")
 TAGLINE = "Scientific Data Visualization"
 
 # Inline Ψ favicon (no asset file needed).
@@ -46,19 +46,15 @@ def _header() -> dmc.Paper:
     return dmc.Paper(
         dmc.Group(
             [
-                dmc.Group(
+                dmc.Stack(
                     [
-                        dmc.ThemeIcon("Ψ", size="lg", variant="light", radius="md",
-                                      style={"fontSize": 22, "fontWeight": 700}),
-                        dmc.Stack(
-                            [
-                                dmc.Title(BRAND, order=3, m=0),
-                                dmc.Text(TAGLINE, size="xs", c="dimmed"),
-                            ],
-                            gap=0,
+                        dmc.Title(
+                            [dmc.Text("Ψ", span=True, inherit=True, c="blue.4"), "DataViz"],
+                            order=2, m=0,
                         ),
+                        dmc.Text(TAGLINE, size="xs", c="dimmed"),
                     ],
-                    gap="sm",
+                    gap=0,
                 ),
                 dmc.Group(links, gap="xs"),
             ],

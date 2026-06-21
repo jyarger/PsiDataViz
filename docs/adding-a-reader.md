@@ -1,6 +1,6 @@
 # Adding a data reader
 
-A *reader* teaches PsiData how to parse one file format into the universal
+A *reader* teaches ΨData how to parse one file format into the universal
 [`Dataset`](../packages/psidata/src/psidata/model.py) container. Once registered, it works everywhere — the
 catalog flags matching files, the app plots them, and the marimo/Colab exports reproduce them.
 **You never edit the registry, the app, or the data model** — you just add one file.

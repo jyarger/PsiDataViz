@@ -1,6 +1,6 @@
-# Ψ PsiData — Scientific Data
+# ΨData — Scientific Data
 
-**PsiData** is a toolkit for **organizing, parsing, converting, and visualizing experimental &
+**ΨData** is a toolkit for **organizing, parsing, converting, and visualizing experimental &
 computational scientific data**. Point it at a public repository of instrument/computational data
 (e.g. [`github.com/yargerlab/Data`](https://github.com/yargerlab/Data)), and it makes sense of the
 sprawl of formats every lab accumulates.
@@ -10,7 +10,7 @@ library, and apps share the **Psi** prefix and the **Ψ** mark.
 
 - **`psidata`** — the framework-agnostic Python library (parsing / model / conversion). Standalone and
   pip-installable; works in marimo / Jupyter. *"Scientific Data."*
-- **PsiDataViz** — the visualization web app on top of it. *"Scientific Data Visualization."*
+- **ΨDataViz** — the visualization web app on top of it. *"Scientific Data Visualization."*
 
 ## Monorepo layout (uv workspace)
 
@@ -44,7 +44,7 @@ Headerless formats (Raman/FTIR `.csv`) are disambiguated by the instrument folde
 
 ```bash
 uv sync --all-packages --all-extras     # creates .venv, installs both packages
-python serve.py                          # PsiDataViz at http://127.0.0.1:8050  (dark mode)
+python serve.py                          # ΨDataViz at http://127.0.0.1:8050  (dark mode)
 ```
 
 Run the tests:
@@ -66,7 +66,7 @@ print(ds.technique, ds.summary())
 
 ## Deploy
 
-`docker compose up -d --build` runs PsiDataViz behind Caddy (automatic HTTPS). See
+`docker compose up -d --build` runs ΨDataViz behind Caddy (automatic HTTPS). See
 [`docs/deploy.md`](docs/deploy.md).
 
 ## Adding a new data reader

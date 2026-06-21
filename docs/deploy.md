@@ -1,6 +1,6 @@
-# Deploying PsiDataViz on a public VPS
+# Deploying ΨDataViz on a public VPS
 
-PsiDataViz ships as a small Docker stack: the app (served by gunicorn) behind
+ΨDataViz ships as a small Docker stack: the app (served by gunicorn) behind
 [Caddy](https://caddyserver.com/), which terminates TLS and obtains a free Let's Encrypt
 certificate automatically.
 

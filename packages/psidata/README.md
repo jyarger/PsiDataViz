@@ -2,7 +2,7 @@
 
 A framework-agnostic Python library to **ingest, parse, and convert experimental & computational
 scientific data** into a single universal model — usable directly in marimo / Jupyter, and the core
-that powers the **PsiDataViz** web app.
+that powers the **ΨDataViz** web app.
 
 ```python
 import psidata
@@ -15,4 +15,4 @@ Built-in readers: **DSC** (TA Trios `.txt`/`.csv`), **NMR** (JCAMP-DX), **FTIR**
 **Raman** (`.csv`). Add a technique by writing one `@register_reader` reader — see
 [`../../docs/adding-a-reader.md`](../../docs/adding-a-reader.md).
 
-Part of the [PsiData](../../README.md) monorepo.
+Part of the [ΨData](../../README.md) monorepo.

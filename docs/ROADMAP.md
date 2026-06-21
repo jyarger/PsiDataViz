@@ -1,8 +1,8 @@
-# PsiData / PsiDataViz — Roadmap
+# ΨData / ΨDataViz — Roadmap
 
 v1 (formerly *MolViz*) proved the core: scan a public GitHub data repo and visualize DSC / NMR /
 FTIR / Raman via a Plotly-Dash app + a framework-agnostic Python library. v2 turns this into
-**PsiData** (the library + ecosystem) and **PsiDataViz** (a modern visualization app).
+**ΨData** (the library + ecosystem) and **ΨDataViz** (a modern visualization app).
 
 ## Architecture decision
 Decoupled, nmrium-style: an async **FastAPI** backend wrapping the standalone **`psidata`** library
@@ -12,7 +12,7 @@ viewers, and WebGL imaging.
 
 ## Phases
 1. **Foundation & rebrand** ✅ (this phase) — uv-workspace monorepo; extract the standalone `psidata`
-   library; rebrand to PsiData / PsiDataViz (Ψ, dark mode); keep the Dash app as an interim demo.
+   library; rebrand to ΨData / ΨDataViz (Ψ, dark mode); keep the Dash app as an interim demo.
 2. **Multi-format dataset intelligence** (in `psidata`) — group files sharing a base name across
    extensions into one *DataRecord* with multiple *FormatVariant*s; classify variants (data vs sidecar,
    e.g. Raman `_spec.txt`); verify equivalence and **diff** what differs between formats; surface in the
@@ -22,7 +22,7 @@ viewers, and WebGL imaging.
    tool.
 4. **NMR depth** — JCAMP **ASDF (X++(Y..Y))** decoder for compressed Bruker `.jdx`; read **`.zip`**
    Bruker datasets (likely `nmrglue`) → ppm spectra; drag-and-drop loading.
-5. **New web stack (PsiDataViz)** — FastAPI async backend (Arrow/Parquet transport, websocket streaming,
+5. **New web stack (ΨDataViz)** — FastAPI async backend (Arrow/Parquet transport, websocket streaming,
    server-side downsampling) + React/TS dashboard: nav **QUICK · DATA · ANALYSIS · VISUALIZATION ·
    ADVANCED**, footer **Tools · Resources · Contacts**, dark, animated, drag-and-drop, WebGL plotting
    (uPlot / Plotly.js GL). Defaults to a public example repo (no marketing CTAs). Retire the Dash app at
