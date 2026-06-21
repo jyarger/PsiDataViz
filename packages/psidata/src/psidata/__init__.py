@@ -5,6 +5,7 @@ experimental & computational scientific data into one universal model.
 from __future__ import annotations
 
 from . import readers as _readers  # noqa: F401  (import registers all built-in readers)
+from .archive import ArchiveError, read_zip
 from .compare import Comparison, compare_datasets
 from .filename import ParsedName, parse_filename
 from .model import Axis, Dataset, Metadata, Signal, SourceInfo
@@ -21,6 +22,7 @@ from .registry import (
 __version__ = "0.2.0"
 
 __all__ = [
+    "ArchiveError",
     "Axis",
     "BaseReader",
     "Candidate",
@@ -36,6 +38,7 @@ __all__ = [
     "get_readers",
     "parse_filename",
     "read",
+    "read_zip",
     "register_reader",
     "score_readers",
     "__version__",
