@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from . import readers as _readers  # noqa: F401  (import registers all built-in readers)
 from .archive import ArchiveError, read_zip
-from .compare import Comparison, compare_datasets
+from .compare import Comparison, compare_datasets, compare_record_formats
 from .filename import ParsedName, parse_filename
 from .model import Axis, Dataset, Metadata, Signal, SourceInfo
 from .readers.base import BaseReader, Candidate
@@ -34,6 +34,7 @@ __all__ = [
     "SourceInfo",
     "UnknownFormatError",
     "compare_datasets",
+    "compare_record_formats",
     "detect",
     "get_readers",
     "parse_filename",
