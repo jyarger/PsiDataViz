@@ -85,17 +85,21 @@ def _line_ordinates(tokens: list[tuple[str, int | float]]) -> list[int | float]:
     return ys
 
 
-def decode_xpp_yy(data_lines: list[str]) -> tuple[int | float | None, int, list[int | float]]:
+def decode_xpp_yy(data_lines: list[str], npoints: int | None = None
+                  ) -> tuple[int | float | None, int, list[int | float]]:
     """Decode ``(X++(Y..Y))`` data lines into ``(x0, direction, ordinates)``.
 
-    ``x0`` is the abscissa index of the first ordinate; ``direction`` is +1/−1 (ascending or
-    descending index). Raises ``ValueError`` if a line's Y-value check fails.
-    """
-    ordinates: list[int | float] = []
-    lead_indices: list[int | float] = []
-    x0: int | float | None = None
+    Two vendor conventions for the line boundary are both handled:
 
-    for idx, raw in enumerate(data_lines):
+    * **overlapping** (Bruker) — the last ordinate of a line is repeated as the first ordinate of
+      the next (a Y-value check); the duplicate is dropped.
+    * **contiguous** (Nicolet) — lines simply abut, no shared point.
+
+    ``npoints`` (from the header) disambiguates which convention applies; without it, overlap is
+    inferred from whether consecutive line boundaries coincide.
+    """
+    per_line: list[tuple[int | float, list[int | float]]] = []
+    for raw in data_lines:
         line = raw.strip()
         if not line or line.startswith(("##", "$$")):
             continue
@@ -103,18 +107,36 @@ def decode_xpp_yy(data_lines: list[str]) -> tuple[int | float | None, int, list[
         if not tokens:
             continue
         ys = _line_ordinates(tokens)
-        if not ys:
-            continue
-        if ordinates:
+        if ys:
+            per_line.append((tokens[0][1], ys))
+    if not per_line:
+        return None, -1, []
+
+    total = sum(len(ys) for _, ys in per_line)
+    n_boundaries = len(per_line) - 1
+    if npoints is not None:
+        if total == npoints:
+            overlap = False
+        elif total - n_boundaries == npoints:
+            overlap = True
+        else:
+            raise ValueError(
+                f"ASDF decoded {total} ordinates ({total - n_boundaries} de-overlapped) "
+                f"but NPOINTS={npoints}"
+            )
+    else:
+        overlap = len(per_line) > 1 and per_line[1][1][0] == per_line[0][1][-1]
+
+    ordinates: list[int | float] = []
+    for idx, (_lead, ys) in enumerate(per_line):
+        if overlap and ordinates:
             if ys[0] != ordinates[-1]:
                 raise ValueError(
                     f"ASDF Y-value check failed at data line {idx}: {ys[0]} != {ordinates[-1]}"
                 )
-            ys = ys[1:]  # drop the duplicated boundary point
-        else:
-            x0 = tokens[0][1]
-        lead_indices.append(tokens[0][1])
+            ys = ys[1:]
         ordinates.extend(ys)
 
-    direction = 1 if (len(lead_indices) >= 2 and lead_indices[1] > lead_indices[0]) else -1
-    return x0, direction, ordinates
+    leads = [lead for lead, _ in per_line]
+    direction = 1 if (len(leads) >= 2 and leads[1] > leads[0]) else -1
+    return per_line[0][0], direction, ordinates
