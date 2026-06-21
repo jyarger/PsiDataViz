@@ -21,7 +21,9 @@ dependencies = [
 
 [project.optional-dependencies]
 export = ["plotly>=5.20", "nbformat>=5.10"]
-dev = ["pytest>=8.0", "ruff>=0.4", "respx>=0.21"]
+# CSDM (.csdf) is written directly as its lightweight JSON form — no heavy csdmpy/astropy dep.
+convert = ["h5py>=3.10", "zarr>=2.17"]
+dev = ["pytest>=8.0", "ruff>=0.4", "respx>=0.21", "h5py>=3.10", "zarr>=2.17"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/psidata"]
