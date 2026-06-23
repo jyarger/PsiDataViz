@@ -14,10 +14,10 @@ export function Resources({ onClose }: { onClose: () => void }) {
         <section>
           <h3>Getting started</h3>
           <p>
-            On the <b>QUICK</b> tab, paste a public data repository and click <b>Scan</b>. PsiDataViz
-            groups files that share a base name into one dataset, lets you <b>filter</b>, <b>overlay</b>,
-            and <b>compare</b> them, and <b>convert</b> to standard formats. The default source is the
-            Yarger Lab data repo.
+            On the <b>QUICK</b> tab, paste a public <b>GitHub repo</b> or <b>Google Drive folder</b> URL
+            and click <b>Scan</b> — or use one of the <b>Try</b> presets. PsiDataViz groups files that
+            share a base name into one dataset, lets you <b>filter</b>, <b>overlay</b>, and <b>compare</b>
+            them, and <b>convert</b> to standard formats. The default source is the Yarger Lab data repo.
           </p>
         </section>
 
@@ -48,7 +48,7 @@ export function Resources({ onClose }: { onClose: () => void }) {
               >
                 Google Drive — Psi_Data
               </a>{" "}
-              — shared example folder (Drive scanning is on the roadmap).
+              — shared example folder, scannable directly (no API key needed).
             </li>
           </ul>
         </section>

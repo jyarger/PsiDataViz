@@ -52,8 +52,18 @@ function Coming({ view }: { view: View }) {
   );
 }
 
+const PRESETS: { label: string; icon: string; url: string }[] = [
+  { label: "yargerlab/Data", icon: "GH", url: "https://github.com/yargerlab/Data" },
+  {
+    label: "Google Drive — Psi_Data",
+    icon: "▲",
+    url: "https://drive.google.com/drive/folders/16VQhcRbCHkzhH2cq8T5DwyhTUBj2BrO4",
+  },
+];
+
 function Quick() {
   const [repo, setRepo] = useState(DEFAULT_REPO);
+  const [src, setSrc] = useState(DEFAULT_REPO); // the source URL backing the current scan
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [technique, setTechnique] = useState<string | null>(null);
   const [records, setRecords] = useState<RecordRow[]>([]);
@@ -83,23 +93,26 @@ function Quick() {
     setCompare(null);
   }
 
-  async function doScan() {
+  async function doScan(target?: string) {
+    const url = (target ?? repo).trim();
+    setRepo(url);
+    setSrc(url);
     setScan(null);
     setTechnique(null);
     setRecords([]);
     clearSelection();
-    const result = await run("Scanning repository…", () => api.scan(repo));
+    const result = await run("Scanning data source…", () => api.scan(url));
     if (result) {
       setScan(result);
       const first = result.techniques.find((t) => t.n_supported > 0)?.technique;
-      if (first) void pickTechnique(first);
+      if (first) void pickTechnique(first, url);
     }
   }
 
-  async function pickTechnique(t: string) {
+  async function pickTechnique(t: string, source: string = src) {
     setTechnique(t);
     clearSelection();
-    const rows = await run("Loading datasets…", () => api.records(repo, t));
+    const rows = await run("Loading datasets…", () => api.records(source, t));
     if (rows) setRecords(rows);
   }
 
@@ -124,7 +137,7 @@ function Quick() {
   async function doCompare() {
     const r = selected.length === 1 ? records.find((x) => x.key === selected[0]) : null;
     if (!r) return;
-    const res = await run("Comparing formats…", () => api.compare(repo, r.technique, r.key));
+    const res = await run("Comparing formats…", () => api.compare(src, r.technique, r.key));
     if (res) setCompare(res);
   }
 
@@ -151,11 +164,26 @@ function Quick() {
           value={repo}
           onChange={(e) => setRepo(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && doScan()}
-          placeholder="owner/repo or https://github.com/owner/repo"
+          placeholder="GitHub repo (owner/repo) or a public Google Drive folder URL"
         />
-        <button className="btn" onClick={doScan} disabled={!!busy}>
+        <button className="btn" onClick={() => doScan()} disabled={!!busy}>
           Scan
         </button>
+      </div>
+      <div className="presets">
+        <span className="muted">Try:</span>
+        {PRESETS.map((p) => (
+          <button
+            key={p.url}
+            className="src-chip"
+            onClick={() => doScan(p.url)}
+            disabled={!!busy}
+            title={p.url}
+          >
+            <span className="src-ic">{p.icon}</span>
+            {p.label}
+          </button>
+        ))}
       </div>
 
       {busy && <p className="spinner">{busy}</p>}
