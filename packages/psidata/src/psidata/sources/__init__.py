@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .base import DataSource, FileRef
-from .catalog import Catalog, CatalogEntry, build_entry, scan
+from .catalog import Catalog, CatalogEntry, build_entry, canonical_technique, scan
 from .gdrive import GoogleDriveError, GoogleDriveSource, parse_drive_url
 from .github import GitHubError, GitHubSource, RepoRef, parse_repo_url
 from .records import (
@@ -38,6 +38,7 @@ __all__ = [
     "RepoRef",
     "build_entry",
     "build_records",
+    "canonical_technique",
     "classify_format",
     "make_source",
     "parse_drive_url",

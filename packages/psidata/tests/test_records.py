@@ -86,3 +86,23 @@ def test_record_summary_shape():
     assert s["primary"] == ".csv"
     assert set(s["formats"]) == {".csv", ".tri"}
     assert s["date"] == "2026-05-26"
+
+
+# --- technique normalization: "IR" and "FTIR" folders are the same technique ------------------
+def test_ir_folder_normalizes_to_ftir():
+    from psidata.sources import canonical_technique
+
+    ir = build_entry(FileRef(path="IR/2026_01_01_silk_ATR.dpt", size=1))
+    ftir = build_entry(FileRef(path="FTIR/2026_01_01_silk_ATR.dpt", size=1))
+    assert ir.technique == "FTIR" == ftir.technique
+    assert ir.supported  # the FTIR reader still matches the normalized folder
+    assert canonical_technique("UV_Vis") == "UV-Vis"
+    assert canonical_technique("NMR") == "NMR"  # unmapped folders pass through unchanged
+
+
+def test_ir_and_ftir_records_share_one_technique_group():
+    recs = _records([
+        "IR/2026_01_01_silk_ATR.dpt",
+        "FTIR/2026_02_02_pdms_ATR.dpt",
+    ])
+    assert {r.technique for r in recs} == {"FTIR"}

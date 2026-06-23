@@ -16,6 +16,27 @@ from .base import DataSource, FileRef
 
 ROOT_GROUP = "(root)"
 
+# Different labs/sources name the same technique folder differently (e.g. "IR" vs "FTIR").
+# Map lowercase folder names to one canonical technique so they merge into a single group.
+_TECHNIQUE_ALIASES = {
+    "ir": "FTIR",
+    "ft-ir": "FTIR",
+    "ftir": "FTIR",
+    "infrared": "FTIR",
+    "uv": "UV-Vis",
+    "uvvis": "UV-Vis",
+    "uv-vis": "UV-Vis",
+    "uv_vis": "UV-Vis",
+    "uv-visible": "UV-Vis",
+}
+
+
+def canonical_technique(top_dir: str) -> str:
+    """Normalize a folder name to one canonical technique label (``IR`` → ``FTIR``, …)."""
+    if not top_dir:
+        return ROOT_GROUP
+    return _TECHNIQUE_ALIASES.get(top_dir.strip().lower(), top_dir)
+
 
 @dataclass(frozen=True)
 class CatalogEntry:
@@ -103,8 +124,8 @@ def _match_reader(top_dir: str, ext: str):
 
 
 def build_entry(ref: FileRef) -> CatalogEntry:
-    technique = ref.top_dir or ROOT_GROUP
-    reader = _match_reader(ref.top_dir, ref.ext)
+    technique = canonical_technique(ref.top_dir)
+    reader = _match_reader(technique, ref.ext)
     return CatalogEntry(
         file=ref,
         technique=technique,
