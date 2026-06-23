@@ -63,9 +63,46 @@ def ldr_float(ldrs: dict[str, str], key: str, default: float | None = None) -> f
 
 def header_index(lines: list[str]) -> int:
     for i, line in enumerate(lines):
-        if line.upper().startswith(("##XYDATA", "##XYPOINTS", "##PEAKTABLE")):
+        if line.upper().startswith(("##XYDATA", "##XYPOINTS", "##PEAKTABLE", "##NTUPLES")):
             return i
     return len(lines)
+
+
+# --- NTUPLES (multi-page) data, e.g. an NMR FID with separate REAL/IMAG pages ------------------
+_NTUPLE_TABLE_RE = re.compile(r"\(X\+\+\(([A-Z])\.\.\1\)\)")
+
+
+def is_ntuples_fid(ldrs: dict[str, str]) -> bool:
+    """True for a JCAMP NTUPLES block holding a time-domain NMR FID (REAL/IMAG pages)."""
+    return ldrs.get("DATACLASS", "").upper() == "NTUPLES" and "FID" in ldrs.get("DATATYPE", "").upper()
+
+
+def ntuples_attr(ldrs: dict[str, str], key: str) -> list[str]:
+    """Split a comma-list NTUPLES attribute (``SYMBOL``, ``FACTOR``, ``VAR_DIM``, …)."""
+    return [s.strip() for s in (ldrs.get(key) or "").split(",")]
+
+
+def parse_ntuples_pages(lines: list[str]) -> dict[str, list[str]]:
+    """Map each NTUPLES page's ordinate symbol (``R``, ``I``, …) to its raw ``(X++(?..?))`` lines."""
+    pages: dict[str, list[str]] = {}
+    sym: str | None = None
+    buf: list[str] = []
+    for line in lines:
+        compact = line.strip().replace(" ", "").upper()
+        if compact.startswith("##DATATABLE"):
+            if sym is not None:
+                pages[sym] = buf
+            m = _NTUPLE_TABLE_RE.search(compact)
+            sym, buf = (m.group(1) if m else None), []
+        elif line.lstrip().startswith("##"):
+            if sym is not None:
+                pages[sym] = buf
+                sym, buf = None, []
+        elif sym is not None:
+            buf.append(line)
+    if sym is not None:
+        pages[sym] = buf
+    return pages
 
 
 def decode_data(ldrs: dict[str, str], marker: str | None,

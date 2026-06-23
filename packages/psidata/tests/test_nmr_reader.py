@@ -69,3 +69,42 @@ def test_asdf_rejects_mismatched_npoints():
     bad = _ASDF.replace("##NPOINTS=7", "##NPOINTS=99")
     with pytest.raises(ValueError, match="NPOINTS"):
         read(Candidate(filename="bruker.jdx", text=bad))
+
+
+# A tiny NTUPLES NMR FID (Nanalysis NMReady style): REAL + IMAG pages, decayed so the FFT is well
+# defined. SF/SWH/O1P drive the ppm axis (SW=SWH/SF=7 ppm, OFFSET=O1P+SW/2=8.5).
+_NTUPLES_FID = (
+    "##TITLE=synthetic fid\n##JCAMP-DX=5.01 $$ Nanalysis NMReady\n"
+    "##DATA TYPE=NMR FID\n##DATA CLASS=NTUPLES\n"
+    "##.OBSERVE NUCLEUS=^1H\n##.OBSERVE FREQUENCY=100.0\n##.SOLVENT NAME=Chloroform-d\n"
+    "##$SF= 100.0\n##$SWH= 700.0\n##$O1P= 5.0\n##NPOINTS=7\n"
+    "##NTUPLES=NMR FID\n##VAR_NAME=TIME,FID/REAL,FID/IMAG,PAGE NUMBER\n"
+    "##SYMBOL=X,R,I,N\n##VAR_DIM=7,7,7,2\n##FACTOR=1,1,1,1\n"
+    "##PAGE=N=1\n##DATA TABLE= (X++(R..R)), XYDATA\n0 100 60 30 10 5 2 1\n"
+    "##PAGE=N=2\n##DATA TABLE= (X++(I..I)), XYDATA\n0 0 20 15 8 4 2 1\n"
+    "##END NTUPLES=NMR FID\n##END=\n"
+)
+
+
+def test_ntuples_fid_is_fourier_transformed_to_spectrum():
+    cand = Candidate(filename="NMR_synthetic_NAnalysis60.dx", text=_NTUPLES_FID, technique_hint="NMR")
+    assert detect(cand).name == "nmr_jcamp"
+    ds = read(cand)
+    assert ds.technique == "NMR"
+    sig = ds.signals[0]
+    assert sig.npoints == 7  # SI not set -> spectrum length == FID length
+    assert sig.x.label == "Chemical shift" and sig.x.unit == "ppm"
+    cs = sig.frame["Chemical shift"].to_numpy()
+    assert cs[0] == pytest.approx(8.5) and cs[-1] == pytest.approx(2.5)  # OFFSET -> OFFSET-SW
+    assert (sig.frame["Intensity"].to_numpy() >= 0).all()  # magnitude spectrum
+    assert "FID" in ds.metadata.data_type and "spectrum" in ds.metadata.data_type
+    assert ds.metadata.nucleus == "1H" and ds.metadata.solvent == "Chloroform-d"
+
+
+def test_ntuples_non_fid_is_declined():
+    # an NTUPLES class we don't decode must not be claimed as "supported"
+    spectrum = (
+        "##TITLE=x\n##JCAMP-DX=5.01\n##DATA TYPE=NMR SPECTRUM\n##DATA CLASS=NTUPLES\n"
+        "##.OBSERVE NUCLEUS=^1H\n##NTUPLES=NMR SPECTRUM\n##END=\n"
+    )
+    assert JcampNmrReader().sniff(Candidate(filename="x.dx", text=spectrum)) == 0.0
