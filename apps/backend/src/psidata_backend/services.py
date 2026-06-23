@@ -8,7 +8,7 @@ from dataclasses import asdict
 import httpx
 import numpy as np
 from psidata import Candidate, Dataset, read, read_zip
-from psidata.sources import Catalog, FileRef, GitHubSource
+from psidata.sources import Catalog, FileRef, make_source
 from psidata.sources.catalog import build_entry
 from psidata.sources.records import IMAGE
 
@@ -18,8 +18,11 @@ _listing_cache: dict[str, dict] = {}  # url -> {"label", "files"} (process-lifet
 def scan_repo(url: str, *, use_cache: bool = True) -> Catalog:
     payload = _listing_cache.get(url) if use_cache else None
     if payload is None:
-        with GitHubSource(url) as src:
+        src = make_source(url)
+        try:
             payload = {"label": src.label, "files": [asdict(r) for r in src.list_files()]}
+        finally:
+            getattr(src, "close", lambda: None)()
         _listing_cache[url] = payload
     refs = [FileRef(**f) for f in payload["files"]]
     return Catalog(source_label=payload["label"], entries=[build_entry(r) for r in refs])
