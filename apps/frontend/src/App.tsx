@@ -32,7 +32,7 @@ export default function App() {
       <main className="main">
         {/* keep QUICK mounted (hidden) so scan/plot state survives tab switches */}
         <div hidden={view !== "QUICK"}>
-          <Quick />
+          <Quick onNav={setView} />
         </div>
         {view !== "QUICK" && <Coming view={view} />}
       </main>
@@ -62,7 +62,7 @@ const PRESETS: { label: string; icon: string; url: string }[] = [
   },
 ];
 
-function Quick() {
+function Quick({ onNav }: { onNav: (v: View) => void }) {
   const [repo, setRepo] = useState(DEFAULT_REPO);
   const [src, setSrc] = useState(DEFAULT_REPO); // the source URL backing the current scan
   const [scan, setScan] = useState<ScanResult | null>(null);
@@ -158,6 +158,12 @@ function Quick() {
       <h1>Point at a data source</h1>
       <p className="subtitle">
         Scan a public repository, overlay datasets, and compare formats — instantly.
+      </p>
+      <p className="nav-hint">
+        Want advanced filtering, multi-source views, deeper analysis, or richer plots? Continue to{" "}
+        <a className="link" onClick={() => onNav("DATA")}>DATA</a>,{" "}
+        <a className="link" onClick={() => onNav("ANALYSIS")}>ANALYSIS</a>, and{" "}
+        <a className="link" onClick={() => onNav("VISUALIZATION")}>VISUALIZATION</a>.
       </p>
 
       <div className="row">

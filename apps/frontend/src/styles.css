@@ -51,7 +51,9 @@ a { color: var(--accent); text-decoration: none; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
 h1 { font-size: 24px; margin: 0 0 4px; }
-.subtitle { color: var(--dim); margin: 0 0 18px; }
+.subtitle { color: var(--dim); margin: 0 0 6px; }
+.nav-hint { color: var(--dim); font-size: 13px; margin: 0 0 18px; }
+.nav-hint .link { font-weight: 600; }
 .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--dim); margin: 0 0 10px; }
 
 /* ---- inputs ---- */
