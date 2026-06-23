@@ -4,11 +4,15 @@
   Need the optional ``[convert]`` extra (``pip install 'psidata[convert]'``).
 * **CSDM** (``.csdf``) — the Core Scientific Dataset Model. Written directly as its lightweight JSON
   form, so it needs no extra dependency. Signals sharing the x-grid become dependent variables.
+* **CSV / Parquet / Feather** — the dataset's signals as one tidy (long-form) table; Parquet/Feather
+  need ``pyarrow`` (in the ``[convert]`` extra). **CSV-zip** is one CSV per signal in a ``.zip``.
 """
 
 from __future__ import annotations
 
 import json
+import re
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +20,8 @@ import numpy as np
 
 from ..model import Dataset
 
-__all__ = ["convert", "to_csdm", "to_hdf5", "to_zarr"]
+__all__ = ["convert", "to_csdm", "to_csv", "to_csv_zip", "to_feather", "to_hdf5", "to_parquet",
+           "to_zarr"]
 
 
 def _meta_attrs(dataset: Dataset) -> dict[str, Any]:
@@ -138,13 +143,48 @@ def to_csdm(dataset: Dataset, path: str | Path | None = None) -> str:
     return text
 
 
+# --- tabular formats (one tidy/long-form table over all signals) ------------------------------
+def _require_pyarrow(fn: str) -> None:
+    try:
+        import pyarrow  # noqa: F401
+    except ImportError as exc:  # pragma: no cover
+        raise ImportError(f"{fn} needs the [convert] extra: pip install 'psidata[convert]'") from exc
+
+
+def to_csv(dataset: Dataset, path: str | Path) -> str:
+    dataset.to_tidy_df().to_csv(str(path), index=False)
+    return str(path)
+
+
+def to_parquet(dataset: Dataset, path: str | Path) -> str:
+    _require_pyarrow("to_parquet")
+    dataset.to_tidy_df().to_parquet(str(path), index=False)
+    return str(path)
+
+
+def to_feather(dataset: Dataset, path: str | Path) -> str:
+    _require_pyarrow("to_feather")
+    dataset.to_tidy_df().reset_index(drop=True).to_feather(str(path))
+    return str(path)
+
+
+def to_csv_zip(dataset: Dataset, path: str | Path) -> str:
+    """One CSV per signal, bundled into a ``.zip`` (useful for multi-segment / multi-row datasets)."""
+    with zipfile.ZipFile(str(path), "w", zipfile.ZIP_DEFLATED) as zf:
+        for i, sig in enumerate(dataset.signals):
+            label = re.sub(r"[^A-Za-z0-9._-]+", "_", sig.segment or sig.name)[:60] or "signal"
+            zf.writestr(f"signal_{i}_{label}.csv", sig.frame.to_csv(index=False))
+    return str(path)
+
+
 def convert(dataset: Dataset, path: str | Path, fmt: str | None = None) -> str:
-    """Dispatch by ``fmt`` (or the path suffix): ``hdf5``/``h5`` · ``zarr`` · ``csdf``/``csdm``."""
+    """Dispatch by ``fmt`` (or path suffix): hdf5/h5 · zarr · csdf/csdm · csv · parquet · feather · zip."""
     fmt = (fmt or Path(str(path)).suffix.lstrip(".")).lower()
-    if fmt in ("h5", "hdf5"):
-        return to_hdf5(dataset, path)
-    if fmt == "zarr":
-        return to_zarr(dataset, path)
-    if fmt in ("csdf", "csdm"):
-        return to_csdm(dataset, path)
-    raise ValueError(f"unknown convert format {fmt!r} (use hdf5, zarr, or csdf)")
+    dispatch = {
+        "h5": to_hdf5, "hdf5": to_hdf5, "zarr": to_zarr, "csdf": to_csdm, "csdm": to_csdm,
+        "csv": to_csv, "parquet": to_parquet, "feather": to_feather, "zip": to_csv_zip,
+    }
+    if fmt not in dispatch:
+        raise ValueError(f"unknown convert format {fmt!r} "
+                         "(use hdf5, zarr, csdf, csv, parquet, feather, or zip)")
+    return dispatch[fmt](dataset, path)

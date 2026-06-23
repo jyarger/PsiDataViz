@@ -58,6 +58,22 @@ def test_convert_endpoint_returns_csdm_download():
     assert json.loads(resp.content)["csdm"]["version"] == "1.0"
 
 
+@respx.mock
+def test_convert_endpoint_csv_download():
+    raw = "https://raw.githubusercontent.com/o/r/main/Raman/2026_01_01_x.csv"
+    respx.get(raw).mock(return_value=httpx.Response(200, text="10,100\n9,200\n8,150\n"))
+    resp = client.get("/api/convert", params={"url": raw, "name": "2026_01_01_x.csv",
+                                              "technique": "Raman", "fmt": "csv"})
+    assert resp.status_code == 200
+    assert resp.headers["content-disposition"].endswith('.csv"')
+    assert b"signal" in resp.content  # tidy CSV header
+
+
+def test_convert_endpoint_rejects_unknown_format():
+    assert client.get("/api/convert", params={"url": "x", "name": "y.csv", "fmt": "bogus"}
+                      ).status_code == 400
+
+
 def test_dataset_endpoint_reports_errors():
     # missing required params -> 422 from FastAPI
     assert client.get("/api/dataset").status_code == 422

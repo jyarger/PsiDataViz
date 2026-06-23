@@ -61,12 +61,18 @@ export function SpectrumPlot({
       font: { color: "#c9d1d9", size: 12 },
       margin: { l: 64, r: 16, t: 12, b: 48 },
       xaxis: {
-        title: x0 ? axisTitle(x0) : "",
+        title: { text: x0 ? axisTitle(x0) : "", font: { size: 16 } },
+        tickfont: { size: 13 },
         autorange: REVERSED.has(datasets[0].technique) ? "reversed" : true,
         gridcolor: "#21262d",
         zeroline: false,
       },
-      yaxis: { title: yTitle, gridcolor: "#21262d", zeroline: false },
+      yaxis: {
+        title: { text: yTitle, font: { size: 16 } },
+        tickfont: { size: 13 },
+        gridcolor: "#21262d",
+        zeroline: false,
+      },
       legend: { orientation: "h", y: -0.18 },
       showlegend: traces.length > 1,
     };

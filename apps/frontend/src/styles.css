@@ -133,3 +133,36 @@ input[type="text"].filter {
 }
 .toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--dim);
   cursor: pointer; user-select: none; }
+
+/* ---- panel brand marks (Ψ PsiData / Ψ PsiViz) ---- */
+.panel-brand { display: inline-flex; align-items: baseline; gap: 2px; font-weight: 800;
+  font-size: 13px; color: var(--dim); letter-spacing: -0.3px; margin-bottom: 10px; }
+.panel-brand .psi { color: var(--accent); font-size: 17px; }
+
+/* ---- export dropdown ---- */
+.export-menu { position: relative; display: inline-block; }
+.export-dropdown { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20;
+  min-width: 190px; background: var(--panel-2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
+.export-item { display: block; padding: 7px 10px; border-radius: 7px; font-size: 13px;
+  color: var(--text); text-decoration: none; }
+.export-item:hover { background: var(--accent-dim); color: #fff; }
+
+/* ---- modal (Resources) ---- */
+.link { cursor: pointer; color: var(--accent); }
+.link:hover { text-decoration: underline; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(2,6,14,0.66); backdrop-filter: blur(3px);
+  display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px; z-index: 100; }
+.modal { background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+  width: 640px; max-width: 100%; max-height: 84vh; overflow: auto; padding: 22px 26px;
+  animation: fade 0.2s ease; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.modal-head h2 { margin: 0; font-size: 20px; }
+.modal-head .psi { color: var(--accent); }
+.modal-close { background: transparent; border: 0; color: var(--dim); font-size: 26px; line-height: 1;
+  cursor: pointer; }
+.modal-close:hover { color: var(--text); }
+.modal section { margin-top: 16px; }
+.modal h3 { font-size: 14px; margin: 0 0 6px; }
+.modal p, .modal li { color: var(--dim); font-size: 13.5px; line-height: 1.6; }
+.modal code { background: var(--panel-2); padding: 1px 5px; border-radius: 4px; font-size: 12px; }

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   api,
-  convertUrl,
   type CompareResult,
   type DatasetData,
   type RecordRow,
@@ -11,15 +10,31 @@ import { Header, type View } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { SpectrumPlot } from "./components/SpectrumPlot";
 import { CompareView } from "./components/CompareView";
+import { ExportMenu } from "./components/ExportMenu";
 
 const DEFAULT_REPO = "https://github.com/yargerlab/Data";
+
+function PanelBrand({ label }: { label: string }) {
+  return (
+    <div className="panel-brand">
+      <span className="psi">Ψ</span>
+      {label}
+    </div>
+  );
+}
 
 export default function App() {
   const [view, setView] = useState<View>("QUICK");
   return (
     <>
       <Header view={view} onNav={setView} />
-      <main className="main">{view === "QUICK" ? <Quick /> : <Coming view={view} />}</main>
+      <main className="main">
+        {/* keep QUICK mounted (hidden) so scan/plot state survives tab switches */}
+        <div hidden={view !== "QUICK"}>
+          <Quick />
+        </div>
+        {view !== "QUICK" && <Coming view={view} />}
+      </main>
       <Footer />
     </>
   );
@@ -173,7 +188,8 @@ function Quick() {
       )}
 
       {records.length > 0 && (
-        <div className="card">
+        <div className="card with-brand">
+          <PanelBrand label="PsiData" />
           <div className="toolbar">
             <span className="section-title" style={{ margin: 0 }}>
               {technique} datasets ({needle ? `${shown.length} of ${records.length}` : records.length}){" "}
@@ -222,7 +238,8 @@ function Quick() {
       )}
 
       {selectedDatasets.length > 0 && (
-        <div className="card">
+        <div className="card with-brand">
+          <PanelBrand label="PsiViz" />
           <div className="toolbar">
             <span className="section-title" style={{ margin: 0 }}>
               {selectedDatasets.length} dataset{selectedDatasets.length === 1 ? "" : "s"} overlaid
@@ -256,14 +273,11 @@ function Quick() {
             <>
               <div className="export-row">
                 <span className="muted">Convert to standard format:</span>
-                <a className="btn ghost sm" download
-                   href={convertUrl(soleRecord.url, soleRecord.name, soleRecord.technique, "csdf")}>
-                  ⬇ CSDM
-                </a>
-                <a className="btn ghost sm" download
-                   href={convertUrl(soleRecord.url, soleRecord.name, soleRecord.technique, "h5")}>
-                  ⬇ HDF5
-                </a>
+                <ExportMenu
+                  url={soleRecord.url}
+                  name={soleRecord.name}
+                  technique={soleRecord.technique}
+                />
               </div>
               <Metadata meta={datasets[soleRecord.key].metadata} />
             </>

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from psidata import Candidate, convert, read
-from psidata.convert import to_csdm, to_hdf5, to_zarr
+from psidata.convert import to_csdm, to_csv, to_csv_zip, to_feather, to_hdf5, to_parquet, to_zarr
 
 
 def _dataset(dsc_txt: str):
@@ -60,3 +60,29 @@ def test_convert_dispatch_by_suffix(dsc_txt, tmp_path):
     out = convert(_dataset(dsc_txt), tmp_path / "a.csdf")
     assert out.endswith(".csdf")
     assert json.loads(Path(out).read_text())["csdm"]["version"] == "1.0"
+
+
+def test_to_csv_parquet_feather_tidy(dsc_txt, tmp_path):
+    import pandas as pd
+
+    ds = _dataset(dsc_txt)
+    csv_df = pd.read_csv(to_csv(ds, tmp_path / "a.csv"))
+    assert "signal" in csv_df.columns and len(csv_df) > 0
+    assert pd.read_parquet(to_parquet(ds, tmp_path / "a.parquet")).shape == csv_df.shape
+    assert pd.read_feather(to_feather(ds, tmp_path / "a.feather")).shape == csv_df.shape
+
+
+def test_to_csv_zip_one_per_signal(dsc_txt, tmp_path):
+    import zipfile
+
+    ds = _dataset(dsc_txt)  # DSC indium -> 2 thermal segments
+    with zipfile.ZipFile(to_csv_zip(ds, tmp_path / "a.zip")) as zf:
+        names = zf.namelist()
+    assert len(names) == len(ds.signals) == 2
+    assert all(n.endswith(".csv") for n in names)
+
+
+def test_convert_dispatch_tabular_formats(dsc_txt, tmp_path):
+    ds = _dataset(dsc_txt)
+    for ext in ("csv", "parquet", "feather", "zip"):
+        assert convert(ds, tmp_path / f"x.{ext}").endswith(ext)

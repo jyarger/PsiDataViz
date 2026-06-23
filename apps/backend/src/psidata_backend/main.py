@@ -15,9 +15,9 @@ import tempfile
 
 from fastapi import Body, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse
 from psidata import __version__, compare_record_formats, get_readers
-from psidata.convert import to_csdm, to_hdf5
+from psidata.convert import convert as run_convert
 from starlette.background import BackgroundTask
 
 from . import services
@@ -64,29 +64,38 @@ def dataset(url: str, name: str, technique: str | None = None, max_points: int =
     return services.dataset_json(ds, max_points=max_points)
 
 
+# fmt -> (file extension, media type)
+_CONVERT_FORMATS = {
+    "csdf": ("csdf", "application/json"),
+    "csdm": ("csdf", "application/json"),
+    "h5": ("h5", "application/x-hdf5"),
+    "hdf5": ("h5", "application/x-hdf5"),
+    "csv": ("csv", "text/csv"),
+    "parquet": ("parquet", "application/octet-stream"),
+    "feather": ("feather", "application/octet-stream"),
+    "zip": ("zip", "application/zip"),
+}
+
+
 @app.get("/api/convert")
-def convert(url: str, name: str, technique: str | None = None, fmt: str = "csdf"):
-    """Convert a dataset to a standard format and return it as a download (CSDM or HDF5)."""
+def convert_endpoint(url: str, name: str, technique: str | None = None, fmt: str = "csdf"):
+    """Convert a dataset to a standard format and return it as a download."""
+    fmt = fmt.lower()
+    if fmt not in _CONVERT_FORMATS:
+        raise HTTPException(status_code=400, detail=f"unsupported format {fmt!r} "
+                            f"(use {', '.join(sorted(set(_CONVERT_FORMATS)))})")
     try:
         ds = services.load_dataset(name, url, technique=technique)
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f"Could not load {name!r}: {exc}") from exc
+
+    ext, media = _CONVERT_FORMATS[fmt]
     stem = (ds.source.filename or "dataset").rsplit(".", 1)[0]
-    fmt = fmt.lower()
-    if fmt in ("csdf", "csdm"):
-        return Response(
-            to_csdm(ds), media_type="application/json",
-            headers={"Content-Disposition": f'attachment; filename="{stem}.csdf"'},
-        )
-    if fmt in ("h5", "hdf5"):
-        tmp = tempfile.NamedTemporaryFile(suffix=".h5", delete=False)
-        tmp.close()
-        to_hdf5(ds, tmp.name)
-        return FileResponse(
-            tmp.name, media_type="application/x-hdf5", filename=f"{stem}.h5",
-            background=BackgroundTask(lambda: os.unlink(tmp.name)),
-        )
-    raise HTTPException(status_code=400, detail=f"unsupported format {fmt!r} (use csdf or hdf5)")
+    tmp = tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=False)
+    tmp.close()
+    run_convert(ds, tmp.name, fmt=fmt)
+    return FileResponse(tmp.name, media_type=media, filename=f"{stem}.{ext}",
+                        background=BackgroundTask(lambda: os.unlink(tmp.name)))
 
 
 @app.post("/api/compare")
