@@ -24,6 +24,9 @@ export interface RecordRow {
   name: string;
   url: string;
 }
+export interface CatalogResult extends ScanResult {
+  records: RecordRow[];
+}
 export interface AxisInfo {
   label: string;
   unit: string | null;
@@ -88,6 +91,7 @@ const q = encodeURIComponent;
 
 export const api = {
   scan: (url: string) => get<ScanResult>(`/api/scan?url=${q(url)}`),
+  catalog: (url: string) => get<CatalogResult>(`/api/catalog?url=${q(url)}`),
   records: (url: string, technique: string) =>
     get<RecordRow[]>(`/api/records?url=${q(url)}&technique=${q(technique)}`),
   dataset: (url: string, name: string, technique: string) =>

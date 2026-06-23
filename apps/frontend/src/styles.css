@@ -79,6 +79,9 @@ input[type="text"]:focus { outline: none; border-color: var(--accent); }
 .chip.active { background: var(--accent-dim); border-color: var(--accent-dim); color: #fff; }
 .chip .count { color: var(--dim); margin-left: 6px; font-size: 11px; }
 .chip.active .count { color: #cfe6ff; }
+.chip-x { margin-left: 8px; font-size: 14px; line-height: 1; color: var(--dim); }
+.chip-x:hover { color: #ff7b72; }
+.chip .src-ic { vertical-align: middle; font-size: 9px; }
 
 /* ---- table ---- */
 table { width: 100%; border-collapse: collapse; font-size: 13px; }

@@ -77,3 +77,21 @@ def test_convert_endpoint_rejects_unknown_format():
 def test_dataset_endpoint_reports_errors():
     # missing required params -> 422 from FastAPI
     assert client.get("/api/dataset").status_code == 422
+
+
+@respx.mock
+def test_catalog_endpoint_returns_summary_and_records():
+    _listing_cache.clear()
+    respx.get("https://api.github.com/repos/o/r").mock(
+        return_value=httpx.Response(200, json={"default_branch": "main"}))
+    tree = {"tree": [
+        {"path": "Raman/2026_01_01_x.csv", "type": "blob", "size": 10},
+        {"path": "DSC/2026_01_01_run.csv", "type": "blob", "size": 10},
+    ]}
+    respx.get("https://api.github.com/repos/o/r/git/trees/main").mock(
+        return_value=httpx.Response(200, json=tree))
+    body = client.get("/api/catalog", params={"url": "o/r"}).json()
+    assert "records" in body and isinstance(body["records"], list)
+    techniques = {r["technique"] for r in body["records"]}
+    assert {"Raman", "DSC"} <= techniques
+    assert all("url" in r and "name" in r for r in body["records"])

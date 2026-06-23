@@ -12,6 +12,7 @@ import { SpectrumPlot } from "./components/SpectrumPlot";
 import { CompareView } from "./components/CompareView";
 import { ExportMenu } from "./components/ExportMenu";
 import { ConnectGuide } from "./components/ConnectGuide";
+import { DataWorkspace } from "./components/DataWorkspace";
 
 const DEFAULT_REPO = "https://github.com/yargerlab/Data";
 
@@ -34,7 +35,10 @@ export default function App() {
         <div hidden={view !== "QUICK"}>
           <Quick onNav={setView} />
         </div>
-        {view !== "QUICK" && <Coming view={view} />}
+        <div hidden={view !== "DATA"}>
+          <DataWorkspace />
+        </div>
+        {view !== "QUICK" && view !== "DATA" && <Coming view={view} />}
       </main>
       <Footer />
     </>

@@ -55,6 +55,24 @@ def records(url: str, technique: str) -> list[dict]:
     return [services.record_row(r) for r in catalog.record_groups().get(technique, []) if r.supported]
 
 
+@app.get("/api/catalog")
+def catalog(url: str) -> dict:
+    """One source's scan summary plus every supported data record (all techniques) — for the
+    multi-source DATA workspace, which merges several catalogs client-side."""
+    try:
+        cat = services.scan_repo(url)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail=f"Could not scan {url!r}: {exc}") from exc
+    summary = services.scan_summary(cat)
+    summary["records"] = [
+        services.record_row(r)
+        for recs in cat.record_groups().values()
+        for r in recs
+        if r.supported
+    ]
+    return summary
+
+
 @app.get("/api/dataset")
 def dataset(url: str, name: str, technique: str | None = None, max_points: int = 4000) -> dict:
     try:
