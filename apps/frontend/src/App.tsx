@@ -11,6 +11,7 @@ import { Footer } from "./components/Footer";
 import { SpectrumPlot } from "./components/SpectrumPlot";
 import { CompareView } from "./components/CompareView";
 import { ExportMenu } from "./components/ExportMenu";
+import { ConnectGuide } from "./components/ConnectGuide";
 
 const DEFAULT_REPO = "https://github.com/yargerlab/Data";
 
@@ -74,6 +75,7 @@ function Quick() {
   const [normalize, setNormalize] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   async function run<T>(what: string, fn: () => Promise<T>): Promise<T | undefined> {
     setBusy(what);
@@ -184,10 +186,38 @@ function Quick() {
             {p.label}
           </button>
         ))}
+        <a className="link" style={{ marginLeft: "auto" }} onClick={() => setShowGuide(true)}>
+          How to share a public link?
+        </a>
       </div>
 
       {busy && <p className="spinner">{busy}</p>}
       {error && <p className="error">{error}</p>}
+
+      {!scan && !busy && (
+        <div className="card">
+          <ConnectGuide onTryExample={(url) => doScan(url)} />
+        </div>
+      )}
+
+      {showGuide && (
+        <div className="modal-overlay" onClick={() => setShowGuide(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h2><span className="psi">Ψ</span> Connect a data source</h2>
+              <button className="modal-close" onClick={() => setShowGuide(false)} aria-label="Close">
+                ×
+              </button>
+            </div>
+            <ConnectGuide
+              onTryExample={(url) => {
+                setShowGuide(false);
+                doScan(url);
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {scan && (
         <div className="card">
