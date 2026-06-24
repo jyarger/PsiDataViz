@@ -1,6 +1,6 @@
-# Deploying ΨDataViz on a public VPS
+# Deploying PsiDataViz on a public VPS
 
-ΨDataViz ships as a small Docker stack: the v2 app — React UI + FastAPI JSON API in one container (uvicorn) behind
+PsiDataViz ships as a small Docker stack: the v2 app — React UI + FastAPI JSON API in one container (uvicorn) behind
 [Caddy](https://caddyserver.com/), which terminates TLS and obtains a free Let's Encrypt
 certificate automatically.
 

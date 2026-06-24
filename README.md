@@ -87,6 +87,13 @@ PsiDataViz/
 └── Dockerfile, docker-compose.yml, deploy/
 ```
 
+## Documentation
+
+Full docs live in **[`docs/`](docs/README.md)** — a wiki-style index covering the
+[roadmap](docs/ROADMAP.md), [architecture](docs/architecture.md), [data sources](docs/data-sources.md),
+[adding a reader](docs/adding-a-reader.md), [design decisions](docs/design-decisions.md), and
+[deployment](docs/deploy.md).
+
 ## Contributing
 
 PsiDataViz is open source under **Apache-2.0** — contributions, forks, and reuse are welcome. The most
