@@ -20,7 +20,7 @@ how to extend it.
 ## Status snapshot
 
 - **Readers today:** DSC (TA Trios), NMR (JCAMP-DX incl. ASDF & Nanalysis NMReady FID→spectrum, `.tsv`,
-  2D TopSpin `totxt`), FTIR (Bruker `.dpt`, JCAMP, PerkinElmer `.asc`), Raman.
+  2D TopSpin `totxt`), FTIR (Bruker `.dpt`, JCAMP, PerkinElmer `.asc`), Raman, XRD (1D ASCII), UV-Vis.
 - **Sources today:** public GitHub repos and Google Drive folders — **keyless** (no API keys). Box and
   Dropbox are planned.
 - **App:** **QUICK** (one source: scan → overlay → compare → convert) and **DATA** (a multi-source
