@@ -6,6 +6,7 @@ To add a technique, create a module here (e.g. ``ftir_jcamp.py``) and import it 
 from __future__ import annotations
 
 from . import (
+    comp_spectrum,  # noqa: F401  (import triggers registration)
     dsc_trios,  # noqa: F401  (import triggers registration)
     ftir_jcamp,  # noqa: F401  (import triggers registration)
     ftir_pe_asc,  # noqa: F401  (import triggers registration)
@@ -20,5 +21,6 @@ from . import (
     xrd_text,  # noqa: F401  (import triggers registration)
 )
 
-__all__ = ["dsc_trios", "ftir_jcamp", "ftir_pe_asc", "ftir_text", "nmr_jcamp", "nmr_text",
-           "nmr_totxt", "raman_text", "uvvis_text", "xrd_image", "xrd_panalytical", "xrd_text"]
+__all__ = ["comp_spectrum", "dsc_trios", "ftir_jcamp", "ftir_pe_asc", "ftir_text", "nmr_jcamp",
+           "nmr_text", "nmr_totxt", "raman_text", "uvvis_text", "xrd_image", "xrd_panalytical",
+           "xrd_text"]

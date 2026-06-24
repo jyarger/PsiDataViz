@@ -43,7 +43,10 @@ The core mission. PsiDataViz is only as useful as the formats it can read.
   (`.edf`, `.img` ADSC, `.mccd` MarCCD, `.tif`/`.raw.tif` via **FabIO**, NeXus `.h5` via h5py — shown as
   heatmaps), UV-Vis ASCII, and zipped Bruker/SpinSolve NMR readers are in. Calibrated detector frames are
   also **azimuthally integrated to a 1D pattern I(2θ)** from the header geometry (distance/centre/pixel/λ),
-  shown alongside the heatmap. Still to do: computational outputs (Gaussian / ORCA / Psi4 / …), TGA, proper
+  shown alongside the heatmap. **Computed IR/Raman spectra** (GaussView `_ir.txt`/`_raman.txt` exports from
+  Gaussian/ORCA/Psi4 frequency jobs, with the DFT method from the filename) read on a wavenumber axis for
+  overlay on experiment. Still to do: parse `.log`/`.out` directly (sticks → broadened), structures
+  (`.xyz`/`.mol`/`.gjf`) + a 3D viewer, TGA, proper
   pyFAI corrections + arbitrary `.poni` calibration, and more.
 
 ### 2 — Sample-centric catalog  ·  *the north star*

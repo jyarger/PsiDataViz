@@ -34,8 +34,10 @@ library, and app share the **Psi** prefix and the **Ψ** mark.
   2D TopSpin `totxt`, **zipped Bruker & SpinSolve** datasets), FTIR (Bruker `.dpt`, JCAMP, PerkinElmer
   `.asc`), Raman, XRD (1D `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`, `.dat`/`.asc`; **2D detector images**
   `.edf`/`.img`/`.mccd`/`.tif`/`.h5` via FabIO, shown as heatmaps — and **azimuthally integrated to a 1D
-  pattern** when the header carries a calibration), UV-Vis (`.txt` + Thorlabs `.csv`).
-  *(More formats — 2D XRD detector images, computational outputs — are the active focus; see the
+  pattern** when the header carries a calibration), UV-Vis (`.txt` + Thorlabs `.csv`), and **computed
+  IR/Raman** spectra from Gaussian/ORCA/Psi4 frequency jobs (`_ir.txt`/`_raman.txt`) for overlay on
+  experiment.
+  *(More formats are the active focus; see the
   [roadmap](docs/ROADMAP.md).)*
 - **QUICK tab** — one source: scan → filter by technique → overlay → compare formats → convert/download.
 - **DATA tab** — a multi-source *workspace*: add several public sources, then filter and overlay datasets
