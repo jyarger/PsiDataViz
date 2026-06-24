@@ -5,6 +5,13 @@ export interface Technique {
   n_datasets: number;
   n_supported: number;
 }
+export interface Diagnostics {
+  coverage: number;
+  n_supported: number;
+  n_unsupported: number;
+  unread_formats: { ext: string; count: number }[];
+  unread_by_technique: { technique: string; count: number }[];
+}
 export interface ScanResult {
   source: string;
   n_files: number;
@@ -12,6 +19,7 @@ export interface ScanResult {
   n_data_records: number;
   n_supported_records: number;
   techniques: Technique[];
+  diagnostics: Diagnostics;
 }
 export interface RecordRow {
   key: string;

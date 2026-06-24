@@ -14,6 +14,7 @@ import { CompareView } from "./components/CompareView";
 import { ExportMenu } from "./components/ExportMenu";
 import { ConnectGuide } from "./components/ConnectGuide";
 import { DataWorkspace } from "./components/DataWorkspace";
+import { Diagnostics } from "./components/Diagnostics";
 
 const DEFAULT_REPO = "https://github.com/yargerlab/Data";
 
@@ -258,6 +259,8 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
           </div>
         </div>
       )}
+
+      {scan && <Diagnostics d={scan.diagnostics} />}
 
       {records.length > 0 && (
         <div className="card with-brand">

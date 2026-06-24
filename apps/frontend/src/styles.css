@@ -139,6 +139,17 @@ input[type="text"].filter {
 .toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--dim);
   cursor: pointer; user-select: none; }
 
+/* ---- parse diagnostics ---- */
+.coverage { font-size: 14px; font-weight: 700; color: var(--accent); }
+.coverage.ok { color: #69db7c; }
+.coverage-bar { height: 8px; background: var(--bg); border-radius: 999px; overflow: hidden;
+  border: 1px solid var(--border); }
+.coverage-fill { height: 100%; background: var(--accent-dim); }
+.chip.unread { background: rgba(255, 123, 114, 0.08); border-color: #ff7b7240; cursor: default; }
+.chip.unread:hover { border-color: #ff7b7280; }
+.chip.unread .count { color: #ff7b72; }
+.diag-hint { font-size: 12.5px; margin-top: 10px; }
+
 /* ---- source presets ---- */
 .presets { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .src-chip { display: inline-flex; align-items: center; gap: 8px; background: var(--panel-2);

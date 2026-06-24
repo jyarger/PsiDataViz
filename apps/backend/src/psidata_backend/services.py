@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from collections import Counter
 from dataclasses import asdict
 
 import httpx
@@ -66,6 +67,33 @@ def scan_summary(catalog: Catalog) -> dict:
         "n_data_records": summary["n_data_records"],
         "n_supported_records": summary["n_supported_records"],
         "techniques": techniques,
+        "diagnostics": _diagnostics(groups, summary),
+    }
+
+
+def _diagnostics(groups: dict, summary: dict) -> dict:
+    """What didn't parse and why — coverage plus the formats present but unread, ranked by count.
+
+    Drives the iterate-on-coverage loop: the highest-count unread extensions are where adding a reader
+    helps most. ``unread_formats`` counts the data-variant extensions of datasets with no usable reader.
+    """
+    unread: Counter[str] = Counter()
+    unread_techniques: Counter[str] = Counter()
+    for tech, recs in groups.items():
+        for r in recs:
+            if r.is_data_record and not r.supported:
+                unread_techniques[tech] += 1
+                for v in r.data_variants:
+                    unread[v.ext] += 1
+    n_data = summary["n_data_records"]
+    n_ok = summary["n_supported_records"]
+    return {
+        "coverage": round(100 * n_ok / n_data, 1) if n_data else 0.0,
+        "n_supported": n_ok,
+        "n_unsupported": n_data - n_ok,
+        "unread_formats": [{"ext": ext, "count": n} for ext, n in unread.most_common(12)],
+        "unread_by_technique": [{"technique": t, "count": n}
+                                for t, n in unread_techniques.most_common()],
     }
 
 

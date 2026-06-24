@@ -32,9 +32,10 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
 
 The core mission. PsiDataViz is only as useful as the formats it can read.
 
-- **Parse-diagnostics framework** — surface, in the app, the files that were *unrecognized* or *failed to
-  load*, **with the reason** (best-guess reader + confidence, or the error). Makes coverage gaps visible
-  and prioritizable, and feeds the data-format issue tracker.
+- **Parse-diagnostics framework** ✅ — the scan reports a **coverage %** and the **formats present but
+  unread, ranked by count** (a "Parsing coverage" panel in QUICK), with a one-click data-format request.
+  Makes coverage gaps visible and prioritizable. *Next:* per-file load-failure reasons, not just unread
+  extensions.
 - **Honest detection** — `sniff()` should never claim a format it can't actually decode (a scan must not
   flag a file "supported" that then fails to load).
 - **Close known gaps** — e.g. most `.zip` NMR datasets aren't recognized yet.
