@@ -33,7 +33,9 @@ OTHER = "other"
 _SIDECAR_STEM = re.compile(r"_spec$", re.IGNORECASE)
 
 # Preference order when several parseable data formats exist (best first).
-_PRIMARY_PREFERENCE = (".csv", ".txt", ".dpt", ".asc", ".dx", ".jdx", ".tsv", ".dat")
+# Prefer parseable ASCII variants; a packaged `.zip` is the lowest-priority primary (used when it's
+# the only parseable variant, e.g. a zipped Bruker/SpinSolve NMR dataset).
+_PRIMARY_PREFERENCE = (".csv", ".txt", ".dpt", ".asc", ".dx", ".jdx", ".tsv", ".dat", ".zip")
 
 
 @dataclass(frozen=True)

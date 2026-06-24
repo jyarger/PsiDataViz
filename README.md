@@ -31,9 +31,10 @@ library, and app share the **Psi** prefix and the **Ψ** mark.
 - **Point-and-scan, keyless.** Public **GitHub** repos and **Google Drive** folders scan with no
   credentials. Files that share a base name across formats collapse into one *dataset*.
 - **Readers today:** DSC (TA Trios), NMR (JCAMP-DX incl. ASDF & Nanalysis NMReady FID→spectrum, `.tsv`,
-  2D TopSpin `totxt`), FTIR (Bruker `.dpt`, JCAMP, PerkinElmer `.asc`), Raman, XRD (1D `.xy` + PANalytical
-  `.csv`/`.dat`/`.asc`), UV-Vis (`.txt` + Thorlabs `.csv`). *(More formats — zipped Bruker/SpinSolve NMR,
-  2D XRD images, computational outputs — are the active focus; see the [roadmap](docs/ROADMAP.md).)*
+  2D TopSpin `totxt`, **zipped Bruker & SpinSolve** datasets), FTIR (Bruker `.dpt`, JCAMP, PerkinElmer
+  `.asc`), Raman, XRD (1D `.xy` + PANalytical `.csv`/`.dat`/`.asc`), UV-Vis (`.txt` + Thorlabs `.csv`).
+  *(More formats — 2D XRD detector images, computational outputs — are the active focus; see the
+  [roadmap](docs/ROADMAP.md).)*
 - **QUICK tab** — one source: scan → filter by technique → overlay → compare formats → convert/download.
 - **DATA tab** — a multi-source *workspace*: add several public sources, then filter and overlay datasets
   across all of them.

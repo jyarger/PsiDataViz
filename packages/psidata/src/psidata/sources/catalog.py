@@ -123,15 +123,30 @@ def _match_reader(top_dir: str, ext: str):
     return None
 
 
+def _technique_has_reader(technique: str) -> bool:
+    """True if any reader handles this technique (regardless of extension)."""
+    folder = technique.lower()
+    return any(
+        r.technique.lower() == folder or r.technique.lower() in folder or (folder and folder in r.technique.lower())
+        for r in get_readers()
+    )
+
+
 def build_entry(ref: FileRef) -> CatalogEntry:
     technique = canonical_technique(ref.top_dir)
     reader = _match_reader(technique, ref.ext)
+    supported = reader is not None
+    reader_name = reader.name if reader else None
+    # A `.zip` is a packaged dataset (e.g. zipped Bruker/SpinSolve NMR); mark it supported when the
+    # technique has a reader, and let `read_zip` extract/parse it on open.
+    if ref.ext == ".zip" and not supported and _technique_has_reader(technique):
+        supported, reader_name = True, "archive_zip"
     return CatalogEntry(
         file=ref,
         technique=technique,
         parsed=parse_filename(ref.name),
-        supported=reader is not None,
-        reader_name=reader.name if reader else None,
+        supported=supported,
+        reader_name=reader_name,
     )
 
 
