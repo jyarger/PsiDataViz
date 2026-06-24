@@ -18,8 +18,8 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
   reader **registry**; file → `DataRecord` grouping (one dataset, many format variants) with format
   comparison; conversion to CSDM/HDF5/Zarr/CSV/Parquet/Feather.
 - **Readers** — DSC, NMR (JCAMP-DX + ASDF, Nanalysis NMReady NTUPLES/FID→spectrum, `.tsv`, 2D `totxt`),
-  FTIR (`.dpt`, JCAMP, PerkinElmer `.asc`), Raman, XRD (1D `.xy` / PANalytical `.csv` / `.dat` / `.asc`),
-  UV-Vis (`.txt` / Thorlabs `.csv`).
+  FTIR (`.dpt`, JCAMP, PerkinElmer `.asc`), Raman, XRD (1D — `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`,
+  `.dat`/`.asc`), UV-Vis (`.txt` / Thorlabs `.csv`).
 - **Sources** — keyless **GitHub** and **Google Drive** connectors behind one `make_source()` factory;
   technique-folder normalization (e.g. `IR` → `FTIR`).
 - **PsiDataViz app** — FastAPI backend + React/TS frontend, single-image deploy. **QUICK** tab
@@ -38,9 +38,9 @@ The core mission. PsiDataViz is only as useful as the formats it can read.
 - **Honest detection** — `sniff()` should never claim a format it can't actually decode (a scan must not
   flag a file "supported" that then fails to load).
 - **Close known gaps** — e.g. most `.zip` NMR datasets aren't recognized yet.
-- **New techniques** — XRD 1D, UV-Vis ASCII, and zipped Bruker/SpinSolve NMR readers are in; still to do:
-  2D XRD detector images (`.tif`/`.edf`/`.img`/`.h5`) and structured XRD (`.xrdml`/`.udf`), computational
-  outputs (Gaussian / ORCA / Psi4 / …), TGA, and more — each a `psidata` reader.
+- **New techniques** — XRD 1D (ASCII + PANalytical `.xrdml`/`.udf`), UV-Vis ASCII, and zipped
+  Bruker/SpinSolve NMR readers are in; still to do: 2D XRD detector images (`.tif`/`.edf`/`.img`/`.h5`),
+  computational outputs (Gaussian / ORCA / Psi4 / …), TGA, and more — each a `psidata` reader.
 
 ### 2 — Sample-centric catalog  ·  *the north star*
 

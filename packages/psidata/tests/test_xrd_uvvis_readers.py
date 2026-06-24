@@ -90,3 +90,46 @@ def test_uvvis_thorlabs_csv_header_and_absorbance():
 def test_uvvis_thorlabs_csv_detected_without_hint():
     # the Thorlabs markers are UV-specific enough to detect even without a folder hint
     assert detect(_cand("ne.csv", _THORLABS_CSV, None)).name == "uvvis_text"
+
+
+# --- XRD structured (PANalytical .xrdml / Philips .udf) ----------------------------------------
+_XRDML = (
+    '<?xml version="1.0"?>\n'
+    '<xrdMeasurements xmlns="http://www.xrdml.com/XRDMeasurement/2.3">\n'
+    "  <sample><id>TestSample</id></sample>\n"
+    "  <xrdMeasurement>\n"
+    '    <usedWavelength><kAlpha1 unit="Angstrom">1.5405980</kAlpha1></usedWavelength>\n'
+    "    <incidentBeamPath><xRayTube><anodeMaterial>Cu</anodeMaterial></xRayTube></incidentBeamPath>\n"
+    "    <scan><dataPoints>\n"
+    '      <positions axis="2Theta" unit="deg"><startPosition>10.0</startPosition>'
+    "<endPosition>40.0</endPosition></positions>\n"
+    '      <counts unit="counts">100 200 150 400</counts>\n'
+    "    </dataPoints></scan>\n"
+    "  </xrdMeasurement>\n</xrdMeasurements>\n"
+)
+
+_UDF = (
+    "SampleIdent,TestUDF,/\nAnode,Cu,/\nLabdaAlpha1, 1.540598,/\n"
+    "DataAngleRange,   10.00000,  40.00000,/\nScanStepSize, 10.00000,/\n"
+    "ScanType,CONTINUOUS,/\nRawScan\n   100,   200,   150,   400\n"
+)
+
+
+def test_xrd_xrdml():
+    ds = read(_cand("AgBeh.xrdml", _XRDML, "XRD"))
+    assert ds.source.reader == "xrd_panalytical" and ds.technique == "XRD"
+    sig = ds.signals[0]
+    assert list(sig.frame["2θ"]) == [10.0, 20.0, 30.0, 40.0]
+    assert list(sig.frame["Intensity"]) == [100.0, 200.0, 150.0, 400.0]
+    assert ds.metadata.sample_name == "TestSample"
+    assert ds.metadata.anode == "Cu"
+    assert abs(ds.metadata.wavelength_angstrom - 1.5405980) < 1e-6
+
+
+def test_xrd_udf():
+    ds = read(_cand("AgBeh.udf", _UDF, "XRD"))
+    assert ds.source.reader == "xrd_panalytical"
+    sig = ds.signals[0]
+    assert list(sig.frame["2θ"]) == [10.0, 20.0, 30.0, 40.0]
+    assert list(sig.frame["Intensity"]) == [100.0, 200.0, 150.0, 400.0]
+    assert ds.metadata.sample_name == "TestUDF" and ds.metadata.anode == "Cu"

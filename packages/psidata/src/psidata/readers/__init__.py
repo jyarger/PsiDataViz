@@ -15,8 +15,9 @@ from . import (
     nmr_totxt,  # noqa: F401  (import triggers registration)
     raman_text,  # noqa: F401  (import triggers registration)
     uvvis_text,  # noqa: F401  (import triggers registration)
+    xrd_panalytical,  # noqa: F401  (import triggers registration)
     xrd_text,  # noqa: F401  (import triggers registration)
 )
 
 __all__ = ["dsc_trios", "ftir_jcamp", "ftir_pe_asc", "ftir_text", "nmr_jcamp", "nmr_text",
-           "nmr_totxt", "raman_text", "uvvis_text", "xrd_text"]
+           "nmr_totxt", "raman_text", "uvvis_text", "xrd_panalytical", "xrd_text"]
