@@ -68,3 +68,30 @@ def test_img_mccd_detected_only_with_xrd_hint():
     r = XRDImageReader()
     assert r.sniff(Candidate(filename="frame.mccd", content=b"\x00\x01", technique_hint="WAXS")) == 0.8
     assert r.sniff(Candidate(filename="frame.mccd", content=b"\x00\x01", technique_hint=None)) == 0.0
+
+
+def test_azimuthal_integration_recovers_a_ring():
+    import math
+
+    from psidata.readers.xrd_image import _azimuthal_integrate
+
+    n, cx, cy = 200, 100.0, 100.0
+    yy, xx = np.indices((n, n))
+    r = np.hypot(xx - cx, yy - cy)
+    img = np.zeros((n, n), dtype=float)
+    img[(r > 49) & (r < 51)] = 1000.0  # a sharp ring at ~50 px
+    geom = {"dist": 0.1, "cx": cx, "cy": cy, "pixel": 1e-4, "wavelength": 1e-10}
+    sig = _azimuthal_integrate(img, geom)
+    x = sig.frame["2θ"].to_numpy()
+    y = sig.frame["Intensity"].to_numpy()
+    peak = float(x[np.argmax(y)])
+    expected = math.degrees(math.atan2(50 * 1e-4, 0.1))  # ring radius -> 2theta
+    assert abs(peak - expected) < 0.2
+    assert sig.x.label == "2θ" and sig.x.unit == "°"
+
+
+def test_geometryless_image_has_no_1d_pattern():
+    # an EDF without calibration keys -> heatmap only, no azimuthal signal
+    arr = np.ones((4, 5), dtype="float32")
+    ds = read(Candidate(filename="frame.edf", content=_edf(arr), technique_hint="XRD"))
+    assert len(ds.images) == 1 and ds.signals == []

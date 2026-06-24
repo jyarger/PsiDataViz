@@ -18,10 +18,18 @@ import re
 import tempfile
 
 import numpy as np
+import pandas as pd
 
-from ..model import Axis, Dataset, Image2D, Metadata, SourceInfo
+from ..model import Axis, Dataset, Image2D, Metadata, Signal, SourceInfo
 from ..registry import register_reader
 from .base import BaseReader, Candidate
+
+
+def _f(value) -> float | None:
+    try:
+        return float(str(value).split()[0]) if value not in (None, "") else None
+    except (ValueError, IndexError, TypeError):
+        return None
 
 _EDF_DTYPES = {
     "UnsignedByte": "u1", "SignedByte": "i1", "UnsignedShort": "u2", "SignedShort": "i2",
@@ -59,9 +67,9 @@ class XRDImageReader(BaseReader):
         if candidate.content is None:
             raise ValueError(f"{candidate.filename}: detector images need raw bytes")
         if candidate.ext in (".h5", ".hdf5"):
-            data, meta = _read_h5(candidate.content)
+            data, meta, geom = _read_h5(candidate.content)
         else:
-            data, meta = _read_image(candidate.content, candidate.ext)
+            data, meta, geom = _read_image(candidate.content, candidate.ext)
         meta.setdefault("sample_name", candidate.stem)
         image = Image2D(
             name="detector image",
@@ -70,16 +78,27 @@ class XRDImageReader(BaseReader):
             y=Axis(label="y", unit="px", quantity="detector_y"),
             z=Axis(label="Intensity", unit="counts", quantity="intensity"),
         )
+        # When the detector header carries a geometry, also reduce the frame to a 1D pattern
+        # (azimuthal/radial integration). The app then shows the heatmap and the 1D pattern together.
+        signals = []
+        if geom:
+            signal = _azimuthal_integrate(data, geom)
+            if signal is not None:
+                signals.append(signal)
+                meta.setdefault("instrument", meta.get("instrument"))
+                if geom.get("wavelength"):
+                    meta["wavelength_angstrom"] = round(geom["wavelength"] * 1e10, 6)
         return Dataset(
             technique=self.technique,
             source=SourceInfo(uri=candidate.uri, filename=candidate.filename,
                               reader=self.name, reader_version=self.version),
-            metadata=Metadata(**meta),
+            metadata=Metadata(**{k: v for k, v in meta.items() if v is not None}),
+            signals=signals,
             images=[image],
         )
 
 
-def _read_image(content: bytes, ext: str) -> tuple[np.ndarray, dict]:
+def _read_image(content: bytes, ext: str) -> tuple[np.ndarray, dict, dict | None]:
     """Read a detector image via FabIO; fall back to a built-in EDF parser if FabIO is absent."""
     try:
         import fabio
@@ -110,10 +129,10 @@ def _read_image(content: bytes, ext: str) -> tuple[np.ndarray, dict]:
         if val and val not in ("NoName", "None", ""):
             meta["sample_name"] = val
             break
-    return data, meta
+    return data, meta, _geometry_from_header(header)
 
 
-def _read_edf(content: bytes) -> tuple[np.ndarray, dict]:
+def _read_edf(content: bytes) -> tuple[np.ndarray, dict, dict | None]:
     """Dependency-free ESRF EDF parser (ASCII { } header + raw binary)."""
     end = content.index(b"}")
     kv = {k.strip(): v.strip()
@@ -126,10 +145,72 @@ def _read_edf(content: bytes) -> tuple[np.ndarray, dict]:
     meta = {}
     if kv.get("BIO_SAMPLE_NAME") and kv["BIO_SAMPLE_NAME"] not in ("", "NoName"):
         meta["sample_name"] = kv["BIO_SAMPLE_NAME"]
-    return data, meta
+    return data, meta, _geometry_from_header(kv)
 
 
-def _read_h5(content: bytes) -> tuple[np.ndarray, dict]:
+# --- geometry + azimuthal (radial) integration ------------------------------------------------
+def _geometry_from_header(h: dict) -> dict | None:
+    """Normalize a detector header's calibration to {dist, cx, cy, pixel (m), wavelength (m)}.
+
+    Handles ESRF EDF (SampleDistance/Center/PSize) and ADSC/d*TREK (.img: DISTANCE/BEAM_CENTER/
+    PIXEL_SIZE). Returns None if the geometry is incomplete (e.g. MarCCD/TIFF carry none).
+    """
+    if "SampleDistance" in h and "PSize_1" in h:  # ESRF EDF (metres, beam centre in px)
+        return _geom(_f(h.get("SampleDistance")), _f(h.get("Center_1")), _f(h.get("Center_2")),
+                     _f(h.get("PSize_1")), _f(h.get("WaveLength") or h.get("Wavelength")))
+    if "DISTANCE" in h and "PIXEL_SIZE" in h:  # ADSC / d*TREK (.img: mm, beam centre in mm)
+        px_mm = _f(h.get("PIXEL_SIZE"))
+        cx, cy = _f(h.get("BEAM_CENTER_X")), _f(h.get("BEAM_CENTER_Y"))
+        return _geom(_div(_f(h.get("DISTANCE")), 1000), _div(cx, px_mm), _div(cy, px_mm),
+                     _div(px_mm, 1000), _angstrom(_f(h.get("WAVELENGTH"))))
+    return None
+
+
+def _geom(dist, cx, cy, pixel, wavelength) -> dict | None:
+    if None in (dist, cx, cy, pixel) or not (dist > 0 and pixel > 0):
+        return None
+    return {"dist": dist, "cx": cx, "cy": cy, "pixel": pixel, "wavelength": wavelength}
+
+
+def _azimuthal_integrate(data: np.ndarray, geom: dict, nbins: int = 1000):
+    """Radially average a detector frame into a 1D pattern I(2θ) using the header geometry.
+
+    A first-draft reduction (no detector-tilt, polarization, or solid-angle corrections — those are a
+    future pyFAI upgrade), but it produces a real diffractogram on the correct 2θ axis.
+    """
+    ny, nx = data.shape
+    yy, xx = np.indices((ny, nx))
+    r = np.hypot(xx - geom["cx"], yy - geom["cy"]) * geom["pixel"]  # radial distance on detector (m)
+    tth = np.degrees(np.arctan2(r, geom["dist"]))
+    mask = np.isfinite(data) & (data >= 0)
+    if not mask.any():
+        return None
+    t, inten = tth[mask].ravel(), data[mask].ravel()
+    bins = np.linspace(float(t.min()), float(t.max()), nbins + 1)
+    idx = np.clip(np.digitize(t, bins) - 1, 0, nbins - 1)
+    total = np.bincount(idx, weights=inten, minlength=nbins)
+    count = np.bincount(idx, minlength=nbins)
+    keep = count > 0
+    centers = (0.5 * (bins[:-1] + bins[1:]))[keep]
+    profile = (total / np.maximum(count, 1))[keep]
+    frame = pd.DataFrame({"2θ": centers, "Intensity": profile})
+    return Signal(
+        name="azimuthal integration",
+        x=Axis(label="2θ", unit="°", quantity="two_theta"),
+        y=Axis(label="Intensity", unit="a.u.", quantity="intensity"),
+        frame=frame,
+    )
+
+
+def _div(a, b):
+    return a / b if (a is not None and b) else None
+
+
+def _angstrom(a):
+    return a * 1e-10 if a is not None else None
+
+
+def _read_h5(content: bytes) -> tuple[np.ndarray, dict, dict | None]:
     try:
         import h5py
     except ImportError as exc:
@@ -151,7 +232,20 @@ def _read_h5(content: bytes) -> tuple[np.ndarray, dict]:
     except OSError as exc:
         raise ValueError("HDF5 dataset uses a compression filter that isn't available; "
                          "install 'hdf5plugin' (in the [convert] extra)") from exc
-    return data, _h5_meta(f)
+    return data, _h5_meta(f), _geometry_from_h5(f)
+
+
+def _geometry_from_h5(f) -> dict | None:
+    def val(path):
+        try:
+            v = f[path][()]
+            return float(v[0] if hasattr(v, "__len__") else v)
+        except (KeyError, OSError, TypeError, ValueError):
+            return None
+
+    sdd, bx, by = val("entry/Metadata/SDD"), val("entry/Metadata/Beam_x_pixel"), val("entry/Metadata/Beam_y_pixel")
+    px, wl = val("entry/Metadata/pixel_size"), val("entry/Metadata/Wavelength")
+    return _geom(_div(sdd, 1000), bx, by, _div(px, 1000), _angstrom(wl))
 
 
 def _datasets(group):
