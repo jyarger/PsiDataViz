@@ -161,7 +161,8 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
     <>
       <h1>Point at a data source</h1>
       <p className="subtitle">
-        Scan a public repository, overlay datasets, and compare formats — instantly.
+        Scan a public repository, overlay datasets, and compare formats —{" "}
+        <span className="link" style={{ fontWeight: 600 }}>QUICK</span>.
       </p>
       <p className="nav-hint">
         Want advanced filtering, multi-source views, deeper analysis, or richer plots? Continue to{" "}
