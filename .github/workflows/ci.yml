@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python:
+    name: Python — lint & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install workspace
+        run: uv sync --all-packages --all-extras
+      - name: Lint (ruff)
+        run: uv run ruff check packages/psidata apps/backend apps/psidataviz-dash
+      - name: Test (pytest)
+        env:
+          PYTHONPATH: packages/psidata/src:apps/backend/src:apps/psidataviz-dash/src
+        run: uv run python -m pytest packages/psidata/tests apps/backend/tests apps/psidataviz-dash/tests
+
+  frontend:
+    name: Frontend — build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+      - name: Install
+        run: npm ci
+        working-directory: apps/frontend
+      - name: Build
+        run: npm run build
+        working-directory: apps/frontend

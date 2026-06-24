@@ -21,3 +21,11 @@ venv/
 .DS_Store
 .idea/
 .vscode/
+
+# Node / frontend build
+node_modules/
+apps/frontend/dist/
+
+# Env / secrets
+.env
+.env.*
