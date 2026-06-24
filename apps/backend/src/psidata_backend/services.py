@@ -106,6 +106,26 @@ def dataset_json(dataset: Dataset, max_points: int = 4000) -> dict:
             }
             for sig in dataset.signals
         ],
+        "images": [_image_json(im) for im in dataset.images],
+    }
+
+
+def _image_json(image, max_side: int = 240) -> dict:
+    """Downsample a 2D image (block max-pool) and log-scale it for compact, viewable transport."""
+    a = image.data
+    rows, cols = a.shape
+    step = max(1, -(-max(rows, cols) // max_side))  # ceil division -> longest side <= max_side
+    if step > 1:  # block max-pool keeps diffraction peaks/rings visible
+        r, c = (rows // step) * step, (cols // step) * step
+        a = a[:r, :c].reshape(r // step, step, c // step, step).max(axis=(1, 3))
+    z = np.log1p(np.clip(np.nan_to_num(a, nan=0.0), 0, None))
+    return {
+        "name": image.name,
+        "x": {"label": image.x.label, "unit": image.x.unit},
+        "y": {"label": image.y.label, "unit": image.y.unit},
+        "z": {"label": image.z.label, "unit": image.z.unit, "scale": "log1p"},
+        "shape": [int(rows), int(cols)],
+        "values": np.round(z, 3).tolist(),
     }
 
 

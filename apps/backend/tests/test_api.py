@@ -95,3 +95,24 @@ def test_catalog_endpoint_returns_summary_and_records():
     techniques = {r["technique"] for r in body["records"]}
     assert {"Raman", "DSC"} <= techniques
     assert all("url" in r and "name" in r for r in body["records"])
+
+
+def test_dataset_json_downsamples_and_logscales_image():
+    import numpy as np
+    from psidata import Axis, Dataset, Image2D, Metadata, SourceInfo
+
+    from psidata_backend import services
+
+    arr = np.zeros((500, 600), dtype="float32")
+    arr[100, 100] = 1e6
+    ds = Dataset(
+        technique="XRD", source=SourceInfo(filename="big.edf"), metadata=Metadata(),
+        images=[Image2D(name="img", data=arr,
+                        x=Axis(label="x", unit="px"), y=Axis(label="y", unit="px"),
+                        z=Axis(label="Intensity", unit="counts"))],
+    )
+    img = services.dataset_json(ds)["images"][0]
+    assert img["shape"] == [500, 600]
+    assert len(img["values"]) <= 240 and len(img["values"][0]) <= 240   # downsampled
+    assert img["z"]["scale"] == "log1p"
+    assert max(max(row) for row in img["values"]) > 0

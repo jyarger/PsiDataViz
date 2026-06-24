@@ -39,12 +39,21 @@ export interface SignalData {
   y: AxisInfo;
   points: [number, number][];
 }
+export interface ImageData {
+  name: string;
+  x: { label: string; unit: string | null };
+  y: { label: string; unit: string | null };
+  z: { label: string; unit: string | null; scale: string };
+  shape: [number, number];
+  values: number[][];
+}
 export interface DatasetData {
   technique: string;
   filename: string;
   reader: string;
   metadata: Record<string, unknown>;
   signals: SignalData[];
+  images: ImageData[];
 }
 
 export interface FormatComparison {

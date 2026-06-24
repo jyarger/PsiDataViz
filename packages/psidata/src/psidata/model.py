@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from datetime import date as _date
 from typing import Any
 
+import numpy as np
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -78,13 +79,33 @@ class Signal:
 
 
 @dataclass
+class Image2D:
+    """A 2D detector image / map: an intensity array over two axes (e.g. an area-detector frame).
+
+    Used for techniques that produce 2D data (XRD/SAXS/WAXS area detectors, microscopy) rather than a
+    1D trace. ``data`` is shape ``(rows, cols)``; ``y`` describes the rows and ``x`` the columns.
+    """
+
+    name: str
+    data: np.ndarray
+    x: Axis
+    y: Axis
+    z: Axis  # the intensity (colour) axis
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        return (int(self.data.shape[0]), int(self.data.shape[1]))
+
+
+@dataclass
 class Dataset:
-    """A fully parsed measurement: provenance + metadata + one or more signals."""
+    """A fully parsed measurement: provenance + metadata + 1D signals and/or 2D images."""
 
     technique: str
     source: SourceInfo
     metadata: Metadata
     signals: list[Signal] = field(default_factory=list)
+    images: list[Image2D] = field(default_factory=list)
 
     def to_tidy_df(self) -> pd.DataFrame:
         """Long-form concatenation of every signal, tagged with signal/segment columns."""
@@ -117,5 +138,11 @@ class Dataset:
                     "npoints": s.npoints,
                 }
                 for s in self.signals
+            ],
+            "n_images": len(self.images),
+            "images": [
+                {"name": im.name, "shape": list(im.shape), "x": im.x.title, "y": im.y.title,
+                 "z": im.z.title}
+                for im in self.images
             ],
         }

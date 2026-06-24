@@ -9,6 +9,7 @@ import {
 import { Header, type View } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { SpectrumPlot } from "./components/SpectrumPlot";
+import { Heatmap } from "./components/Heatmap";
 import { CompareView } from "./components/CompareView";
 import { ExportMenu } from "./components/ExportMenu";
 import { ConnectGuide } from "./components/ConnectGuide";
@@ -148,6 +149,8 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
   }
 
   const selectedDatasets = selected.map((k) => datasets[k]).filter(Boolean);
+  const signalDatasets = selectedDatasets.filter((d) => d.signals?.length > 0);
+  const imageDatasets = selectedDatasets.filter((d) => d.images?.length > 0);
   const soleRecord = selected.length === 1 ? records.find((r) => r.key === selected[0]) : null;
   const canCompare = !!soleRecord && soleRecord.formats.length > 1;
   const needle = filter.trim().toLowerCase();
@@ -332,7 +335,12 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
               </button>
             </div>
           </div>
-          <SpectrumPlot datasets={selectedDatasets} normalize={normalize} />
+          {signalDatasets.length > 0 && (
+            <SpectrumPlot datasets={signalDatasets} normalize={normalize} />
+          )}
+          {imageDatasets.map((ds) => (
+            <Heatmap key={ds.filename} dataset={ds} />
+          ))}
           {compare && (
             <div className="cmp-panel">
               <CompareView result={compare} />

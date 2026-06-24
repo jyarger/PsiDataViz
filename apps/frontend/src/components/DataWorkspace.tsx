@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api, type CatalogResult, type DatasetData, type RecordRow } from "../api";
 import { SpectrumPlot } from "./SpectrumPlot";
+import { Heatmap } from "./Heatmap";
 
 type Source = { url: string; label: string; icon: string; catalog: CatalogResult };
 type Row = RecordRow & { source: string; ckey: string };
@@ -102,6 +103,8 @@ export function DataWorkspace() {
   }
 
   const selectedDatasets = selected.map((k) => datasets[k]).filter(Boolean);
+  const signalDatasets = selectedDatasets.filter((d) => d.signals?.length > 0);
+  const imageDatasets = selectedDatasets.filter((d) => d.images?.length > 0);
 
   return (
     <>
@@ -265,7 +268,12 @@ export function DataWorkspace() {
               </button>
             </div>
           </div>
-          <SpectrumPlot datasets={selectedDatasets} normalize={normalize} />
+          {signalDatasets.length > 0 && (
+            <SpectrumPlot datasets={signalDatasets} normalize={normalize} />
+          )}
+          {imageDatasets.map((ds) => (
+            <Heatmap key={ds.filename} dataset={ds} />
+          ))}
         </div>
       )}
     </>
