@@ -33,7 +33,7 @@ library, and app share the **Psi** prefix and the **Ψ** mark.
 - **Readers today:** DSC (TA Trios), NMR (JCAMP-DX incl. ASDF & Nanalysis NMReady FID→spectrum, `.tsv`,
   2D TopSpin `totxt`, **zipped Bruker & SpinSolve** datasets), FTIR (Bruker `.dpt`, JCAMP, PerkinElmer
   `.asc`), Raman, XRD (1D `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`, `.dat`/`.asc`; **2D detector images**
-  `.edf`/`.h5` as heatmaps), UV-Vis (`.txt` + Thorlabs `.csv`).
+  `.edf`/`.img`/`.mccd`/`.tif`/`.h5` via FabIO, shown as heatmaps), UV-Vis (`.txt` + Thorlabs `.csv`).
   *(More formats — 2D XRD detector images, computational outputs — are the active focus; see the
   [roadmap](docs/ROADMAP.md).)*
 - **QUICK tab** — one source: scan → filter by technique → overlay → compare formats → convert/download.

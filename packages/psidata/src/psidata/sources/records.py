@@ -63,6 +63,8 @@ _EXT_TABLE: dict[str, FormatInfo] = {
     ".xrdml": FormatInfo(DATA, "PANalytical XRD (XML)", True),
     ".udf": FormatInfo(DATA, "Philips XRD (text)", True),
     ".edf": FormatInfo(DATA, "ESRF detector image", True),
+    ".img": FormatInfo(DATA, "ADSC / d*TREK detector image", True),
+    ".mccd": FormatInfo(DATA, "MarCCD detector image", True),
     ".h5": FormatInfo(DATA, "HDF5 / NeXus data", True),
     ".hdf5": FormatInfo(DATA, "HDF5 / NeXus data", True),
     ".xls": FormatInfo(SPREADSHEET, "Excel spreadsheet", True),
@@ -136,7 +138,8 @@ class DataRecord:
 
     @property
     def data_variants(self) -> list[FormatVariant]:
-        return [v for v in self.variants if v.info.is_data]
+        # a parseable variant is data even if statically classed otherwise (e.g. a detector .tif)
+        return [v for v in self.variants if v.info.is_data or v.parseable]
 
     @property
     def parseable_variants(self) -> list[FormatVariant]:
@@ -199,9 +202,9 @@ def build_records(entries: list[CatalogEntry]) -> list[DataRecord]:
         variants: list[FormatVariant] = []
         for entry in grouped:
             info = classify_format(entry.file.name)
-            # A reader only "counts" for a real, non-sidecar data file.
-            reader = entry.reader_name if (entry.supported and info.is_data
-                                           and info.role != SIDECAR) else None
+            # A matched reader makes a file parseable (even a detector .tif statically classed as an
+            # image) — but never a sidecar.
+            reader = entry.reader_name if (entry.supported and info.role != SIDECAR) else None
             variants.append(FormatVariant(file=entry.file, info=info, reader_name=reader))
         variants.sort(key=lambda v: v.ext)
         records.append(DataRecord(key=key, technique=technique,

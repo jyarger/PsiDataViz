@@ -39,9 +39,9 @@ The core mission. PsiDataViz is only as useful as the formats it can read.
   flag a file "supported" that then fails to load).
 - **Close known gaps** — e.g. most `.zip` NMR datasets aren't recognized yet.
 - **New techniques** — XRD 1D (ASCII + PANalytical `.xrdml`/`.udf`), **2D XRD/SAXS detector images**
-  (`.edf` / NeXus `.h5`, shown as heatmaps), UV-Vis ASCII, and zipped Bruker/SpinSolve NMR readers are in;
-  still to do: other 2D detector formats (`.tif`/`.mccd`/`.img`, need an imaging library), computational
-  outputs (Gaussian / ORCA / Psi4 / …), TGA, and more — each a `psidata` reader.
+  (`.edf`, `.img` ADSC, `.mccd` MarCCD, `.tif`/`.raw.tif` via **FabIO**, NeXus `.h5` via h5py — shown as
+  heatmaps), UV-Vis ASCII, and zipped Bruker/SpinSolve NMR readers are in; still to do: computational
+  outputs (Gaussian / ORCA / Psi4 / …), TGA, azimuthal integration of 2D frames to 1D, and more.
 
 ### 2 — Sample-centric catalog  ·  *the north star*
 

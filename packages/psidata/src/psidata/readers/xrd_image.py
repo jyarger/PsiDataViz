@@ -1,19 +1,21 @@
-"""Reader for **2D X-ray detector images** (area-detector frames): ESRF ``.edf`` and NeXus/HDF5 ``.h5``.
+"""Reader for **2D X-ray detector images** (area-detector frames): the diverse formats produced by
+synchrotron beamlines (e.g. APS sectors 6/11/12/14) and lab systems.
 
-These are large 2D intensity arrays (SAXS / WAXS / GIWAXS frames), not 1D patterns, so they come back
-as a :class:`~psidata.model.Image2D` (rendered as a heatmap) rather than a 1D ``Signal``.
+Returned as a :class:`~psidata.model.Image2D` (rendered as a heatmap) rather than a 1D ``Signal``.
 
-* ``.edf`` — ESRF Data Format: an ASCII ``{ … }`` header (``Dim_1``/``Dim_2``/``DataType``/``ByteOrder``)
-  followed by the raw binary array. Parsed with no extra dependency.
-* ``.h5`` / ``.hdf5`` — read via ``h5py`` (the ``[convert]`` extra); the largest 2D dataset is used.
-
-``.tif``/``.mccd``/``.img`` detector formats need an imaging library and are not handled yet.
+* ``.edf`` (ESRF), ``.img`` (ADSC / d*TREK), ``.mccd`` (MarCCD), ``.tif`` / ``.raw.tif`` — read via
+  **FabIO** (the [convert] extra), which handles the many vendor detector formats uniformly. RGB
+  preview TIFFs are reduced to luminance.
+* ``.edf`` also has a dependency-free fallback parser (ASCII header + raw binary).
+* ``.h5`` / ``.hdf5`` (NeXus) — read via ``h5py`` (+ ``hdf5plugin`` for compressed datasets).
 """
 
 from __future__ import annotations
 
 import io
+import os
 import re
+import tempfile
 
 import numpy as np
 
@@ -21,37 +23,45 @@ from ..model import Axis, Dataset, Image2D, Metadata, SourceInfo
 from ..registry import register_reader
 from .base import BaseReader, Candidate
 
-# ESRF EDF DataType -> numpy type code
 _EDF_DTYPES = {
-    "UnsignedByte": "u1", "SignedByte": "i1",
-    "UnsignedShort": "u2", "SignedShort": "i2",
-    "UnsignedInteger": "u4", "SignedInteger": "i4",
-    "UnsignedLong": "u4", "SignedLong": "i4",
-    "Unsigned64": "u8", "Signed64": "i8",
-    "FloatValue": "f4", "Float": "f4", "DoubleValue": "f8", "Double": "f8",
+    "UnsignedByte": "u1", "SignedByte": "i1", "UnsignedShort": "u2", "SignedShort": "i2",
+    "UnsignedInteger": "u4", "SignedInteger": "i4", "UnsignedLong": "u4", "SignedLong": "i4",
+    "Unsigned64": "u8", "Signed64": "i8", "FloatValue": "f4", "Float": "f4",
+    "DoubleValue": "f8", "Double": "f8",
 }
+# friendlier instrument label from a FabIO image class name
+_DETECTORS = {"Marccd": "MarCCD", "Dtrek": "ADSC / d*TREK", "Edf": "ESRF EDF", "Tif": "TIFF",
+              "Pilatus": "Pilatus", "Eiger": "Eiger", "Cbf": "CBF"}
+_XRD_HINTS = {"XRD", "PXRD", "SAXS", "WAXS", "GIWAXS", "DIFFRACTION"}
 
 
 @register_reader
 class XRDImageReader(BaseReader):
     technique = "XRD"
     name = "xrd_image"
-    version = "0.1.0"
-    extensions = (".edf", ".h5", ".hdf5")
+    version = "0.2.0"
+    extensions = (".edf", ".img", ".mccd", ".tif", ".h5", ".hdf5")
 
     def sniff(self, candidate: Candidate) -> float:
-        if candidate.ext not in self.extensions:
+        ext = candidate.ext
+        if ext not in self.extensions:
             return 0.0
         magic = (candidate.content or b"")[:8]
-        if candidate.ext == ".edf":
+        if ext == ".edf":
             return 0.9 if magic.lstrip()[:1] == b"{" else 0.0
-        return 0.85 if magic[:4] == b"\x89HDF" else 0.0  # .h5 / .hdf5
+        if ext in (".h5", ".hdf5"):
+            return 0.85 if magic[:4] == b"\x89HDF" else 0.0
+        # .img / .mccd / .tif are detector-specific in an XRD context; a stray preview .tif in a
+        # non-XRD folder won't carry an XRD hint and is declined.
+        return 0.8 if (candidate.technique_hint or "").upper() in _XRD_HINTS else 0.0
 
     def read(self, candidate: Candidate) -> Dataset:
         if candidate.content is None:
             raise ValueError(f"{candidate.filename}: detector images need raw bytes")
-        data, meta = (_read_edf(candidate.content) if candidate.ext == ".edf"
-                      else _read_h5(candidate.content))
+        if candidate.ext in (".h5", ".hdf5"):
+            data, meta = _read_h5(candidate.content)
+        else:
+            data, meta = _read_image(candidate.content, candidate.ext)
         meta.setdefault("sample_name", candidate.stem)
         image = Image2D(
             name="detector image",
@@ -69,7 +79,42 @@ class XRDImageReader(BaseReader):
         )
 
 
+def _read_image(content: bytes, ext: str) -> tuple[np.ndarray, dict]:
+    """Read a detector image via FabIO; fall back to a built-in EDF parser if FabIO is absent."""
+    try:
+        import fabio
+    except ImportError:
+        if ext == ".edf":
+            return _read_edf(content)
+        raise ImportError("reading .img/.mccd/.tif detector images needs fabio: "
+                          "pip install 'psidata[convert]'") from None
+
+    fd, tmp = tempfile.mkstemp(suffix=ext)
+    try:
+        os.write(fd, content)
+        os.close(fd)
+        img = fabio.open(tmp)
+        data = np.asarray(img.data, dtype=np.float32)
+        header = dict(img.header)
+        detector = type(img).__name__.removesuffix("Image")
+    finally:
+        os.unlink(tmp)
+
+    if data.ndim == 3:  # an RGB/RGBA preview TIFF -> luminance
+        data = data[..., :3].mean(axis=2)
+    meta: dict = {}
+    if detector:
+        meta["instrument"] = _DETECTORS.get(detector, detector)
+    for key in ("BIO_SAMPLE_NAME", "imageDescription", "title", "Sample"):
+        val = str(header.get(key, "")).strip()
+        if val and val not in ("NoName", "None", ""):
+            meta["sample_name"] = val
+            break
+    return data, meta
+
+
 def _read_edf(content: bytes) -> tuple[np.ndarray, dict]:
+    """Dependency-free ESRF EDF parser (ASCII { } header + raw binary)."""
     end = content.index(b"}")
     kv = {k.strip(): v.strip()
           for k, v in re.findall(r"(\w+)\s*=\s*([^;]*);", content[:end].decode("latin1"))}
@@ -93,7 +138,7 @@ def _read_h5(content: bytes) -> tuple[np.ndarray, dict]:
     try:
         import hdf5plugin  # noqa: F401  registers blosc/lz4/bitshuffle/... compression filters
     except ImportError:
-        pass  # only needed for plugin-compressed datasets
+        pass
     f = h5py.File(io.BytesIO(content), "r")
     best = None
     for obj in _datasets(f):

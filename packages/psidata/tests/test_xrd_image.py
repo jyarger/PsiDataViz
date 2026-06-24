@@ -47,3 +47,24 @@ def test_edf_not_claimed_without_brace_magic():
     from psidata.readers.xrd_image import XRDImageReader
 
     assert XRDImageReader().sniff(Candidate(filename="x.edf", content=b"not an edf")) == 0.0
+
+
+def test_fabio_reads_written_edf_and_tif(tmp_path):
+    import fabio
+
+    arr = np.arange(12, dtype="uint16").reshape(3, 4)
+    for ext, cls in [(".edf", fabio.edfimage.EdfImage), (".tif", fabio.tifimage.TifImage)]:
+        p = tmp_path / f"frame{ext}"
+        cls(data=arr).write(str(p))
+        ds = read(Candidate(filename=f"frame{ext}", content=p.read_bytes(), technique_hint="XRD"))
+        assert ds.source.reader == "xrd_image"
+        assert ds.images[0].shape == (3, 4)
+        np.testing.assert_array_equal(ds.images[0].data, arr)
+
+
+def test_img_mccd_detected_only_with_xrd_hint():
+    from psidata.readers.xrd_image import XRDImageReader
+
+    r = XRDImageReader()
+    assert r.sniff(Candidate(filename="frame.mccd", content=b"\x00\x01", technique_hint="WAXS")) == 0.8
+    assert r.sniff(Candidate(filename="frame.mccd", content=b"\x00\x01", technique_hint=None)) == 0.0
