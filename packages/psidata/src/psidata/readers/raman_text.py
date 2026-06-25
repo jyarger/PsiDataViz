@@ -9,6 +9,9 @@ no numeric table and are ignored).
 
 from __future__ import annotations
 
+import re
+from typing import Any
+
 from ..model import Axis, Dataset, Metadata, Signal, SourceInfo
 from ..registry import register_reader
 from ._tabular import parse_numeric_table
@@ -18,6 +21,36 @@ from .base import BaseReader, Candidate
 class RamanMetadata(Metadata):
     npoints: int | None = None
     n_traces: int = 0
+
+
+def parse_spec_sidecar(text: str) -> dict[str, Any]:
+    """Parse a homebuilt-rig ``*_spec.txt`` companion (laser / power / spectrometer / polarization).
+
+    The LabVIEW Raman exports a free-form sidecar such as::
+
+        Green
+        12.0mW
+        Andor750 (3)
+        Polarized
+
+    Parsed by content (order-tolerant) into laser, laser_power_mw, spectrometer, polarization.
+    """
+    out: dict[str, Any] = {}
+    for line in text.splitlines():
+        s = line.strip()
+        if not s:
+            continue
+        low = s.lower()
+        m = re.fullmatch(r"([\d.]+)\s*mw", low)
+        if m:
+            out["laser_power_mw"] = float(m.group(1))
+        elif low in {"green", "red", "blue", "ir", "nir", "uv", "violet"} or re.search(r"\d{3,4}\s*nm", low):
+            out["laser"] = s
+        elif "polar" in low:
+            out["polarization"] = s
+        else:
+            out.setdefault("spectrometer", s)
+    return out
 
 
 @register_reader

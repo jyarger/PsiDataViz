@@ -74,9 +74,10 @@ def catalog(url: str) -> dict:
 
 
 @app.get("/api/dataset")
-def dataset(url: str, name: str, technique: str | None = None, max_points: int = 4000) -> dict:
+def dataset(url: str, name: str, technique: str | None = None, max_points: int = 4000,
+            sidecar_url: str | None = None) -> dict:
     try:
-        ds = services.load_dataset(name, url, technique=technique)
+        ds = services.load_dataset(name, url, technique=technique, sidecar_url=sidecar_url)
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f"Could not load {name!r}: {exc}") from exc
     return services.dataset_json(ds, max_points=max_points)

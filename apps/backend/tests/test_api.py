@@ -146,3 +146,15 @@ def test_diagnostics_annotates_known_formats():
     diag = client.get("/api/scan", params={"url": "o/r"}).json()["diagnostics"]
     tri = next(f for f in diag["unread_formats"] if f["ext"] == ".tri")
     assert "Trios" in tri["note"] and "export" in tri["hint"].lower()
+
+
+@respx.mock
+def test_dataset_merges_raman_spec_sidecar():
+    raw = "https://raw.githubusercontent.com/o/r/main/Raman/x.csv"
+    spec = "https://raw.githubusercontent.com/o/r/main/Raman/x_spec.txt"
+    respx.get(raw).mock(return_value=httpx.Response(200, text="10,100\n9,200\n8,150\n"))
+    respx.get(spec).mock(return_value=httpx.Response(200, text="Green\n1.3mW\nAndor750 (3)\nDepolarized\n"))
+    md = client.get("/api/dataset", params={"url": raw, "name": "x.csv", "technique": "Raman",
+                                            "sidecar_url": spec}).json()["metadata"]
+    assert md["laser"] == "Green" and md["laser_power_mw"] == 1.3
+    assert md["spectrometer"] == "Andor750 (3)" and md["polarization"] == "Depolarized"

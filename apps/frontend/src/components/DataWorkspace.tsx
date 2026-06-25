@@ -92,7 +92,7 @@ export function DataWorkspace() {
     setBusy(`Loading ${r.name} …`);
     setError(null);
     try {
-      const ds = await api.dataset(r.url, r.name, r.technique);
+      const ds = await api.dataset(r.url, r.name, r.technique, r.sidecar_url);
       setSelected((s) => [...s, r.ckey]);
       setDatasets((d) => ({ ...d, [r.ckey]: ds }));
     } catch (e) {

@@ -9,6 +9,7 @@ from dataclasses import asdict
 import httpx
 import numpy as np
 from psidata import Candidate, Dataset, read, read_zip
+from psidata.readers.raman_text import parse_spec_sidecar
 from psidata.sources import Catalog, FileRef, make_source
 from psidata.sources.catalog import build_entry
 from psidata.sources.records import IMAGE
@@ -39,11 +40,19 @@ def _fetch_bytes(url: str) -> bytes:
     return resp.content
 
 
-def load_dataset(name: str, url: str, *, technique: str | None = None) -> Dataset:
+def load_dataset(name: str, url: str, *, technique: str | None = None,
+                 sidecar_url: str | None = None) -> Dataset:
     content = _fetch_bytes(url)
     if name.lower().endswith(".zip") or url.lower().endswith(".zip"):
-        return read_zip(name, content, technique_hint=technique)
-    return read(Candidate(filename=name, content=content, uri=url, technique_hint=technique))
+        ds = read_zip(name, content, technique_hint=technique)
+    else:
+        ds = read(Candidate(filename=name, content=content, uri=url, technique_hint=technique))
+    if sidecar_url:  # merge a Raman *_spec.txt companion (laser/power/spectrometer) into metadata
+        try:
+            ds.metadata.extra.update(parse_spec_sidecar(_fetch_bytes(sidecar_url).decode("utf-8", "replace")))
+        except Exception:  # noqa: BLE001  a missing/odd sidecar must never break the dataset
+            pass
+    return ds
 
 
 # --- JSON serialization -----------------------------------------------------------------------
@@ -139,6 +148,7 @@ def record_row(record) -> dict:
         extras.append("params")
     if any(v.info.role == IMAGE for v in record.variants):
         extras.append("img")
+    spec = next((v for v in record.sidecars if v.file.name.lower().endswith("_spec.txt")), None)
     return {
         "key": record.key,
         "technique": record.technique,
@@ -149,15 +159,18 @@ def record_row(record) -> dict:
         "primary": record.primary.ext,
         "name": record.primary.file.name,
         "url": record.primary.file.download_url,
+        "sidecar_url": spec.file.download_url if spec else None,
     }
 
 
 def dataset_json(dataset: Dataset, max_points: int = 4000) -> dict:
+    meta = {k: v for k, v in dataset.metadata.model_dump().items() if v not in (None, [], {})}
+    meta.update(meta.pop("extra", {}))  # surface sidecar fields (laser/power/…) at the top level
     return {
         "technique": dataset.technique,
         "filename": dataset.source.filename,
         "reader": dataset.source.reader,
-        "metadata": {k: v for k, v in dataset.metadata.model_dump().items() if v not in (None, [], {})},
+        "metadata": meta,
         "signals": [
             {
                 "name": sig.name,

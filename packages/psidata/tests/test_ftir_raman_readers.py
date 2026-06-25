@@ -59,3 +59,11 @@ def test_dsc_csv_not_claimed_by_raman_in_dsc_folder(dsc_csv):
     assert FtirTextReader().sniff(Candidate(filename="run.csv", text=dsc_csv,
                                             technique_hint="DSC")) == 0.0
     assert read(Candidate(filename="run.csv", text=dsc_csv, technique_hint="DSC")).technique == "DSC"
+
+
+def test_parse_raman_spec_sidecar():
+    from psidata.readers.raman_text import parse_spec_sidecar
+
+    d = parse_spec_sidecar("Green\r\n12.0mW\r\nAndor750 (3)\r\nPolarized\r\n")
+    assert d == {"laser": "Green", "laser_power_mw": 12.0,
+                 "spectrometer": "Andor750 (3)", "polarization": "Polarized"}

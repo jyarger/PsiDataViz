@@ -37,6 +37,7 @@ export interface RecordRow {
   primary: string;
   name: string;
   url: string;
+  sidecar_url: string | null;
 }
 export interface CatalogResult extends ScanResult {
   records: RecordRow[];
@@ -117,8 +118,11 @@ export const api = {
   catalog: (url: string) => get<CatalogResult>(`/api/catalog?url=${q(url)}`),
   records: (url: string, technique: string) =>
     get<RecordRow[]>(`/api/records?url=${q(url)}&technique=${q(technique)}`),
-  dataset: (url: string, name: string, technique: string) =>
-    get<DatasetData>(`/api/dataset?url=${q(url)}&name=${q(name)}&technique=${q(technique)}`),
+  dataset: (url: string, name: string, technique: string, sidecarUrl?: string | null) =>
+    get<DatasetData>(
+      `/api/dataset?url=${q(url)}&name=${q(name)}&technique=${q(technique)}` +
+        (sidecarUrl ? `&sidecar_url=${q(sidecarUrl)}` : ""),
+    ),
   compare: (url: string, technique: string, key: string) =>
     post<CompareResult>(`/api/compare`, { url, technique, key }),
 };

@@ -135,7 +135,9 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
       });
       return;
     }
-    const ds = await run("Parsing dataset…", () => api.dataset(r.url, r.name, r.technique));
+    const ds = await run("Parsing dataset…", () =>
+      api.dataset(r.url, r.name, r.technique, r.sidecar_url),
+    );
     if (ds) {
       setSelected((s) => [...s, r.key]);
       setDatasets((d) => ({ ...d, [r.key]: ds }));
