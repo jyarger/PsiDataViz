@@ -70,6 +70,11 @@ class XRDImageReader(BaseReader):
             data, meta, geom = _read_h5(candidate.content)
         else:
             data, meta, geom = _read_image(candidate.content, candidate.ext)
+        # Mask detector-module gaps / dead / saturated pixels to NaN before anything else, so they
+        # neither corrupt the azimuthal integration nor dominate the heatmap colour scale.
+        data, n_masked = _mask_bad_pixels(data)
+        if n_masked:
+            meta["masked_pixels"] = int(n_masked)
         meta.setdefault("sample_name", candidate.stem)
         image = Image2D(
             name="detector image",
@@ -170,6 +175,29 @@ def _geom(dist, cx, cy, pixel, wavelength) -> dict | None:
     if None in (dist, cx, cy, pixel) or not (dist > 0 and pixel > 0):
         return None
     return {"dist": dist, "cx": cx, "cy": cy, "pixel": pixel, "wavelength": wavelength}
+
+
+def _mask_bad_pixels(data: np.ndarray) -> tuple[np.ndarray, int]:
+    """Set detector-module gaps / dead / saturated pixels to NaN.
+
+    Multi-module detectors (MarCCD CCD arrays, Pilatus/Eiger panels) fill inter-module gaps and
+    over-range/dead pixels with a sentinel — usually a single very high value (often the dtype max)
+    repeated across whole rows/columns, or a negative flag. Left in, those pixels spike the radial
+    average and dominate the heatmap. We mask non-finite, negative, and any saturating value that
+    covers a non-trivial fraction of the frame. (Beam-stop / per-module masks are tracked in #1.)
+    """
+    data = np.array(data, dtype=np.float32, copy=True)
+    bad = ~np.isfinite(data) | (data < 0)
+    finite = data[np.isfinite(data)]
+    if finite.size:
+        top = float(finite.max())
+        # a flat sentinel/saturation fill shows up as the same maximum over many pixels
+        if top > 0 and np.count_nonzero(data >= top) > max(64, 0.0003 * data.size):
+            bad |= data >= top
+    n = int(np.count_nonzero(bad))
+    if n:
+        data[bad] = np.nan
+    return data, n
 
 
 def _azimuthal_integrate(data: np.ndarray, geom: dict, nbins: int = 1000):

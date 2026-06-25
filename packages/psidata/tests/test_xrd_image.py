@@ -95,3 +95,24 @@ def test_geometryless_image_has_no_1d_pattern():
     arr = np.ones((4, 5), dtype="float32")
     ds = read(Candidate(filename="frame.edf", content=_edf(arr), technique_hint="XRD"))
     assert len(ds.images) == 1 and ds.signals == []
+
+
+def test_mask_detector_gaps_and_dead_pixels():
+    from psidata.readers.xrd_image import _mask_bad_pixels
+
+    data = np.ones((100, 100), dtype="float32")  # 10,000 px of real signal = 1.0
+    data[:, 50] = 4.29e9   # an inter-module gap column filled with a huge sentinel
+    data[0, 0] = -1.0      # a dead/flagged pixel
+    masked, n = _mask_bad_pixels(data)
+    assert n >= 101  # gap column (100) + the dead pixel
+    assert np.isnan(masked[5, 50]) and np.isnan(masked[0, 0])
+    assert float(np.nanmax(masked)) == 1.0  # sentinel removed; real max recovered
+
+
+def test_mask_leaves_clean_frame_untouched():
+    from psidata.readers.xrd_image import _mask_bad_pixels
+
+    data = np.arange(400, dtype="float32").reshape(20, 20)  # one max pixel, no gaps
+    masked, n = _mask_bad_pixels(data)
+    assert n == 0
+    np.testing.assert_array_equal(masked, data)
