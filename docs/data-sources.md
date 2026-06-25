@@ -25,12 +25,30 @@ automatically.
 
 ## Planned
 
-- **Box** and **Dropbox** public shared folders (also keyless).
+- **Codeberg** (Gitea API — closest to GitHub), **Dropbox**, **Box**, and **Proton Drive** public shares
+  (tracked in [#4](https://github.com/jyarger/PsiDataViz/issues/4)).
 - Provider buttons in the connect-helper; generalist research repositories (Zenodo, Figshare, Dryad,
   OSF, Mendeley Data); drag-and-drop and private/authenticated sources.
 
 `make_source(url)` routes a URL to the right connector, and every connector implements the same
 `DataSource` interface, so the catalog, app, and conversions work identically across sources.
+
+## Example data (the PsiData collection)
+
+The Yarger Lab publishes the same example data in several public locations:
+
+| Location | Organized by | Status |
+| --- | --- | --- |
+| [GitHub `yargerlab/Data`](https://github.com/yargerlab/Data) | technique | ✅ supported |
+| [Google Drive `Psi_Data`](https://drive.google.com/drive/folders/16VQhcRbCHkzhH2cq8T5DwyhTUBj2BrO4) | technique | ✅ supported |
+| Proton Drive | technique | planned |
+| Dropbox | sample / compound | planned |
+| Box | sample / compound | planned |
+| [Codeberg `jyarger/PsiData`](https://codeberg.org/jyarger/PsiData) | sample / compound | planned |
+
+The *technique*-organized sources have top-level folders per instrument (`DSC/`, `NMR/`, …); the
+*sample*-organized ones have a folder per compound (`Aspirin/`, `CBD/`, …) — see
+[the roadmap](ROADMAP.md)'s sample-centric phase.
 
 ## From files to datasets
 
