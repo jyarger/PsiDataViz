@@ -55,8 +55,22 @@ const PROVIDERS: Provider[] = [
       ],
     },
   },
-  { id: "dropbox", label: "Dropbox", icon: "DB", ready: false },
-  { id: "box", label: "Box · Proton", icon: "BX", ready: false },
+  {
+    id: "box",
+    label: "Box",
+    icon: "BX",
+    ready: true,
+    example: "https://app.box.com/s/yigbg0fd5xj5n1hkxf8rcsemrkz7qgsx",
+    steps: {
+      title: "Share a Box folder",
+      items: [
+        'Open the folder, click Share, set access to "Anyone with the link"',
+        "Copy the shared link (app.box.com/s/…)",
+        "Paste it in the box above, then Scan",
+      ],
+    },
+  },
+  { id: "dropbox", label: "Dropbox · Proton", icon: "DB", ready: false },
 ];
 
 export function ConnectGuide({ onTryExample }: { onTryExample?: (url: string) => void }) {

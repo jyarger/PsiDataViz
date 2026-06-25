@@ -68,6 +68,7 @@ const PRESETS: { label: string; icon: string; url: string }[] = [
     url: "https://drive.google.com/drive/folders/16VQhcRbCHkzhH2cq8T5DwyhTUBj2BrO4",
   },
   { label: "Codeberg — PsiData (by sample)", icon: "CB", url: "https://codeberg.org/jyarger/PsiData" },
+  { label: "Box — PsiData (by sample)", icon: "BX", url: "https://app.box.com/s/yigbg0fd5xj5n1hkxf8rcsemrkz7qgsx" },
 ];
 
 // A record's `key` (base name) repeats across techniques and sub-folders, so identify a selected row

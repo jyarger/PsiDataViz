@@ -136,9 +136,10 @@ def _technique_has_reader(technique: str) -> bool:
 # not the instrument), where the technique is encoded in the filename instead.
 _TECHNIQUE_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("FTIR", ("ftir", "_ir_", "_ir.", "atrir", "atr-ir", "infrared", "opus")),
-    ("NMR", ("nmr", "bruker400", "bruker500", "spinsolve", "nmready")),
+    ("NMR", ("nmr", "bruker400", "bruker500", "spinsolve", "nmready", "mhz", "_1h", "_13c", "_31p",
+             "_19f", "_15n")),
     ("Raman", ("raman",)),  # bare wavelengths (532nm…) are ambiguous (also Brillouin) — keep explicit
-    ("DSC", ("dsc", "mdsc", "calorimetry", "trios")),
+    ("DSC", ("dsc", "mdsc", "calorimetry", "trios", "cmin")),  # cmin = a °C/min ramp rate (e.g. 5Cmin)
     ("XRD", ("xrd", "pxrd", "saxs", "waxs", "giwaxs", "diffract")),
     ("UV-Vis", ("uvvis", "uv-vis", "uv_vis", "uv_visible")),
     ("TGA", ("tga", "thermogravimetric")),

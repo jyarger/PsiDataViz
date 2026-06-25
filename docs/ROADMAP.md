@@ -22,7 +22,7 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
   `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`, `.dat`/`.asc`; 2D detector images via FabIO), UV-Vis
   (`.txt` / Thorlabs `.csv`), **Computational** (`.log`/`.out` via **cclib** → IR/Raman, plus GaussView
   `_ir.txt`/`_raman.txt`).
-- **Sources** — keyless **GitHub**, **Google Drive**, and **Codeberg** connectors behind one
+- **Sources** — keyless **GitHub**, **Google Drive**, **Codeberg**, and **Box** connectors behind one
   `make_source()` factory; technique-folder normalization (e.g. `IR` → `FTIR`) and, for sample-organized
   sources, technique **inferred from the filename**.
 - **3D structure viewer** — **3Dmol.js** renders structure files and a computational job's optimized
@@ -33,9 +33,9 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
 
 ## Next up  ·  *immediate sequence*
 
-1. **More public-source connectors** ([#4](https://github.com/jyarger/PsiDataViz/issues/4)) — **Dropbox**
-   and **Box** keyless public folders (sample-organized data); **Proton Drive** is E2E-encrypted and may
-   not allow a keyless server-side scan (investigate / likely defer).
+1. **More public-source connectors** ([#4](https://github.com/jyarger/PsiDataViz/issues/4)) — **Box** is in
+   (keyless). **Dropbox** lacks a clean keyless path (only a ~700 MB whole-folder zip; per-file listing is
+   CSRF-gated) and **Proton Drive** is E2E-encrypted — both deferred pending a viable approach.
 2. **More parsing breadth & robustness** (§1) — close the highest-count gaps from the live coverage panel:
    **TGA**, `.gjf`/`.inp` geometries, per-file load-failure reasons, and additional proprietary-format
    guidance; keep `sniff()` honest.
@@ -78,8 +78,10 @@ The core mission. PsiDataViz is only as useful as the formats it can read.
 
 ### 2 — Sample-centric catalog  ·  *the north star*
 
-- **More sources** — **Codeberg** (Gitea) is in; keyless **Box**, **Dropbox**, and **Proton Drive**
-  public-folder connectors next ([#4](https://github.com/jyarger/PsiDataViz/issues/4)).
+- **More sources** — keyless **Codeberg** (Gitea) and **Box** (scrapes each shared-folder page's
+  `Box.postStreamData`) are in. **Dropbox** (public folder only exposes a ~700 MB whole-folder zip; per-file
+  listing is CSRF-gated) and **Proton Drive** (E2E-encrypted) remain open in
+  [#4](https://github.com/jyarger/PsiDataViz/issues/4).
 - **Organize by sample.** Some sources are organized by instrument (GitHub, Drive); others by chemical
   (Codeberg/Box/Dropbox folders named `Aspirin`, `CBD`, …). A first step is in — when the top folder is a
   compound (no instrument reader), the technique is **inferred from the filename**. Next: deep-parse

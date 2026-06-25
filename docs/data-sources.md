@@ -23,10 +23,19 @@ automatically.
 2. Under *General access*, choose **Anyone with the link**.
 3. Copy the link and paste it into PsiDataViz.
 
+### Box shared folders (keyless)
+
+Share a folder as **"Anyone with the link"** and paste its `app.box.com/s/…` URL. PsiDataViz reads the
+`Box.postStreamData` JSON each folder page embeds (no Box API token), recurses through sub-folders, and
+downloads file bytes from the keyless `index.php?rm=box_download_shared_file` endpoint.
+
 ## Planned
 
-- **Dropbox**, **Box**, and **Proton Drive** public shares (Codeberg is supported)
-  (tracked in [#4](https://github.com/jyarger/PsiDataViz/issues/4)).
+- **Dropbox** and **Proton Drive** public shares (tracked in
+  [#4](https://github.com/jyarger/PsiDataViz/issues/4)). *Dropbox:* a public folder only exposes a
+  whole-folder `?dl=1` **zip** (the example folder is ~700 MB — too heavy to scan), and per-file listing
+  needs Dropbox's CSRF-gated internal API; a clean keyless path is still being investigated. *Proton Drive:*
+  end-to-end encrypted, so a server-side keyless scan likely isn't possible.
 - Provider buttons in the connect-helper; generalist research repositories (Zenodo, Figshare, Dryad,
   OSF, Mendeley Data); drag-and-drop and private/authenticated sources.
 
@@ -41,9 +50,9 @@ The Yarger Lab publishes the same example data in several public locations:
 | --- | --- | --- |
 | [GitHub `yargerlab/Data`](https://github.com/yargerlab/Data) | technique | ✅ supported |
 | [Google Drive `Psi_Data`](https://drive.google.com/drive/folders/16VQhcRbCHkzhH2cq8T5DwyhTUBj2BrO4) | technique | ✅ supported |
-| Proton Drive | technique | planned |
+| Proton Drive | technique | planned (E2E-encrypted) |
 | Dropbox | sample / compound | planned |
-| Box | sample / compound | planned |
+| [Box `PsiData`](https://app.box.com/s/yigbg0fd5xj5n1hkxf8rcsemrkz7qgsx) | sample / compound | ✅ supported |
 | [Codeberg `jyarger/PsiData`](https://codeberg.org/jyarger/PsiData) | sample / compound | ✅ supported |
 
 The *technique*-organized sources have top-level folders per instrument (`DSC/`, `NMR/`, …); the

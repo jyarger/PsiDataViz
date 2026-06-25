@@ -15,8 +15,8 @@
 
 Every lab accumulates a sprawl of instrument and computational data in dozens of formats, scattered
 across folders and cloud drives. **PsiDataViz** points at a *public* data location — a GitHub repo, a
-Google Drive folder, a Codeberg repo, (soon) Box and Dropbox — scans it, makes sense of the formats, and
-lets you filter, overlay, compare, and convert datasets in your browser.
+Google Drive folder, a Codeberg repo, a Box folder, (soon) Dropbox — scans it, makes sense of the formats,
+and lets you filter, overlay, compare, and convert datasets in your browser.
 
 The name: *sci* and *psi* are homophones, and **Ψ** is a science-coded Greek letter — so the project,
 library, and app share the **Psi** prefix and the **Ψ** mark.
@@ -28,8 +28,9 @@ library, and app share the **Psi** prefix and the **Ψ** mark.
 
 ## Highlights
 
-- **Point-and-scan, keyless.** Public **GitHub** repos, **Google Drive** folders, and **Codeberg** repos
-  scan with no credentials. Files that share a base name across formats collapse into one *dataset*.
+- **Point-and-scan, keyless.** Public **GitHub** repos, **Google Drive** folders, **Codeberg** repos, and
+  **Box** folders scan with no credentials. Files that share a base name across formats collapse into one
+  *dataset*.
 - **Readers today:** DSC (TA Trios), NMR (JCAMP-DX incl. ASDF & Nanalysis NMReady FID→spectrum, `.tsv`,
   2D TopSpin `totxt`, **zipped Bruker & SpinSolve** datasets), FTIR (Bruker `.dpt`, Bruker OPUS `.0`, JCAMP, PerkinElmer
   `.asc`), Raman, XRD (1D `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`, `.dat`/`.asc`; **2D detector images**
