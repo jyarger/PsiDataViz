@@ -154,16 +154,16 @@ def test_diagnostics_unread_items_give_per_dataset_reasons():
     respx.get("https://api.github.com/repos/o/r").mock(
         return_value=httpx.Response(200, json={"default_branch": "main"}))
     tree = {"tree": [
-        {"path": "DSC/2026_run.tri", "type": "blob", "size": 10},        # known binary -> note + hint
-        {"path": "Acoustic/2026_argon.zip", "type": "blob", "size": 10},  # whole technique unread
+        {"path": "DSC/2026_run.tri", "type": "blob", "size": 10},            # known binary -> note + hint
+        {"path": "Ellipsometry/2026_film.zip", "type": "blob", "size": 10},  # whole technique unread
     ]}
     respx.get("https://api.github.com/repos/o/r/git/trees/main").mock(
         return_value=httpx.Response(200, json=tree))
     items = client.get("/api/scan", params={"url": "o/r"}).json()["diagnostics"]["unread_items"]
     by_tech = {it["technique"]: it for it in items}
     assert "Trios" in by_tech["DSC"]["reason"] and by_tech["DSC"]["hint"]
-    assert by_tech["Acoustic"]["reason"] == "No reader for Acoustic data yet"
-    assert by_tech["Acoustic"]["formats"] == [".zip"]
+    assert by_tech["Ellipsometry"]["reason"] == "No reader for Ellipsometry data yet"
+    assert by_tech["Ellipsometry"]["formats"] == [".zip"]
 
 
 @respx.mock

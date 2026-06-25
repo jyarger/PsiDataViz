@@ -21,8 +21,8 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
   FTIR (`.dpt`, JCAMP, PerkinElmer `.asc`, **Bruker OPUS `.0`** via brukeropusreader), Raman, XRD (1D —
   `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`, `.dat`/`.asc`; 2D detector images via FabIO), UV-Vis
   (`.txt` / Thorlabs `.csv`), **TGA** (TA Instruments `.txt`), **Brillouin** (multichannel-scaler `.asc`),
-  **Computational** (`.log`/`.out` via **cclib** → IR/Raman, plus GaussView `_ir.txt`/`_raman.txt`,
-  and `.gjf`/`.inp` input geometries).
+  **Acoustic** (interferometry FFT `Spectrum.csv` inside the `.zip`), **Computational** (`.log`/`.out` via
+  **cclib** → IR/Raman, plus GaussView `_ir.txt`/`_raman.txt`, and `.gjf`/`.inp` input geometries).
 - **Sources** — keyless **GitHub**, **Google Drive**, **Codeberg**, and **Box** connectors behind one
   `make_source()` factory; technique-folder normalization (e.g. `IR` → `FTIR`) and, for sample-organized
   sources, technique **inferred from the filename**.
