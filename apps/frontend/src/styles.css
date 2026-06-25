@@ -250,3 +250,9 @@ input[type="text"].filter {
 .mol-modesel select:hover { border-color: var(--accent); }
 .bundle-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 10px; }
 .bundle-row .chip { font-size: 12px; padding: 4px 10px; }
+.unread-detail { margin-top: 12px; }
+.unread-detail > summary { cursor: pointer; color: var(--accent); font-size: 13px; user-select: none; }
+.unread-detail > summary:hover { color: var(--text); }
+.unread-list { list-style: none; margin: 8px 0 0; padding: 0; max-height: 260px; overflow-y: auto; }
+.unread-list li { padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.unread-list li:last-child { border-bottom: 0; }

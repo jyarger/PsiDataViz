@@ -52,6 +52,27 @@ export function Diagnostics({ d }: { d: DiagnosticsData }) {
             </div>
           )}
 
+          {d.unread_items && d.unread_items.length > 0 && (
+            <details className="unread-detail">
+              <summary>Which datasets, and why ({d.unread_items.length})</summary>
+              <ul className="unread-list">
+                {d.unread_items.map((it, i) => (
+                  <li key={i}>
+                    <span className="fmt">{it.name}</span>
+                    <span className="muted">
+                      {" · "}
+                      {it.technique} · {it.formats.join("/")}
+                    </span>
+                    <div className="diag-hint">
+                      {it.reason}
+                      {it.hint ? ` — ${it.hint}` : ""}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+
           <p className="muted diag-hint">
             Spot a format we should read? Open a{" "}
             <a

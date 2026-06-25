@@ -11,7 +11,7 @@ import numpy as np
 from psidata import Candidate, Dataset, read, read_zip, zip_datasets
 from psidata.readers.raman_text import parse_spec_sidecar
 from psidata.sources import Catalog, FileRef, make_source
-from psidata.sources.catalog import build_entry
+from psidata.sources.catalog import _technique_has_reader, build_entry
 from psidata.sources.records import IMAGE
 
 _listing_cache: dict[str, dict] = {}  # url -> {"label", "files"} (process-lifetime cache)
@@ -102,8 +102,6 @@ _FORMAT_NOTES: dict[str, tuple[str, str | None]] = {
     ".gbw": ("ORCA binary wavefunction (not a spectrum)", "Use the ORCA .out."),
     ".densities": ("Computational density data (not a spectrum)", None),
     ".densitiesinfo": ("Computational density metadata", None),
-    ".xyz": ("Molecular geometry (a 3D structure viewer is planned)", None),
-    ".mol": ("Molecular structure (a 3D structure viewer is planned)", None),
     ".gjf": ("Gaussian input file (not measured data)", None),
     ".inp": ("Calculation input file (not measured data)", None),
     ".itp": ("GROMACS topology (molecular dynamics)", None),
@@ -121,12 +119,14 @@ def _diagnostics(groups: dict, summary: dict) -> dict:
     """
     unread: Counter[str] = Counter()
     unread_techniques: Counter[str] = Counter()
+    unread_items: list[dict] = []
     for tech, recs in groups.items():
         for r in recs:
             if r.is_data_record and not r.supported:
                 unread_techniques[tech] += 1
                 for v in r.data_variants:
                     unread[v.ext] += 1
+                unread_items.append(_unread_item(r, tech))
     n_data = summary["n_data_records"]
     n_ok = summary["n_supported_records"]
     return {
@@ -136,7 +136,24 @@ def _diagnostics(groups: dict, summary: dict) -> dict:
         "unread_formats": [_unread_entry(ext, n) for ext, n in unread.most_common(14)],
         "unread_by_technique": [{"technique": t, "count": n}
                                 for t, n in unread_techniques.most_common()],
+        "unread_items": unread_items[:60],  # per-dataset breakdown (which files, and why)
     }
+
+
+def _unread_item(record, technique: str) -> dict:
+    """Why one dataset isn't readable: its data extensions plus the most specific reason we can give
+    without downloading it (a known proprietary/binary note, else 'no reader yet')."""
+    exts = sorted({v.ext for v in record.data_variants})
+    noted = next((e for e in exts if e in _FORMAT_NOTES), exts[0] if exts else "")
+    note = _FORMAT_NOTES.get(noted)
+    name = record.data_variants[0].file.name if record.data_variants else record.key
+    if note:  # a known proprietary/binary/non-data format -> the specific guidance
+        reason, hint = note[0], note[1]
+    elif not _technique_has_reader(technique):  # the whole technique has no reader yet
+        reason, hint = f"No reader for {technique} data yet", None
+    else:  # technique is read, but not this particular format
+        reason, hint = f"No reader for {noted or 'this format'} yet", None
+    return {"name": name, "technique": technique, "formats": exts, "reason": reason, "hint": hint}
 
 
 def _unread_entry(ext: str, count: int) -> dict:

@@ -11,12 +11,20 @@ export interface UnreadFormat {
   note?: string;
   hint?: string;
 }
+export interface UnreadItem {
+  name: string;
+  technique: string;
+  formats: string[];
+  reason: string;
+  hint?: string | null;
+}
 export interface Diagnostics {
   coverage: number;
   n_supported: number;
   n_unsupported: number;
   unread_formats: UnreadFormat[];
   unread_by_technique: { technique: string; count: number }[];
+  unread_items: UnreadItem[];
 }
 export interface ScanResult {
   source: string;
