@@ -20,8 +20,8 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
 - **Readers** — DSC, NMR (JCAMP-DX + ASDF, Nanalysis NMReady NTUPLES/FID→spectrum, `.tsv`, 2D `totxt`),
   FTIR (`.dpt`, JCAMP, PerkinElmer `.asc`, **Bruker OPUS `.0`** via brukeropusreader), Raman, XRD (1D —
   `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`, `.dat`/`.asc`; 2D detector images via FabIO), UV-Vis
-  (`.txt` / Thorlabs `.csv`), **Computational** (`.log`/`.out` via **cclib** → IR/Raman, plus GaussView
-  `_ir.txt`/`_raman.txt`).
+  (`.txt` / Thorlabs `.csv`), **TGA** (TA Instruments `.txt`), **Computational** (`.log`/`.out` via
+  **cclib** → IR/Raman, plus GaussView `_ir.txt`/`_raman.txt`).
 - **Sources** — keyless **GitHub**, **Google Drive**, **Codeberg**, and **Box** connectors behind one
   `make_source()` factory; technique-folder normalization (e.g. `IR` → `FTIR`) and, for sample-organized
   sources, technique **inferred from the filename**.
@@ -72,9 +72,10 @@ The core mission. PsiDataViz is only as useful as the formats it can read.
   overlay on experiment. **Quantum-chemistry outputs** (`.log`/`.out`) are now parsed directly with
   **cclib** (Gaussian/ORCA/Q-Chem/NWChem/Psi4): vibrational frequencies + IR/Raman intensities are
   Lorentzian-broadened into spectra, and the optimized geometry + normal modes feed the 3D viewer (§3).
-  Molecular **structure files** (`.xyz`/`.mol`/`.sdf`/`.pdb`/`.cif`) read too. Still to do: **TGA**,
-  Gaussian/ORCA input files (`.gjf`/`.inp` geometry), per-file load-failure reasons in diagnostics, proper
-  **pyFAI** corrections + arbitrary `.poni` calibration, more proprietary-binary export guidance, and more.
+  Molecular **structure files** (`.xyz`/`.mol`/`.sdf`/`.pdb`/`.cif`) and **TGA** (TA Instruments
+  thermogravimetric `.txt` → weight % vs temperature) read too. Still to do: Gaussian/ORCA input files
+  (`.gjf`/`.inp` geometry), per-file load-failure reasons in diagnostics, proper **pyFAI** corrections +
+  arbitrary `.poni` calibration, more proprietary-binary export guidance, and more.
 
 ### 2 — Sample-centric catalog  ·  *the north star*
 

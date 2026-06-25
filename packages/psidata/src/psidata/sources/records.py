@@ -96,8 +96,9 @@ def classify_format(filename: str) -> FormatInfo:
         return FormatInfo(SIDECAR, "Instrument acquisition parameters", False)
     if ext in _EXT_TABLE:
         return _EXT_TABLE[ext]
-    if ext[1:].isdigit():  # Bruker OPUS block files: name.0, name.1, ...
-        return FormatInfo(BINARY_ORIGINAL, "Bruker OPUS native (binary)", True)
+    if ext[1:].isdigit():  # numeric extensions: Bruker OPUS (name.0..name.9) or TA TGA native (name.001)
+        label = "Bruker OPUS native (binary)" if len(ext) == 2 else "Instrument native (binary)"
+        return FormatInfo(BINARY_ORIGINAL, label, True)
     return FormatInfo(OTHER, f"{ext or 'no-extension'} file", False)
 
 
