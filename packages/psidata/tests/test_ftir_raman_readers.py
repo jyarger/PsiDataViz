@@ -67,3 +67,13 @@ def test_parse_raman_spec_sidecar():
     d = parse_spec_sidecar("Green\r\n12.0mW\r\nAndor750 (3)\r\nPolarized\r\n")
     assert d == {"laser": "Green", "laser_power_mw": 12.0,
                  "spectrometer": "Andor750 (3)", "polarization": "Polarized"}
+
+
+def test_opus_sniff_and_block_pick():
+    from psidata.readers.ftir_opus import FtirOpusReader, _pick_block
+
+    r = FtirOpusReader()
+    assert r.sniff(Candidate(filename="x.0", content=b"\n\n\xfe\xfe more")) == 0.95
+    assert r.sniff(Candidate(filename="x.0", content=b"not an opus file")) == 0.0
+    assert r.sniff(Candidate(filename="x.dpt", content=b"\n\n\xfe\xfe")) == 0.0  # wrong ext
+    assert _pick_block({"AB": [1, 2]}) == ("AB", "Absorbance", "absorbance")

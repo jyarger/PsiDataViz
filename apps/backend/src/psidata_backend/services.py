@@ -88,7 +88,6 @@ _FORMAT_NOTES: dict[str, tuple[str, str | None]] = {
     ".spa": ("Thermo OMNIC proprietary binary (IR)", "Export to JCAMP (.dx) or .csv from OMNIC."),
     ".spc": ("Galactic/Thermo SPC proprietary binary", "Export to ASCII / .csv."),
     ".spf2": ("Spectrometer proprietary binary (UV-Vis)", "Export to .csv or .txt."),
-    ".0": ("Bruker OPUS binary (FTIR)", "Export to .dpt or JCAMP from OPUS."),
     ".chk": ("Gaussian checkpoint (binary state, not a spectrum)",
              "Use the .log, or the exported _ir.txt / _raman.txt."),
     ".gbw": ("ORCA binary wavefunction (not a spectrum)", "Use the ORCA .out."),
