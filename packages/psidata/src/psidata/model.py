@@ -128,8 +128,25 @@ class Structure3D:
 
 
 @dataclass
+class Audio:
+    """An audio recording (e.g. an acoustic-interferometry ``.wav``) for in-browser playback.
+
+    The waveform and its FFT travel as ordinary :class:`Signal`\\ s on the dataset; this carries the
+    playback parameters and signals that the dataset is playable.
+    """
+
+    sample_rate: int
+    n_samples: int
+    channels: int = 1
+
+    @property
+    def duration(self) -> float:
+        return self.n_samples / self.sample_rate if self.sample_rate else 0.0
+
+
+@dataclass
 class Dataset:
-    """A fully parsed measurement: provenance + metadata + 1D signals, 2D images, and/or a 3D structure."""
+    """A fully parsed measurement: metadata + 1D signals, 2D images, a 3D structure, and/or audio."""
 
     technique: str
     source: SourceInfo
@@ -137,6 +154,7 @@ class Dataset:
     signals: list[Signal] = field(default_factory=list)
     images: list[Image2D] = field(default_factory=list)
     structure: Structure3D | None = None
+    audio: Audio | None = None
 
     def to_tidy_df(self) -> pd.DataFrame:
         """Long-form concatenation of every signal, tagged with signal/segment columns."""

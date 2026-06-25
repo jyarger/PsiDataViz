@@ -9,7 +9,7 @@ from .archive import ArchiveError, read_zip, zip_datasets
 from .compare import Comparison, compare_datasets, compare_record_formats
 from .convert import convert
 from .filename import ParsedName, parse_filename
-from .model import Axis, Dataset, Image2D, Metadata, Signal, SourceInfo, Structure3D, VibMode
+from .model import Audio, Axis, Dataset, Image2D, Metadata, Signal, SourceInfo, Structure3D, VibMode
 from .readers.base import BaseReader, Candidate
 from .registry import (
     UnknownFormatError,
@@ -24,6 +24,7 @@ __version__ = "0.2.0"
 
 __all__ = [
     "ArchiveError",
+    "Audio",
     "Axis",
     "BaseReader",
     "Candidate",

@@ -54,6 +54,8 @@ library, and app share the **Psi** prefix and the **Ψ** mark.
   computational job's **optimized geometry** render in an interactive **3Dmol.js** viewer beside the data,
   so a Gaussian/ORCA `.log` shows its IR/Raman spectra *and* its molecule — with **animated vibrational
   normal modes** (pick a frequency and watch the atoms move).
+- **ΨDataSound** — for acoustic `.wav` recordings, **play the sound in the browser** and toggle between the
+  **waveform** (time vs amplitude) and its **FFT spectrum**.
 - **Convert** any dataset to **CSDM, HDF5, CSV, Parquet, Feather,** or per-signal **CSV (zip)**.
 - **Single-image deploy.** One container serves the React UI and the API together.
 

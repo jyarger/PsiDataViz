@@ -15,7 +15,7 @@ import tempfile
 
 from fastapi import Body, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from psidata import __version__, compare_record_formats, get_readers
 from psidata.convert import convert as run_convert
 from starlette.background import BackgroundTask
@@ -85,7 +85,23 @@ def dataset(url: str, name: str, technique: str | None = None, max_points: int =
     bundle = services.zip_bundle(name, url, technique=technique)
     if bundle:  # a zip holding several datasets -> let the UI switch between them
         out["bundle"] = {"members": bundle, "current": member}
+    if out.get("audio"):  # a playable .wav -> URL the <audio> element can stream
+        from urllib.parse import quote
+        audio_url = f"/api/audio?url={quote(url, safe='')}&name={quote(name, safe='')}"
+        if member:
+            audio_url += f"&member={quote(member, safe='')}"
+        out["audio_url"] = audio_url
     return out
+
+
+@app.get("/api/audio")
+def audio(url: str, name: str, member: str | None = None) -> Response:
+    """Stream a `.wav` (a zip member, or directly) as 16-bit PCM so the browser can play it."""
+    try:
+        data = services.audio_wav(url, name, member=member)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail=f"Could not load audio: {exc}") from exc
+    return Response(content=data, media_type="audio/wav")
 
 
 # fmt -> (file extension, media type)

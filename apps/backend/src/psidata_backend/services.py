@@ -220,7 +220,27 @@ def dataset_json(dataset: Dataset, max_points: int = 4000) -> dict:
             }
             if dataset.structure else None
         ),
+        "audio": (
+            {"sample_rate": dataset.audio.sample_rate, "n_samples": dataset.audio.n_samples,
+             "channels": dataset.audio.channels, "duration": round(dataset.audio.duration, 3)}
+            if dataset.audio else None
+        ),
     }
+
+
+def audio_wav(url: str, name: str, member: str | None = None) -> bytes:
+    """Fetch a ``.wav`` (a zip member, or directly) and re-encode it as plain 16-bit PCM for playback."""
+    from psidata.readers.wav_audio import read_wav, to_pcm16_wav
+
+    content = _fetch_bytes(url)
+    if member or name.lower().endswith(".zip") or url.lower().endswith(".zip"):
+        import io
+        import zipfile
+        if not member:
+            raise ValueError("a zip audio request needs a member")
+        content = zipfile.ZipFile(io.BytesIO(content)).read(member)
+    sample_rate, _channels, samples = read_wav(content)
+    return to_pcm16_wav(samples, sample_rate)
 
 
 def _image_json(image, max_side: int = 240) -> dict:

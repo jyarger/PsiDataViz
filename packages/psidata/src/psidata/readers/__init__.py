@@ -23,6 +23,7 @@ from . import (
     structure_file,  # noqa: F401  (import triggers registration)
     tga_text,  # noqa: F401  (import triggers registration)
     uvvis_text,  # noqa: F401  (import triggers registration)
+    wav_audio,  # noqa: F401  (import triggers registration)
     xrd_image,  # noqa: F401  (import triggers registration)
     xrd_panalytical,  # noqa: F401  (import triggers registration)
     xrd_text,  # noqa: F401  (import triggers registration)
@@ -30,4 +31,4 @@ from . import (
 
 __all__ = ["acoustic_spectrum", "brillouin_asc", "comp_input", "comp_log", "comp_spectrum", "dsc_trios", "ftir_jcamp", "ftir_opus", "ftir_pe_asc",
            "ftir_text", "nmr_jcamp", "nmr_text", "nmr_totxt", "raman_text", "structure_file",
-           "tga_text", "uvvis_text", "xrd_image", "xrd_panalytical", "xrd_text"]
+           "tga_text", "uvvis_text", "wav_audio", "xrd_image", "xrd_panalytical", "xrd_text"]

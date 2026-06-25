@@ -3,6 +3,7 @@ import { api, type CatalogResult, type DatasetData, type RecordRow } from "../ap
 import { SpectrumPlot } from "./SpectrumPlot";
 import { Heatmap } from "./Heatmap";
 import { MoleculeViewer } from "./MoleculeViewer";
+import { WaveformPlayer } from "./WaveformPlayer";
 
 type Source = { url: string; label: string; icon: string; catalog: CatalogResult };
 type Row = RecordRow & { source: string; ckey: string };
@@ -111,7 +112,8 @@ export function DataWorkspace() {
   }
 
   const selectedDatasets = selected.map((k) => datasets[k]).filter(Boolean);
-  const signalDatasets = selectedDatasets.filter((d) => d.signals?.length > 0);
+  const audioDatasets = selectedDatasets.filter((d) => d.audio);
+  const signalDatasets = selectedDatasets.filter((d) => d.signals?.length > 0 && !d.audio);
   const imageDatasets = selectedDatasets.filter((d) => d.images?.length > 0);
 
   return (
@@ -296,6 +298,9 @@ export function DataWorkspace() {
                 peak={peak}
               />
             ))}
+          {audioDatasets.map((ds) => (
+            <WaveformPlayer key={`wav-${ds.filename}`} dataset={ds} />
+          ))}
         </div>
       )}
     </>

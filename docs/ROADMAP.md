@@ -28,6 +28,8 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
   sources, technique **inferred from the filename**.
 - **3D structure viewer** — **3Dmol.js** renders structure files and a computational job's optimized
   geometry beside the data; **vibrational normal modes animate** (pick a mode, or click the spectrum peak).
+- **ΨDataSound** — acoustic `.wav` recordings play in the browser (16-bit PCM re-encode) with a
+  waveform / FFT-spectrum toggle.
 - **PsiDataViz app** — FastAPI backend + React/TS frontend, single-image deploy. **QUICK** tab
   (scan → filter → overlay → compare → convert) and **DATA** tab (multi-source workspace).
 - **Open source** — public repo, Apache-2.0, CI (lint + tests + build), issue/PR templates.

@@ -11,6 +11,7 @@ import { Footer } from "./components/Footer";
 import { SpectrumPlot } from "./components/SpectrumPlot";
 import { Heatmap } from "./components/Heatmap";
 import { MoleculeViewer } from "./components/MoleculeViewer";
+import { WaveformPlayer } from "./components/WaveformPlayer";
 import { CompareView } from "./components/CompareView";
 import { ExportMenu } from "./components/ExportMenu";
 import { ConnectGuide } from "./components/ConnectGuide";
@@ -168,7 +169,9 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
   }
 
   const selectedDatasets = selected.map((k) => datasets[k]).filter(Boolean);
-  const signalDatasets = selectedDatasets.filter((d) => d.signals?.length > 0);
+  const audioDatasets = selectedDatasets.filter((d) => d.audio);
+  // audio carries waveform + FFT as signals, but they go to the player, not the overlay plot
+  const signalDatasets = selectedDatasets.filter((d) => d.signals?.length > 0 && !d.audio);
   const imageDatasets = selectedDatasets.filter((d) => d.images?.length > 0);
   const structureDatasets = selectedDatasets.filter((d) => d.structure);
   const soleRecord = selected.length === 1 ? records.find((r) => rid(r) === selected[0]) : null;
@@ -374,6 +377,9 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
               title={(ds.metadata.sample_name as string) || ds.filename}
               peak={peak}
             />
+          ))}
+          {audioDatasets.map((ds) => (
+            <WaveformPlayer key={`wav-${ds.filename}`} dataset={ds} />
           ))}
           {compare && (
             <div className="cmp-panel">

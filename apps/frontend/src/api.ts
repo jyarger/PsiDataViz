@@ -89,6 +89,12 @@ export interface ZipMember {
   member: string | null;
   formats: string[];
 }
+export interface AudioData {
+  sample_rate: number;
+  n_samples: number;
+  channels: number;
+  duration: number;
+}
 export interface DatasetData {
   technique: string;
   filename: string;
@@ -97,6 +103,8 @@ export interface DatasetData {
   signals: SignalData[];
   images: ImageData[];
   structure: StructureData | null;
+  audio?: AudioData | null;
+  audio_url?: string | null;
   bundle?: { members: ZipMember[]; current: string | null };
 }
 
@@ -166,4 +174,9 @@ export const api = {
 // Direct download URL for converting a dataset to a standard format (csdf | h5).
 export function convertUrl(url: string, name: string, technique: string, fmt: string): string {
   return `${BASE}/api/convert?url=${q(url)}&name=${q(name)}&technique=${q(technique)}&fmt=${fmt}`;
+}
+
+// Absolute URL for an <audio> element to stream a dataset's .wav (the backend returns a relative path).
+export function audioSrc(ds: DatasetData): string | null {
+  return ds.audio_url ? `${BASE}${ds.audio_url}` : null;
 }

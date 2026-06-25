@@ -256,3 +256,18 @@ input[type="text"].filter {
 .unread-list { list-style: none; margin: 8px 0 0; padding: 0; max-height: 260px; overflow-y: auto; }
 .unread-list li { padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
 .unread-list li:last-child { border-bottom: 0; }
+
+/* PsiDataSound — waveform/FFT viewer + player */
+.wave-card { margin-top: 14px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.wave-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.wave-brand { font-weight: 700; font-size: 14px; color: var(--text); }
+.wave-brand .psi { color: var(--accent); }
+.wave-title { font-size: 14px; color: var(--text); }
+.wave-controls { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg button { background: var(--panel-2); color: #8b949e; border: 0; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+.seg button.active { background: var(--accent-dim); color: #fff; }
+.play-btn { background: var(--accent-dim); color: #fff; border: 0; border-radius: 8px; padding: 5px 14px; font-size: 13px; cursor: pointer; }
+.play-btn:hover { background: var(--accent); }
+.play-btn .psi { font-weight: 700; }
+.wave-canvas { width: 100%; height: 360px; }
