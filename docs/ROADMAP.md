@@ -25,9 +25,24 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
 - **Sources** — keyless **GitHub**, **Google Drive**, and **Codeberg** connectors behind one
   `make_source()` factory; technique-folder normalization (e.g. `IR` → `FTIR`) and, for sample-organized
   sources, technique **inferred from the filename**.
+- **3D structure viewer** — **3Dmol.js** renders structure files and a computational job's optimized
+  geometry beside the data; **vibrational normal modes animate** (pick a mode, or click the spectrum peak).
 - **PsiDataViz app** — FastAPI backend + React/TS frontend, single-image deploy. **QUICK** tab
   (scan → filter → overlay → compare → convert) and **DATA** tab (multi-source workspace).
 - **Open source** — public repo, Apache-2.0, CI (lint + tests + build), issue/PR templates.
+
+## Next up  ·  *immediate sequence*
+
+1. **More public-source connectors** ([#4](https://github.com/jyarger/PsiDataViz/issues/4)) — **Dropbox**
+   and **Box** keyless public folders (sample-organized data); **Proton Drive** is E2E-encrypted and may
+   not allow a keyless server-side scan (investigate / likely defer).
+2. **More parsing breadth & robustness** (§1) — close the highest-count gaps from the live coverage panel:
+   **TGA**, `.gjf`/`.inp` geometries, per-file load-failure reasons, and additional proprietary-format
+   guidance; keep `sniff()` honest.
+3. **Sample-centric catalog** (§2) — deep-parse headers to recover sample *and* instrument regardless of
+   folder layout; browse by compound. (Introduces the first database.)
+4. Then the **advanced ANALYSIS / VISUALIZATION tabs** (§3), **large-dataset handling** (§5), and
+   **VPS deploy + domain** (§6).
 
 ## Prioritized plan
 
@@ -50,9 +65,10 @@ The core mission. PsiDataViz is only as useful as the formats it can read.
   Gaussian/ORCA/Psi4 frequency jobs, with the DFT method from the filename) read on a wavenumber axis for
   overlay on experiment. **Quantum-chemistry outputs** (`.log`/`.out`) are now parsed directly with
   **cclib** (Gaussian/ORCA/Q-Chem/NWChem/Psi4): vibrational frequencies + IR/Raman intensities are
-  Lorentzian-broadened into spectra. Still to do: structures (`.xyz`/`.mol`/`.gjf`) + a 3D viewer
-  ([#5](https://github.com/jyarger/PsiDataViz/issues/5)), TGA, proper pyFAI corrections + arbitrary
-  `.poni` calibration, and more.
+  Lorentzian-broadened into spectra, and the optimized geometry + normal modes feed the 3D viewer (§3).
+  Molecular **structure files** (`.xyz`/`.mol`/`.sdf`/`.pdb`/`.cif`) read too. Still to do: **TGA**,
+  Gaussian/ORCA input files (`.gjf`/`.inp` geometry), per-file load-failure reasons in diagnostics, proper
+  **pyFAI** corrections + arbitrary `.poni` calibration, more proprietary-binary export guidance, and more.
 
 ### 2 — Sample-centric catalog  ·  *the north star*
 
@@ -77,9 +93,9 @@ Lives in the **ANALYSIS / VISUALIZATION** tabs (QUICK stays simple):
   (`.xyz`/`.mol`/`.sdf`/`.pdb`/`.cif`) and a computational job's **optimized geometry** (from cclib) render
   in an interactive viewer beside the data, so a Gaussian/ORCA `.log` shows its IR/Raman spectra *and* its
   molecule. **Vibrational normal modes animate** — pick a mode (frequency + IR strength, from cclib
-  `vibdisps`) and the atoms oscillate along it. *Next:* link a spectrum-peak click to its mode; cube files
-  (MOs/density) and crystal unit cells; Mol\* behind a thin abstraction for large biomolecules.
-  Tracked in [#5](https://github.com/jyarger/PsiDataViz/issues/5).
+  `vibdisps`) and the atoms oscillate along it, **or click the peak on the spectrum** to animate its mode.
+  *Next:* cube files (MOs/density) and crystal unit cells; Mol\* behind a thin abstraction for large
+  biomolecules. Tracked in [#5](https://github.com/jyarger/PsiDataViz/issues/5).
 - Multiple datasets per plot, and series/grids of subplots.
 
 ### 4 — Documentation & feedback
