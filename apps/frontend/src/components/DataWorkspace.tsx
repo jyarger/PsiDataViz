@@ -67,7 +67,7 @@ export function DataWorkspace() {
   }
 
   const rows: Row[] = sources.flatMap((s) =>
-    s.catalog.records.map((r) => ({ ...r, source: s.label, ckey: `${s.url}|${r.key}` })),
+    s.catalog.records.map((r) => ({ ...r, source: s.label, ckey: `${s.url}|${r.uid}` })),
   );
   const techniques = [...new Set(rows.map((r) => r.technique))].sort();
   const nd = needle.trim().toLowerCase();

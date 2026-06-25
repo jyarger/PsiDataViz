@@ -156,6 +156,13 @@ class DataRecord:
         return [v for v in self.variants if v.info.role == SIDECAR]
 
     @property
+    def uid(self) -> str:
+        """A source-unique id: the base name plus its folder, since the same base name can recur in
+        different sub-folders (e.g. ``min.pdb`` in several MD run directories)."""
+        directory = os.path.dirname(self.variants[0].file.path) if self.variants else ""
+        return f"{directory}/{self.key}" if directory else self.key
+
+    @property
     def is_data_record(self) -> bool:
         """True if any variant holds scientific data (vs. image/preview/params only)."""
         return bool(self.data_variants)

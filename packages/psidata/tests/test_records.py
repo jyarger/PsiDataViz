@@ -106,3 +106,12 @@ def test_ir_and_ftir_records_share_one_technique_group():
         "FTIR/2026_02_02_pdms_ATR.dpt",
     ])
     assert {r.technique for r in recs} == {"FTIR"}
+
+
+def test_record_uid_unique_across_subfolders():
+    # the same base name in different sub-folders (e.g. MD runs) must yield distinct records + uids
+    entries = [build_entry(FileRef(path=f"Computational/run{i}/min.pdb", size=1)) for i in range(3)]
+    recs = build_records(entries)
+    assert len(recs) == 3
+    assert len({r.uid for r in recs}) == 3
+    assert all(r.key == "min" for r in recs)  # the display key is still the base name

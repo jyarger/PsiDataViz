@@ -70,6 +70,10 @@ const PRESETS: { label: string; icon: string; url: string }[] = [
   { label: "Codeberg — PsiData (by sample)", icon: "CB", url: "https://codeberg.org/jyarger/PsiData" },
 ];
 
+// A record's `key` (base name) repeats across techniques and sub-folders, so identify a selected row
+// by its source-unique `uid` (folder + base name).
+const rid = (r: RecordRow) => r.uid;
+
 function Quick({ onNav }: { onNav: (v: View) => void }) {
   const [repo, setRepo] = useState(DEFAULT_REPO);
   const [src, setSrc] = useState(DEFAULT_REPO); // the source URL backing the current scan
@@ -128,11 +132,11 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
 
   async function toggleRecord(r: RecordRow) {
     setCompare(null);
-    if (selected.includes(r.key)) {
-      setSelected(selected.filter((k) => k !== r.key));
+    if (selected.includes(rid(r))) {
+      setSelected(selected.filter((k) => k !== rid(r)));
       setDatasets((d) => {
         const next = { ...d };
-        delete next[r.key];
+        delete next[rid(r)];
         return next;
       });
       return;
@@ -141,13 +145,13 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
       api.dataset(r.url, r.name, r.technique, r.sidecar_url),
     );
     if (ds) {
-      setSelected((s) => [...s, r.key]);
-      setDatasets((d) => ({ ...d, [r.key]: ds }));
+      setSelected((s) => [...s, rid(r)]);
+      setDatasets((d) => ({ ...d, [rid(r)]: ds }));
     }
   }
 
   async function doCompare() {
-    const r = selected.length === 1 ? records.find((x) => x.key === selected[0]) : null;
+    const r = selected.length === 1 ? records.find((x) => rid(x) === selected[0]) : null;
     if (!r) return;
     const res = await run("Comparing formats…", () => api.compare(src, r.technique, r.key));
     if (res) setCompare(res);
@@ -157,7 +161,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
   const signalDatasets = selectedDatasets.filter((d) => d.signals?.length > 0);
   const imageDatasets = selectedDatasets.filter((d) => d.images?.length > 0);
   const structureDatasets = selectedDatasets.filter((d) => d.structure);
-  const soleRecord = selected.length === 1 ? records.find((r) => r.key === selected[0]) : null;
+  const soleRecord = selected.length === 1 ? records.find((r) => rid(r) === selected[0]) : null;
   const canCompare = !!soleRecord && soleRecord.formats.length > 1;
   const needle = filter.trim().toLowerCase();
   const shown = needle
@@ -296,12 +300,12 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
               <tbody>
                 {shown.map((r) => (
                   <tr
-                    key={r.key}
-                    className={selected.includes(r.key) ? "selected" : ""}
+                    key={rid(r)}
+                    className={selected.includes(rid(r)) ? "selected" : ""}
                     onClick={() => toggleRecord(r)}
                   >
                     <td>
-                      <input type="checkbox" readOnly checked={selected.includes(r.key)} />
+                      <input type="checkbox" readOnly checked={selected.includes(rid(r))} />
                     </td>
                     <td>{r.date ?? ""}</td>
                     <td>{r.description}</td>
@@ -361,7 +365,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
               <CompareView result={compare} />
             </div>
           )}
-          {soleRecord && datasets[soleRecord.key] && (
+          {soleRecord && datasets[rid(soleRecord)] && (
             <>
               <div className="export-row">
                 <span className="muted">Convert to standard format:</span>
@@ -371,7 +375,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
                   technique={soleRecord.technique}
                 />
               </div>
-              <Metadata meta={datasets[soleRecord.key].metadata} />
+              <Metadata meta={datasets[rid(soleRecord)].metadata} />
             </>
           )}
         </div>

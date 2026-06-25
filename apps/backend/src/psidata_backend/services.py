@@ -150,6 +150,7 @@ def record_row(record) -> dict:
     spec = next((v for v in record.sidecars if v.file.name.lower().endswith("_spec.txt")), None)
     return {
         "key": record.key,
+        "uid": record.uid,
         "technique": record.technique,
         "date": record.parsed.date.isoformat() if record.parsed.date else None,
         "description": record.parsed.description,

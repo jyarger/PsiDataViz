@@ -29,6 +29,7 @@ export interface ScanResult {
 }
 export interface RecordRow {
   key: string;
+  uid: string;
   technique: string;
   date: string | null;
   description: string;
