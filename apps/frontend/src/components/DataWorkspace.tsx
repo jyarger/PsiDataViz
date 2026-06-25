@@ -34,6 +34,7 @@ export function DataWorkspace() {
   const [selected, setSelected] = useState<string[]>([]);
   const [datasets, setDatasets] = useState<Record<string, DatasetData>>({});
   const [normalize, setNormalize] = useState(false);
+  const [peak, setPeak] = useState<{ freq: number; label: string } | null>(null);
 
   async function addSource(url: string) {
     const u = url.trim();
@@ -271,7 +272,11 @@ export function DataWorkspace() {
             </div>
           </div>
           {signalDatasets.length > 0 && (
-            <SpectrumPlot datasets={signalDatasets} normalize={normalize} />
+            <SpectrumPlot
+              datasets={signalDatasets}
+              normalize={normalize}
+              onPeakClick={(freq, label) => setPeak({ freq, label })}
+            />
           )}
           {imageDatasets.map((ds) => (
             <Heatmap key={ds.filename} dataset={ds} />
@@ -283,6 +288,7 @@ export function DataWorkspace() {
                 key={`mol-${ds.filename}`}
                 structure={ds.structure!}
                 title={(ds.metadata.sample_name as string) || ds.filename}
+                peak={peak}
               />
             ))}
         </div>

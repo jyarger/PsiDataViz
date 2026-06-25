@@ -25,9 +25,11 @@ function normalizeY(ys: number[]): number[] {
 export function SpectrumPlot({
   datasets,
   normalize = false,
+  onPeakClick,
 }: {
   datasets: DatasetData[];
   normalize?: boolean;
+  onPeakClick?: (wavenumber: number, label: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -35,12 +37,14 @@ export function SpectrumPlot({
     if (!ref.current || datasets.length === 0) return;
     const multi = datasets.length > 1;
     let color = 0;
+    const traceLabels: string[] = []; // dataset label per trace (curveNumber -> sample), for click routing
     const traces = datasets.flatMap((ds) => {
       const label = ds.metadata.sample_name ? String(ds.metadata.sample_name) : ds.filename;
       return ds.signals.map((s) => {
         const segLabel = s.segment ?? s.name;
         const name = multi ? `${label} · ${segLabel}` : segLabel;
         const ys = s.points.map((p) => p[1]);
+        traceLabels.push(label);
         return {
           x: s.points.map((p) => p[0]),
           y: normalize ? normalizeY(ys) : ys,
@@ -81,7 +85,18 @@ export function SpectrumPlot({
       displaylogo: false,
       modeBarButtonsToRemove: ["lasso2d", "select2d"],
     });
-  }, [datasets, normalize]);
+
+    if (onPeakClick) {
+      // clicking a peak on a computed spectrum animates the nearest vibrational mode in the 3D viewer
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const el = ref.current as any;
+      el.removeAllListeners?.("plotly_click");
+      el.on("plotly_click", (e: { points?: { x: number; curveNumber: number }[] }) => {
+        const p = e.points?.[0];
+        if (p) onPeakClick(p.x, traceLabels[p.curveNumber] ?? "");
+      });
+    }
+  }, [datasets, normalize, onPeakClick]);
 
   return <div ref={ref} style={{ width: "100%", height: 480 }} />;
 }

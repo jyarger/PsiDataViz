@@ -85,6 +85,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
   const [compare, setCompare] = useState<CompareResult | null>(null);
   const [filter, setFilter] = useState("");
   const [normalize, setNormalize] = useState(false);
+  const [peak, setPeak] = useState<{ freq: number; label: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
@@ -348,7 +349,11 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
             </div>
           </div>
           {signalDatasets.length > 0 && (
-            <SpectrumPlot datasets={signalDatasets} normalize={normalize} />
+            <SpectrumPlot
+              datasets={signalDatasets}
+              normalize={normalize}
+              onPeakClick={(freq, label) => setPeak({ freq, label })}
+            />
           )}
           {imageDatasets.map((ds) => (
             <Heatmap key={ds.filename} dataset={ds} />
@@ -358,6 +363,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
               key={`mol-${ds.filename}`}
               structure={ds.structure!}
               title={(ds.metadata.sample_name as string) || ds.filename}
+              peak={peak}
             />
           ))}
           {compare && (

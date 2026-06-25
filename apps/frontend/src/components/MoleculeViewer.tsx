@@ -5,7 +5,15 @@ import type { StructureData } from "../api";
 // 3D molecular / crystal structure, rendered by 3Dmol.js from the raw structure-file text the backend
 // ships. Drag to rotate, scroll to zoom. For a frequency calculation, each vibrational normal mode can
 // be animated (every atom oscillates along its displacement vector).
-export function MoleculeViewer({ structure, title }: { structure: StructureData; title: string }) {
+export function MoleculeViewer({
+  structure,
+  title,
+  peak,
+}: {
+  structure: StructureData;
+  title: string;
+  peak?: { freq: number; label: string } | null;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const viewerRef = useRef<any>(null);
@@ -71,6 +79,22 @@ export function MoleculeViewer({ structure, title }: { structure: StructureData;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [structure]);
 
+  // a peak clicked on this molecule's spectrum -> animate the nearest vibrational mode
+  useEffect(() => {
+    if (!peak || peak.label !== title || modes.length === 0) return;
+    let best = -1;
+    let bestDist = Infinity;
+    modes.forEach((m, i) => {
+      const d = Math.abs(m.freq - peak.freq);
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    });
+    if (best >= 0 && bestDist < 80) selectMode(best);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [peak]);
+
   function selectMode(idx: number) {
     setMode(idx);
     draw(idx);
@@ -91,7 +115,7 @@ export function MoleculeViewer({ structure, title }: { structure: StructureData;
         </span>
         {!error &&
           (modes.length > 0 ? (
-            <label className="mol-modesel">
+            <label className="mol-modesel" title="…or click a peak on the spectrum above">
               Vibration:
               <select value={mode} onChange={(e) => selectMode(Number(e.target.value))}>
                 <option value={-1}>none</option>
