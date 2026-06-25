@@ -75,11 +75,11 @@ docker build -t psidataviz . && docker run --rm -p 8070:8000 psidataviz
 Prerequisites: [`uv`](https://docs.astral.sh/uv/) (Python) and Node 20+.
 
 ```bash
-# Python library + backend (installs the uv workspace into .venv)
+# Python library + backend deps, incl. all reader extras (cclib, fabio, h5py, brukeropusreader, …)
 uv sync --all-packages --all-extras
 
-# Backend API on :8000
-uv run --package psidata-backend psidata-api
+# Backend API on :8000 (PYTHONPATH form is the most portable across environments)
+PYTHONPATH="packages/psidata/src:apps/backend/src" uv run python -m psidata_backend.main
 
 # Frontend dev server on :5173 (in another terminal), proxying /api -> :8000
 cd apps/frontend && npm install && npm run dev
