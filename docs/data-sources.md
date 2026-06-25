@@ -35,7 +35,10 @@ downloads file bytes from the keyless `index.php?rm=box_download_shared_file` en
   [#4](https://github.com/jyarger/PsiDataViz/issues/4)). *Dropbox:* a public folder only exposes a
   whole-folder `?dl=1` **zip** (the example folder is ~700 MB — too heavy to scan), and per-file listing
   needs Dropbox's CSRF-gated internal API; a clean keyless path is still being investigated. *Proton Drive:*
-  end-to-end encrypted, so a server-side keyless scan likely isn't possible.
+  even a password-less public link requires a custom **SRP-6a handshake** (`/api/drive/urls/<token>/info`
+  returns the SRP `Modulus`/`ServerEphemeral`/salt) plus **OpenPGP** decryption of the folder tree and file
+  blocks — the `#fragment` is the client-side key, never sent to the server. Feasible but the most complex
+  connector (mature implementations are Go-only); deferred since the same data is on Box/Codeberg/Drive.
 - Provider buttons in the connect-helper; generalist research repositories (Zenodo, Figshare, Dryad,
   OSF, Mendeley Data); drag-and-drop and private/authenticated sources.
 
