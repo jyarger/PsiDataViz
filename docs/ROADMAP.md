@@ -72,10 +72,11 @@ The core mission. PsiDataViz is only as useful as the formats it can read.
   overlay on experiment. **Quantum-chemistry outputs** (`.log`/`.out`) are now parsed directly with
   **cclib** (Gaussian/ORCA/Q-Chem/NWChem/Psi4): vibrational frequencies + IR/Raman intensities are
   Lorentzian-broadened into spectra, and the optimized geometry + normal modes feed the 3D viewer (§3).
-  Molecular **structure files** (`.xyz`/`.mol`/`.sdf`/`.pdb`/`.cif`) and **TGA** (TA Instruments
-  thermogravimetric `.txt` → weight % vs temperature) read too. Still to do: Gaussian/ORCA input files
-  (`.gjf`/`.inp` geometry), per-file load-failure reasons in diagnostics, proper **pyFAI** corrections +
-  arbitrary `.poni` calibration, more proprietary-binary export guidance, and more.
+  Molecular **structure files** (`.xyz`/`.mol`/`.sdf`/`.pdb`/`.cif`), **TGA** (TA Instruments
+  thermogravimetric `.txt` → weight % vs temperature), and **Gaussian/ORCA input geometries**
+  (`.gjf`/`.com`/`.inp` → 3D viewer) read too. The coverage panel now lists **per-dataset reasons** (which
+  files, and why). Still to do: proper **pyFAI** corrections + arbitrary `.poni` calibration, Z-matrix
+  inputs, more proprietary-binary export guidance, and more.
 
 ### 2 — Sample-centric catalog  ·  *the north star*
 

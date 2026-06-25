@@ -55,3 +55,28 @@ def test_comp_log_modes_from_ccdata():
     assert len(modes) == 2
     assert modes[1].freq == 1159.1 and modes[1].ir == 298.99
     assert len(modes[0].disps) == 2 and modes[0].disps[0] == (0.0, 0.0, -0.23)
+
+
+def test_comp_input_reads_gaussian_gjf_geometry():
+    gjf = (
+        "%mem=8GB\n%chk=x.chk\n#p opt freq b3lyp/6-31g(d)\n\n"
+        "r134a title\n\n0 1\n"
+        " C   -1.501439    1.410611    1.456949\n"
+        " H   -1.182454    2.431922    1.448389\n"
+        " C   -0.305047    0.496427    1.133662\n"
+        "\n 1 2 1.0 3 1.0\n 2\n"  # connectivity lines must be ignored
+    )
+    ds = read(Candidate(filename="r134a_Gaussian16.gjf",
+                        content=gjf.encode(), technique_hint="Computational"))
+    assert ds.source.reader == "comp_input"
+    assert ds.signals == [] and ds.structure is not None
+    assert ds.structure.fmt == "xyz" and ds.structure.n_atoms == 3
+    assert ds.structure.data.splitlines()[2].startswith("C")
+
+
+def test_comp_input_skips_orca_external_xyzfile():
+    from psidata.readers.comp_input import CompInputReader
+
+    inp = "! B3LYP def2-SVP Opt\n%pal nprocs 4 end\n* xyzfile 0 1 geom.xyz\n"
+    # no inline coordinates -> not claimed (the geometry is in the referenced .xyz)
+    assert CompInputReader().sniff(Candidate(filename="x.inp", text=inp)) == 0.0

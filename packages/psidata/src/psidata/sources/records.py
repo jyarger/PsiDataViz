@@ -35,7 +35,8 @@ _SIDECAR_STEM = re.compile(r"_spec$", re.IGNORECASE)
 # Preference order when several parseable data formats exist (best first).
 # Prefer parseable ASCII variants; a packaged `.zip` is the lowest-priority primary (used when it's
 # the only parseable variant, e.g. a zipped Bruker/SpinSolve NMR dataset).
-_PRIMARY_PREFERENCE = (".csv", ".txt", ".dpt", ".asc", ".dx", ".jdx", ".tsv", ".dat", ".zip")
+# preferred primary data format (earlier = better); a calc OUTPUT (.log/.out) beats its INPUT (.gjf/.inp)
+_PRIMARY_PREFERENCE = (".csv", ".txt", ".dpt", ".asc", ".dx", ".jdx", ".tsv", ".dat", ".log", ".out", ".zip")
 
 
 @dataclass(frozen=True)
@@ -67,6 +68,9 @@ _EXT_TABLE: dict[str, FormatInfo] = {
     ".mccd": FormatInfo(DATA, "MarCCD detector image", True),
     ".h5": FormatInfo(DATA, "HDF5 / NeXus data", True),
     ".hdf5": FormatInfo(DATA, "HDF5 / NeXus data", True),
+    ".gjf": FormatInfo(DATA, "Gaussian input (geometry)", True),
+    ".com": FormatInfo(DATA, "Gaussian input (geometry)", True),
+    ".inp": FormatInfo(DATA, "Computational input (geometry)", True),
     ".xyz": FormatInfo(DATA, "XYZ molecular geometry", True),
     ".mol": FormatInfo(DATA, "MDL molfile (structure)", True),
     ".sdf": FormatInfo(DATA, "SDF structure", True),

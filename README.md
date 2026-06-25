@@ -48,7 +48,8 @@ library, and app share the **Psi** prefix and the **Ψ** mark.
 - **QUICK tab** — one source: scan → filter by technique → overlay → compare formats → convert/download.
 - **DATA tab** — a multi-source *workspace*: add several public sources, then filter and overlay datasets
   across all of them.
-- **3D structure viewer** — molecular & crystal structures (`.xyz`/`.mol`/`.sdf`/`.pdb`/`.cif`) and a
+- **3D structure viewer** — molecular & crystal structures (`.xyz`/`.mol`/`.sdf`/`.pdb`/`.cif`, plus
+  Gaussian/ORCA input geometries `.gjf`/`.inp`) and a
   computational job's **optimized geometry** render in an interactive **3Dmol.js** viewer beside the data,
   so a Gaussian/ORCA `.log` shows its IR/Raman spectra *and* its molecule — with **animated vibrational
   normal modes** (pick a frequency and watch the atoms move).

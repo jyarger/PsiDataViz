@@ -102,8 +102,6 @@ _FORMAT_NOTES: dict[str, tuple[str, str | None]] = {
     ".gbw": ("ORCA binary wavefunction (not a spectrum)", "Use the ORCA .out."),
     ".densities": ("Computational density data (not a spectrum)", None),
     ".densitiesinfo": ("Computational density metadata", None),
-    ".gjf": ("Gaussian input file (not measured data)", None),
-    ".inp": ("Calculation input file (not measured data)", None),
     ".itp": ("GROMACS topology (molecular dynamics)", None),
     ".gro": ("GROMACS coordinates (molecular dynamics)", None),
     ".bibtex": ("Bibliography / references (not data)", None),
