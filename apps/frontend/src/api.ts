@@ -5,11 +5,17 @@ export interface Technique {
   n_datasets: number;
   n_supported: number;
 }
+export interface UnreadFormat {
+  ext: string;
+  count: number;
+  note?: string;
+  hint?: string;
+}
 export interface Diagnostics {
   coverage: number;
   n_supported: number;
   n_unsupported: number;
-  unread_formats: { ext: string; count: number }[];
+  unread_formats: UnreadFormat[];
   unread_by_technique: { technique: string; count: number }[];
 }
 export interface ScanResult {

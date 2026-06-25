@@ -71,11 +71,36 @@ def scan_summary(catalog: Catalog) -> dict:
     }
 
 
+# Recognized formats we can't (or won't) parse directly, with guidance. (note, how-to-convert).
+_FORMAT_NOTES: dict[str, tuple[str, str | None]] = {
+    ".tri": ("TA Instruments Trios proprietary binary (DSC)",
+             "Export to .txt or .xls from Trios — PsiDataViz reads those."),
+    ".sp": ("PerkinElmer FTIR proprietary binary", "Export to .dpt or .csv from Spectrum."),
+    ".spa": ("Thermo OMNIC proprietary binary (IR)", "Export to JCAMP (.dx) or .csv from OMNIC."),
+    ".spc": ("Galactic/Thermo SPC proprietary binary", "Export to ASCII / .csv."),
+    ".spf2": ("Spectrometer proprietary binary (UV-Vis)", "Export to .csv or .txt."),
+    ".0": ("Bruker OPUS binary (FTIR)", "Export to .dpt or JCAMP from OPUS."),
+    ".chk": ("Gaussian checkpoint (binary state, not a spectrum)",
+             "Use the .log, or the exported _ir.txt / _raman.txt."),
+    ".gbw": ("ORCA binary wavefunction (not a spectrum)", "Use the ORCA .out."),
+    ".densities": ("Computational density data (not a spectrum)", None),
+    ".densitiesinfo": ("Computational density metadata", None),
+    ".xyz": ("Molecular geometry (a 3D structure viewer is planned)", None),
+    ".mol": ("Molecular structure (a 3D structure viewer is planned)", None),
+    ".gjf": ("Gaussian input file (not measured data)", None),
+    ".inp": ("Calculation input file (not measured data)", None),
+    ".itp": ("GROMACS topology (molecular dynamics)", None),
+    ".gro": ("GROMACS coordinates (molecular dynamics)", None),
+    ".bibtex": ("Bibliography / references (not data)", None),
+}
+
+
 def _diagnostics(groups: dict, summary: dict) -> dict:
     """What didn't parse and why — coverage plus the formats present but unread, ranked by count.
 
     Drives the iterate-on-coverage loop: the highest-count unread extensions are where adding a reader
-    helps most. ``unread_formats`` counts the data-variant extensions of datasets with no usable reader.
+    helps most. ``unread_formats`` counts the data-variant extensions of datasets with no usable reader,
+    annotated with guidance for formats we recognize as proprietary/binary (e.g. ``.tri``).
     """
     unread: Counter[str] = Counter()
     unread_techniques: Counter[str] = Counter()
@@ -91,10 +116,20 @@ def _diagnostics(groups: dict, summary: dict) -> dict:
         "coverage": round(100 * n_ok / n_data, 1) if n_data else 0.0,
         "n_supported": n_ok,
         "n_unsupported": n_data - n_ok,
-        "unread_formats": [{"ext": ext, "count": n} for ext, n in unread.most_common(12)],
+        "unread_formats": [_unread_entry(ext, n) for ext, n in unread.most_common(14)],
         "unread_by_technique": [{"technique": t, "count": n}
                                 for t, n in unread_techniques.most_common()],
     }
+
+
+def _unread_entry(ext: str, count: int) -> dict:
+    entry = {"ext": ext, "count": count}
+    note = _FORMAT_NOTES.get(ext)
+    if note:
+        entry["note"] = note[0]
+        if note[1]:
+            entry["hint"] = note[1]
+    return entry
 
 
 def record_row(record) -> dict:

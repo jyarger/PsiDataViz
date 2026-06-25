@@ -5,6 +5,7 @@ import type { Diagnostics as DiagnosticsData } from "../api";
 export function Diagnostics({ d }: { d: DiagnosticsData }) {
   if (!d) return null;
   const allReadable = d.n_unsupported === 0;
+  const known = d.unread_formats.filter((f) => f.note);
   return (
     <div className="card diag">
       <div className="toolbar" style={{ marginBottom: 8 }}>
@@ -27,15 +28,30 @@ export function Diagnostics({ d }: { d: DiagnosticsData }) {
           <div className="chips">
             {d.unread_formats.map((f) => (
               <span
-                className="chip unread"
+                className={"chip unread" + (f.note ? " known" : "")}
                 key={f.ext}
-                title={`${f.count} dataset${f.count === 1 ? "" : "s"} use ${f.ext || "(no extension)"}`}
+                title={f.note || `${f.count} dataset${f.count === 1 ? "" : "s"} use ${f.ext || "(no extension)"}`}
               >
                 {f.ext || "(none)"}
                 <span className="count">{f.count}</span>
               </span>
             ))}
           </div>
+
+          {known.length > 0 && (
+            <div className="known-formats">
+              <div className="section-title" style={{ margin: "14px 0 6px" }}>Recognized formats</div>
+              <ul>
+                {known.map((f) => (
+                  <li key={f.ext}>
+                    <code>{f.ext}</code> — {f.note}
+                    {f.hint && <span className="diag-hint"> {f.hint}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <p className="muted diag-hint">
             Spot a format we should read? Open a{" "}
             <a

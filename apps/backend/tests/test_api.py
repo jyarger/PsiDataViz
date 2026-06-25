@@ -133,3 +133,16 @@ def test_scan_diagnostics_reports_unread_formats():
     assert diag["coverage"] == 50.0
     assert diag["n_supported"] == 1 and diag["n_unsupported"] == 1
     assert ".xls" in [f["ext"] for f in diag["unread_formats"]]
+
+
+@respx.mock
+def test_diagnostics_annotates_known_formats():
+    _listing_cache.clear()
+    respx.get("https://api.github.com/repos/o/r").mock(
+        return_value=httpx.Response(200, json={"default_branch": "main"}))
+    tree = {"tree": [{"path": "DSC/run.tri", "type": "blob", "size": 10}]}  # Trios binary, no reader
+    respx.get("https://api.github.com/repos/o/r/git/trees/main").mock(
+        return_value=httpx.Response(200, json=tree))
+    diag = client.get("/api/scan", params={"url": "o/r"}).json()["diagnostics"]
+    tri = next(f for f in diag["unread_formats"] if f["ext"] == ".tri")
+    assert "Trios" in tri["note"] and "export" in tri["hint"].lower()

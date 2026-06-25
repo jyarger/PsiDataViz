@@ -149,6 +149,12 @@ input[type="text"].filter {
 .chip.unread:hover { border-color: #ff7b7280; }
 .chip.unread .count { color: #ff7b72; }
 .diag-hint { font-size: 12.5px; margin-top: 10px; }
+.chip.unread.known { background: var(--panel-2); border-color: var(--border); }
+.known-formats ul { list-style: none; padding: 0; margin: 0; }
+.known-formats li { font-size: 13px; color: var(--dim); padding: 3px 0; line-height: 1.55; }
+.known-formats li .diag-hint { margin: 0; color: var(--accent); }
+.known-formats code { background: var(--bg); padding: 1px 6px; border-radius: 4px; color: var(--text);
+  font-size: 12px; }
 
 /* ---- source presets ---- */
 .presets { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
