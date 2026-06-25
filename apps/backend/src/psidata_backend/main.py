@@ -75,12 +75,17 @@ def catalog(url: str) -> dict:
 
 @app.get("/api/dataset")
 def dataset(url: str, name: str, technique: str | None = None, max_points: int = 4000,
-            sidecar_url: str | None = None) -> dict:
+            sidecar_url: str | None = None, member: str | None = None) -> dict:
     try:
-        ds = services.load_dataset(name, url, technique=technique, sidecar_url=sidecar_url)
+        ds = services.load_dataset(name, url, technique=technique, sidecar_url=sidecar_url,
+                                   member=member)
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f"Could not load {name!r}: {exc}") from exc
-    return services.dataset_json(ds, max_points=max_points)
+    out = services.dataset_json(ds, max_points=max_points)
+    bundle = services.zip_bundle(name, url, technique=technique)
+    if bundle:  # a zip holding several datasets -> let the UI switch between them
+        out["bundle"] = {"members": bundle, "current": member}
+    return out
 
 
 # fmt -> (file extension, media type)

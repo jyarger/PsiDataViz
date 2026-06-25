@@ -151,6 +151,14 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
     }
   }
 
+  // switch which dataset of a multi-dataset zip is shown (reloads under the same record)
+  async function loadMember(r: RecordRow, member: string | null) {
+    const ds = await run("Loading dataset…", () =>
+      api.dataset(r.url, r.name, r.technique, r.sidecar_url, member),
+    );
+    if (ds) setDatasets((d) => ({ ...d, [rid(r)]: ds }));
+  }
+
   async function doCompare() {
     const r = selected.length === 1 ? records.find((x) => rid(x) === selected[0]) : null;
     if (!r) return;
@@ -373,6 +381,25 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
           )}
           {soleRecord && datasets[rid(soleRecord)] && (
             <>
+              {datasets[rid(soleRecord)].bundle && (
+                <div className="bundle-row">
+                  <span className="muted">
+                    {datasets[rid(soleRecord)].bundle!.members.length} datasets in this zip — show:
+                  </span>
+                  {datasets[rid(soleRecord)].bundle!.members.map((m) => (
+                    <button
+                      key={m.member ?? m.key}
+                      className={`chip ${
+                        m.member === datasets[rid(soleRecord)].bundle!.current ? "active" : ""
+                      }`}
+                      onClick={() => loadMember(soleRecord, m.member)}
+                      title={m.formats.join(" · ")}
+                    >
+                      {m.key}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="export-row">
                 <span className="muted">Convert to standard format:</span>
                 <ExportMenu

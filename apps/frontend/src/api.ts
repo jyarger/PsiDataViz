@@ -76,6 +76,11 @@ export interface StructureData {
   n_atoms: number | null;
   modes: VibModeData[];
 }
+export interface ZipMember {
+  key: string;
+  member: string | null;
+  formats: string[];
+}
 export interface DatasetData {
   technique: string;
   filename: string;
@@ -84,6 +89,7 @@ export interface DatasetData {
   signals: SignalData[];
   images: ImageData[];
   structure: StructureData | null;
+  bundle?: { members: ZipMember[]; current: string | null };
 }
 
 export interface FormatComparison {
@@ -133,10 +139,17 @@ export const api = {
   catalog: (url: string) => get<CatalogResult>(`/api/catalog?url=${q(url)}`),
   records: (url: string, technique: string) =>
     get<RecordRow[]>(`/api/records?url=${q(url)}&technique=${q(technique)}`),
-  dataset: (url: string, name: string, technique: string, sidecarUrl?: string | null) =>
+  dataset: (
+    url: string,
+    name: string,
+    technique: string,
+    sidecarUrl?: string | null,
+    member?: string | null,
+  ) =>
     get<DatasetData>(
       `/api/dataset?url=${q(url)}&name=${q(name)}&technique=${q(technique)}` +
-        (sidecarUrl ? `&sidecar_url=${q(sidecarUrl)}` : ""),
+        (sidecarUrl ? `&sidecar_url=${q(sidecarUrl)}` : "") +
+        (member ? `&member=${q(member)}` : ""),
     ),
   compare: (url: string, technique: string, key: string) =>
     post<CompareResult>(`/api/compare`, { url, technique, key }),

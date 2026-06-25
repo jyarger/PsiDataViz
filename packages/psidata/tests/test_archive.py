@@ -5,7 +5,7 @@ import zipfile
 
 import pytest
 
-from psidata import ArchiveError, read_zip
+from psidata import ArchiveError, read_zip, zip_datasets
 
 
 def _zip(files: dict[str, str | bytes]) -> bytes:
@@ -58,6 +58,26 @@ def test_zip_picks_parseable_member_among_junk(dsc_txt):
     content = _zip({"preview.png": b"\x89PNG\r\n", "readme.md": "# notes", "run.txt": dsc_txt})
     ds = read_zip("mixed.zip", content)
     assert ds.technique == "DSC"
+
+
+def test_zip_datasets_lists_several_and_loads_member(dsc_txt):
+    content = _zip({
+        "2023_runA_DSC.txt": dsc_txt,
+        "2023_runB_DSC.txt": dsc_txt,
+        "notes.md": "# just notes",          # not a dataset -> filtered out
+    })
+    datasets = zip_datasets("bundle.zip", content, technique_hint="DSC")
+    assert sorted(d["key"] for d in datasets) == ["2023_runA_DSC", "2023_runB_DSC"]
+    ds = read_zip("bundle.zip", content, technique_hint="DSC", member="2023_runB_DSC.txt")
+    assert ds.technique == "DSC" and len(ds.signals) == 2
+
+
+def test_zip_datasets_collapses_one_dataset_many_formats(dsc_txt):
+    # several formats of the SAME measurement (one base name) -> a single dataset
+    content = _zip({"run_DSC.txt": dsc_txt, "run_DSC.csv": dsc_txt})
+    datasets = zip_datasets("one.zip", content, technique_hint="DSC")
+    assert len(datasets) == 1
+    assert set(datasets[0]["formats"]) == {"txt", "csv"}
 
 
 def test_read_spinsolve_zip():
