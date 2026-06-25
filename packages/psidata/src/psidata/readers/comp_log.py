@@ -15,7 +15,7 @@ import tempfile
 import numpy as np
 import pandas as pd
 
-from ..model import Axis, Dataset, Signal, SourceInfo, Structure3D
+from ..model import Axis, Dataset, Signal, SourceInfo, Structure3D, VibMode
 from ..registry import register_reader
 from .base import BaseReader, Candidate
 from .comp_spectrum import ComputedMetadata, _method_basis
@@ -94,7 +94,28 @@ def _structure_from_ccdata(data, title: str) -> Structure3D | None:
     lines = [str(len(nums)), title]
     for z, (x, y, zc) in zip(nums, geom, strict=False):
         lines.append(f"{table.element[int(z)]:2s} {x:14.6f} {y:14.6f} {zc:14.6f}")
-    return Structure3D(data="\n".join(lines) + "\n", fmt="xyz", title=title, n_atoms=int(nums.size))
+    return Structure3D(data="\n".join(lines) + "\n", fmt="xyz", title=title, n_atoms=int(nums.size),
+                       modes=_modes_from_ccdata(data))
+
+
+def _modes_from_ccdata(data) -> list[VibMode]:
+    """Vibrational normal modes (frequency + per-atom displacements + IR/Raman strength) for animation."""
+    freqs = getattr(data, "vibfreqs", None)
+    disps = getattr(data, "vibdisps", None)
+    if freqs is None or disps is None:
+        return []
+    irs = getattr(data, "vibirs", None)
+    ramans = getattr(data, "vibramans", None)
+    modes: list[VibMode] = []
+    for i, freq in enumerate(freqs):
+        vec = np.round(np.asarray(disps[i], dtype=float), 4)
+        modes.append(VibMode(
+            freq=round(float(freq), 1),
+            disps=[(float(x), float(y), float(z)) for x, y, z in vec],
+            ir=round(float(irs[i]), 2) if irs is not None and i < len(irs) else None,
+            raman=round(float(ramans[i]), 2) if ramans is not None and i < len(ramans) else None,
+        ))
+    return modes
 
 
 def _spectrum(label: str, freqs: np.ndarray, intensities: np.ndarray, y_label: str) -> Signal:

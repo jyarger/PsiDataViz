@@ -44,7 +44,8 @@ library, and app share the **Psi** prefix and the **Ψ** mark.
   across all of them.
 - **3D structure viewer** — molecular & crystal structures (`.xyz`/`.mol`/`.sdf`/`.pdb`/`.cif`) and a
   computational job's **optimized geometry** render in an interactive **3Dmol.js** viewer beside the data,
-  so a Gaussian/ORCA `.log` shows its IR/Raman spectra *and* its molecule.
+  so a Gaussian/ORCA `.log` shows its IR/Raman spectra *and* its molecule — with **animated vibrational
+  normal modes** (pick a frequency and watch the atoms move).
 - **Convert** any dataset to **CSDM, HDF5, CSV, Parquet, Feather,** or per-signal **CSV (zip)**.
 - **Single-image deploy.** One container serves the React UI and the API together.
 

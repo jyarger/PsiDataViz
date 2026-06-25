@@ -63,11 +63,18 @@ export interface ImageData {
   shape: [number, number];
   values: number[][];
 }
+export interface VibModeData {
+  freq: number;
+  ir: number | null;
+  raman: number | null;
+  disps: [number, number, number][];
+}
 export interface StructureData {
   data: string;
   format: string;
   title: string | null;
   n_atoms: number | null;
+  modes: VibModeData[];
 }
 export interface DatasetData {
   technique: string;

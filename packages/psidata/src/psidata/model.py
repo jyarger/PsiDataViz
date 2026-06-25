@@ -98,18 +98,33 @@ class Image2D:
 
 
 @dataclass
+class VibMode:
+    """One vibrational normal mode: frequency (cm⁻¹), per-atom displacement vectors, and IR/Raman strength.
+
+    The displacement vectors animate the mode in the 3D viewer (each atom oscillates along its vector).
+    """
+
+    freq: float
+    disps: list[tuple[float, float, float]]  # one (dx, dy, dz) per atom
+    ir: float | None = None
+    raman: float | None = None
+
+
+@dataclass
 class Structure3D:
     """A 3D molecular / crystal structure, kept as the **raw structure-file text** plus its format.
 
     Rendering is done client-side by 3Dmol.js, which has parsers for these formats — so we transport the
     original text verbatim rather than re-encoding atoms. ``fmt`` is a 3Dmol format string
-    (``xyz``/``mol``/``sdf``/``pdb``/``mol2``/``cif``).
+    (``xyz``/``mol``/``sdf``/``pdb``/``mol2``/``cif``). ``modes`` carries vibrational normal modes (from a
+    frequency calculation) for animation.
     """
 
     data: str
     fmt: str
     title: str | None = None
     n_atoms: int | None = None
+    modes: list[VibMode] = field(default_factory=list)
 
 
 @dataclass

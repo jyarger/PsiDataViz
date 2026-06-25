@@ -189,6 +189,10 @@ def dataset_json(dataset: Dataset, max_points: int = 4000) -> dict:
                 "format": dataset.structure.fmt,
                 "title": dataset.structure.title,
                 "n_atoms": dataset.structure.n_atoms,
+                "modes": [
+                    {"freq": m.freq, "ir": m.ir, "raman": m.raman, "disps": m.disps}
+                    for m in dataset.structure.modes
+                ],
             }
             if dataset.structure else None
         ),

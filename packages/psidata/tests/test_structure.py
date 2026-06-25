@@ -40,3 +40,18 @@ def test_structure_from_ccdata():
     lines = s.data.splitlines()
     assert lines[0] == "2"
     assert lines[2].startswith("O") and lines[3].startswith("H")
+
+
+def test_comp_log_modes_from_ccdata():
+    from psidata.readers.comp_log import _modes_from_ccdata
+
+    class FakeCC:
+        vibfreqs = [107.4, 1159.1]
+        vibdisps = [[[0.0, 0.0, -0.23], [0.0, 0.0, 0.10]], [[0.10, 0.0, 0.0], [0.0, 0.10, 0.0]]]
+        vibirs = [6.48, 298.99]
+        vibramans = [0.05, 1.2]
+
+    modes = _modes_from_ccdata(FakeCC())
+    assert len(modes) == 2
+    assert modes[1].freq == 1159.1 and modes[1].ir == 298.99
+    assert len(modes[0].disps) == 2 and modes[0].disps[0] == (0.0, 0.0, -0.23)
