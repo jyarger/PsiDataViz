@@ -69,7 +69,10 @@ class ComputedSpectrumReader(BaseReader):
 
 # common DFT methods / basis-set fragments seen in filenames
 _METHODS = ("WB97XD", "B3LYP", "CAM-B3LYP", "PBE0", "PBE", "M06-2X", "M062X", "HF", "MP2", "AM1", "PM3", "PM6")
-_BASIS_RE = re.compile(r"(6-?31\+?\+?[gG]?[\w()]*|6-?311\+?\+?[gG]?[\w()]*|def2-?\w+|cc-?pv\w+|sto-?3g)", re.I)
+_BASIS_RE = re.compile(
+    r"(6-?311\+?\+?[gG]?[a-zA-Z0-9()+]*|6-?31\+?\+?[gG]?[a-zA-Z0-9()+]*|def2-?[a-zA-Z]+|cc-?pv[a-zA-Z0-9]+|sto-?3g)",
+    re.I,
+)
 
 
 def _method_basis(stem: str) -> tuple[str | None, str | None]:

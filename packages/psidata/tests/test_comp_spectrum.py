@@ -39,3 +39,22 @@ def test_comp_reader_ignores_plain_text():
     from psidata.readers.comp_spectrum import ComputedSpectrumReader
     assert ComputedSpectrumReader().sniff(
         Candidate(filename="notes.txt", text="some experimental notes\n1 2\n3 4\n")) == 0.0
+
+
+def test_comp_log_sniff_and_broaden():
+    import numpy as np
+
+    from psidata.readers.comp_log import CompLogReader, _broaden
+
+    r = CompLogReader()
+    assert r.sniff(Candidate(filename="x.log", text="...\n Entering Gaussian System ...\n")) == 0.85
+    assert r.sniff(Candidate(filename="x.log", text="just a plain log\n")) == 0.0
+    grid, curve = _broaden(np.array([1000.0]), np.array([100.0]))
+    assert abs(float(grid[int(np.argmax(curve))]) - 1000.0) < 4.0
+
+
+def test_basis_regex_stops_at_underscore():
+    from psidata.readers.comp_spectrum import _method_basis
+
+    method, basis = _method_basis("Acetone_Opt_Freq_DFT_B3LYP_631pd_Gaussian16")
+    assert method == "B3LYP" and basis == "631pd"  # no trailing _Gaussian16
