@@ -40,7 +40,7 @@ library, and app share the **Psi** prefix and the **Ψ** mark.
   `.asc`), Raman, XRD (1D `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`, `.dat`/`.asc`; **2D detector images**
   `.edf`/`.img`/`.mccd`/`.tif`/`.h5` via FabIO, shown as heatmaps — and **azimuthally integrated to a 1D
   pattern** when the header carries a calibration), UV-Vis (`.txt` + Thorlabs `.csv`), **TGA** (TA
-  Instruments `.txt` → weight % vs temperature), and **computed
+  Instruments `.txt` → weight % vs temperature), **Brillouin** (multichannel-scaler `.asc`), and **computed
   IR/Raman** spectra from Gaussian/ORCA/Psi4 frequency jobs — `.log`/`.out` via **cclib** (Gaussian/ORCA/Q-Chem/NWChem/Psi4), or pre-extracted `_ir.txt`/`_raman.txt` — for overlay on
   experiment.
   *(More formats are the active focus; see the
