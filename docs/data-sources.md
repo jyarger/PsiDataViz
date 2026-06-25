@@ -3,6 +3,27 @@
 PsiDataViz reads data from **public** locations with **no account and no API key**. You give it a public
 link; it lists the files, groups them into datasets, and parses them on demand.
 
+## Where to host data for PsiDataViz
+
+> **TL;DR — use GitHub, Google Drive, Codeberg, or Box.** These let PsiDataViz list and read your files
+> from a plain public link, no credentials.
+>
+> **Avoid Dropbox and Proton Drive for data you want to open in PsiDataViz.** They have no workable
+> keyless path: a public **Dropbox** folder only offers a single whole-folder zip download (often
+> hundreds of MB) and gates per-file listing behind a private, CSRF-protected API; **Proton Drive** is
+> end-to-end encrypted, so even a password-less public link requires an SRP handshake plus client-side
+> OpenPGP decryption that a server can't do. You can still *store* data there, but PsiDataViz can't scan
+> it — so host (or mirror) anything you want others to open in the app on one of the four supported
+> services above. See [Planned](#planned) for the technical detail.
+
+| Host | Keyless scan | Good for |
+| --- | --- | --- |
+| **GitHub** / **Codeberg** | ✅ | versioned datasets, instrument- or sample-organized repos |
+| **Google Drive** | ✅ | quick "Anyone with the link" folder sharing |
+| **Box** | ✅ | shared folders (sample/compound layout) |
+| Dropbox | ❌ | *not scannable* — don't rely on it for PsiDataViz |
+| Proton Drive | ❌ | *not scannable* (E2E-encrypted) — don't rely on it for PsiDataViz |
+
 ## Supported today
 
 ### GitHub repositories

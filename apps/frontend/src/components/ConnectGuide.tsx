@@ -5,6 +5,8 @@ type Provider = {
   label: string;
   icon: string;
   ready: boolean;
+  status?: string; // overrides the badge text when not ready
+  note?: string; // tooltip, e.g. why a host isn't supported
   example?: string;
   steps?: { title: string; items: string[] };
 };
@@ -70,7 +72,14 @@ const PROVIDERS: Provider[] = [
       ],
     },
   },
-  { id: "dropbox", label: "Dropbox · Proton", icon: "DB", ready: false },
+  {
+    id: "dropbox",
+    label: "Dropbox · Proton",
+    icon: "DB",
+    ready: false,
+    status: "N/A",
+    note: "Not scannable from a public link — host your data on GitHub, Google Drive, Codeberg, or Box instead.",
+  },
 ];
 
 export function ConnectGuide({ onTryExample }: { onTryExample?: (url: string) => void }) {
@@ -91,10 +100,13 @@ export function ConnectGuide({ onTryExample }: { onTryExample?: (url: string) =>
             className={"provider" + (p.id === active ? " active" : "") + (p.ready ? "" : " soon")}
             onClick={() => p.ready && setActive(p.id)}
             disabled={!p.ready}
+            title={p.note}
           >
             <span className="provider-ic">{p.icon}</span>
             <span className="provider-name">{p.label}</span>
-            <span className={"provider-status" + (p.ready ? " ok" : "")}>{p.ready ? "Ready" : "Soon"}</span>
+            <span className={"provider-status" + (p.ready ? " ok" : "")}>
+              {p.ready ? "Ready" : (p.status ?? "Soon")}
+            </span>
           </button>
         ))}
       </div>

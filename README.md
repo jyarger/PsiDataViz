@@ -14,9 +14,13 @@
 ---
 
 Every lab accumulates a sprawl of instrument and computational data in dozens of formats, scattered
-across folders and cloud drives. **PsiDataViz** points at a *public* data location — a GitHub repo, a
-Google Drive folder, a Codeberg repo, a Box folder, (soon) Dropbox — scans it, makes sense of the formats,
+across folders and cloud drives. **PsiDataViz** points at a *public* data location — a **GitHub** or
+**Codeberg** repo, a **Google Drive** folder, or a **Box** folder — scans it, makes sense of the formats,
 and lets you filter, overlay, compare, and convert datasets in your browser.
+
+> Hosting data for PsiDataViz? Use **GitHub, Google Drive, Codeberg, or Box** (all scan from a plain
+> public link). **Dropbox and Proton Drive aren't scannable** — see
+> [docs/data-sources](docs/data-sources.md#where-to-host-data-for-psidataviz).
 
 The name: *sci* and *psi* are homophones, and **Ψ** is a science-coded Greek letter — so the project,
 library, and app share the **Psi** prefix and the **Ψ** mark.
