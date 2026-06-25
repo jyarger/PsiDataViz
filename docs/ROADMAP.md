@@ -18,10 +18,13 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
   reader **registry**; file → `DataRecord` grouping (one dataset, many format variants) with format
   comparison; conversion to CSDM/HDF5/Zarr/CSV/Parquet/Feather.
 - **Readers** — DSC, NMR (JCAMP-DX + ASDF, Nanalysis NMReady NTUPLES/FID→spectrum, `.tsv`, 2D `totxt`),
-  FTIR (`.dpt`, JCAMP, PerkinElmer `.asc`), Raman, XRD (1D — `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`,
-  `.dat`/`.asc`), UV-Vis (`.txt` / Thorlabs `.csv`).
-- **Sources** — keyless **GitHub** and **Google Drive** connectors behind one `make_source()` factory;
-  technique-folder normalization (e.g. `IR` → `FTIR`).
+  FTIR (`.dpt`, JCAMP, PerkinElmer `.asc`, **Bruker OPUS `.0`** via brukeropusreader), Raman, XRD (1D —
+  `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`, `.dat`/`.asc`; 2D detector images via FabIO), UV-Vis
+  (`.txt` / Thorlabs `.csv`), **Computational** (`.log`/`.out` via **cclib** → IR/Raman, plus GaussView
+  `_ir.txt`/`_raman.txt`).
+- **Sources** — keyless **GitHub**, **Google Drive**, and **Codeberg** connectors behind one
+  `make_source()` factory; technique-folder normalization (e.g. `IR` → `FTIR`) and, for sample-organized
+  sources, technique **inferred from the filename**.
 - **PsiDataViz app** — FastAPI backend + React/TS frontend, single-image deploy. **QUICK** tab
   (scan → filter → overlay → compare → convert) and **DATA** tab (multi-source workspace).
 - **Open source** — public repo, Apache-2.0, CI (lint + tests + build), issue/PR templates.
@@ -45,16 +48,21 @@ The core mission. PsiDataViz is only as useful as the formats it can read.
   also **azimuthally integrated to a 1D pattern I(2θ)** from the header geometry (distance/centre/pixel/λ),
   shown alongside the heatmap. **Computed IR/Raman spectra** (GaussView `_ir.txt`/`_raman.txt` exports from
   Gaussian/ORCA/Psi4 frequency jobs, with the DFT method from the filename) read on a wavenumber axis for
-  overlay on experiment. Still to do: parse `.log`/`.out` directly (sticks → broadened), structures
-  (`.xyz`/`.mol`/`.gjf`) + a 3D viewer, TGA, proper
-  pyFAI corrections + arbitrary `.poni` calibration, and more.
+  overlay on experiment. **Quantum-chemistry outputs** (`.log`/`.out`) are now parsed directly with
+  **cclib** (Gaussian/ORCA/Q-Chem/NWChem/Psi4): vibrational frequencies + IR/Raman intensities are
+  Lorentzian-broadened into spectra. Still to do: structures (`.xyz`/`.mol`/`.gjf`) + a 3D viewer
+  ([#5](https://github.com/jyarger/PsiDataViz/issues/5)), TGA, proper pyFAI corrections + arbitrary
+  `.poni` calibration, and more.
 
 ### 2 — Sample-centric catalog  ·  *the north star*
 
-- **More sources** — keyless **Box** and **Dropbox** public-folder connectors.
+- **More sources** — **Codeberg** (Gitea) is in; keyless **Box**, **Dropbox**, and **Proton Drive**
+  public-folder connectors next ([#4](https://github.com/jyarger/PsiDataViz/issues/4)).
 - **Organize by sample.** Some sources are organized by instrument (GitHub, Drive); others by chemical
-  (Box/Dropbox folders named `Aspirin`, `CBD`, …). Deep-parse headers/notes to determine the **sample**
-  and **instrument** for every dataset regardless of folder layout, then let users **browse by sample**.
+  (Codeberg/Box/Dropbox folders named `Aspirin`, `CBD`, …). A first step is in — when the top folder is a
+  compound (no instrument reader), the technique is **inferred from the filename**. Next: deep-parse
+  headers/notes to determine the **sample** *and* **instrument** for every dataset regardless of folder
+  layout, then let users **browse by sample**.
 - Introduces the project's first **database** + tags/labels for a searchable catalog.
 
 ### 3 — Advanced per-technique analysis & visualization
@@ -63,7 +71,13 @@ Lives in the **ANALYSIS / VISUALIZATION** tabs (QUICK stays simple):
 
 - **NMR** — NMRium-grade interactivity: referencing, peak picking, integration, phasing.
 - **DSC** — select heating/cooling scans; glass transition; peak integration (enthalpy).
-- **IR / Raman** — overlay experimental spectra with **computed** spectra (from Gaussian/ORCA/Psi4 …).
+- **IR / Raman** — overlay experimental spectra with **computed** spectra (from Gaussian/ORCA/Psi4 …,
+  now read via cclib).
+- **3D structure viewer** (**3Dmol.js**) — visualize the molecule / compound / crystal alongside its
+  data: render a computational job's optimized geometry, then animate vibrational **normal modes** from a
+  frequency calc so an IR/Raman peak maps to a molecular motion; cube files (MOs/density) and `.cif`
+  crystals to follow. Mol\* behind a thin abstraction for large biomolecules/crystallography. Tracked in
+  [#5](https://github.com/jyarger/PsiDataViz/issues/5).
 - Multiple datasets per plot, and series/grids of subplots.
 
 ### 4 — Documentation & feedback
