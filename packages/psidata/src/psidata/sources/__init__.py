@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .base import DataSource, FileRef
 from .catalog import Catalog, CatalogEntry, build_entry, canonical_technique, scan
+from .codeberg import CodebergError, CodebergSource, parse_codeberg_url
 from .gdrive import GoogleDriveError, GoogleDriveSource, parse_drive_url
 from .github import GitHubError, GitHubSource, RepoRef, parse_repo_url
 from .records import (
@@ -17,15 +18,19 @@ from .records import (
 
 
 def make_source(url: str, **kwargs) -> DataSource:
-    """Pick the right :class:`DataSource` for a URL — Google Drive folder vs. GitHub repo."""
+    """Pick the right :class:`DataSource` for a URL (Google Drive / Codeberg / GitHub)."""
     if "drive.google.com" in url:
         return GoogleDriveSource(url, **kwargs)
+    if "codeberg.org" in url:
+        return CodebergSource(url, **kwargs)
     return GitHubSource(url, **kwargs)
 
 
 __all__ = [
     "Catalog",
     "CatalogEntry",
+    "CodebergError",
+    "CodebergSource",
     "DataRecord",
     "DataSource",
     "FileRef",
@@ -41,6 +46,7 @@ __all__ = [
     "canonical_technique",
     "classify_format",
     "make_source",
+    "parse_codeberg_url",
     "parse_drive_url",
     "parse_repo_url",
     "record_key",

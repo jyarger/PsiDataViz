@@ -25,7 +25,7 @@ automatically.
 
 ## Planned
 
-- **Codeberg** (Gitea API — closest to GitHub), **Dropbox**, **Box**, and **Proton Drive** public shares
+- **Dropbox**, **Box**, and **Proton Drive** public shares (Codeberg is supported)
   (tracked in [#4](https://github.com/jyarger/PsiDataViz/issues/4)).
 - Provider buttons in the connect-helper; generalist research repositories (Zenodo, Figshare, Dryad,
   OSF, Mendeley Data); drag-and-drop and private/authenticated sources.
@@ -44,7 +44,7 @@ The Yarger Lab publishes the same example data in several public locations:
 | Proton Drive | technique | planned |
 | Dropbox | sample / compound | planned |
 | Box | sample / compound | planned |
-| [Codeberg `jyarger/PsiData`](https://codeberg.org/jyarger/PsiData) | sample / compound | planned |
+| [Codeberg `jyarger/PsiData`](https://codeberg.org/jyarger/PsiData) | sample / compound | ✅ supported |
 
 The *technique*-organized sources have top-level folders per instrument (`DSC/`, `NMR/`, …); the
 *sample*-organized ones have a folder per compound (`Aspirin/`, `CBD/`, …) — see

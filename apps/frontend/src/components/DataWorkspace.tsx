@@ -13,6 +13,7 @@ const PRESETS = [
     icon: "GD",
     label: "Google Drive — Psi_Data",
   },
+  { url: "https://codeberg.org/jyarger/PsiData", icon: "CB", label: "Codeberg — PsiData (by sample)" },
 ];
 
 function labelFor(url: string, source: string): { label: string; icon: string } {

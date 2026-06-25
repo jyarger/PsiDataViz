@@ -132,8 +132,33 @@ def _technique_has_reader(technique: str) -> bool:
     )
 
 
+# Keyword -> technique, for sources organized by sample/compound (the top folder is the molecule,
+# not the instrument), where the technique is encoded in the filename instead.
+_TECHNIQUE_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("FTIR", ("ftir", "_ir_", "_ir.", "atrir", "atr-ir", "infrared", "opus")),
+    ("NMR", ("nmr", "bruker400", "bruker500", "spinsolve", "nmready")),
+    ("Raman", ("raman",)),  # bare wavelengths (532nm…) are ambiguous (also Brillouin) — keep explicit
+    ("DSC", ("dsc", "mdsc", "calorimetry", "trios")),
+    ("XRD", ("xrd", "pxrd", "saxs", "waxs", "giwaxs", "diffract")),
+    ("UV-Vis", ("uvvis", "uv-vis", "uv_vis", "uv_visible")),
+    ("TGA", ("tga", "thermogravimetric")),
+)
+
+
+def infer_technique(filename: str) -> str | None:
+    """Guess the technique from a filename's keywords (for sample-organized sources)."""
+    low = filename.lower()
+    for technique, keywords in _TECHNIQUE_KEYWORDS:
+        if any(kw in low for kw in keywords):
+            return technique
+    return None
+
+
 def build_entry(ref: FileRef) -> CatalogEntry:
     technique = canonical_technique(ref.top_dir)
+    if not _technique_has_reader(technique):
+        # sample-organized source (the top folder is a compound): infer technique from the filename
+        technique = infer_technique(ref.name) or technique
     reader = _match_reader(technique, ref.ext)
     supported = reader is not None
     reader_name = reader.name if reader else None

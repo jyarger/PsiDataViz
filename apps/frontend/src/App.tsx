@@ -66,6 +66,7 @@ const PRESETS: { label: string; icon: string; url: string }[] = [
     icon: "▲",
     url: "https://drive.google.com/drive/folders/16VQhcRbCHkzhH2cq8T5DwyhTUBj2BrO4",
   },
+  { label: "Codeberg — PsiData (by sample)", icon: "CB", url: "https://codeberg.org/jyarger/PsiData" },
 ];
 
 function Quick({ onNav }: { onNav: (v: View) => void }) {

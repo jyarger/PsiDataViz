@@ -40,8 +40,23 @@ const PROVIDERS: Provider[] = [
       ],
     },
   },
+  {
+    id: "codeberg",
+    label: "Codeberg",
+    icon: "CB",
+    ready: true,
+    example: "https://codeberg.org/jyarger/PsiData",
+    steps: {
+      title: "Share a Codeberg repository",
+      items: [
+        "Make the repository public",
+        "Copy its URL (e.g. codeberg.org/you/repo)",
+        "Paste it in the box above, then Scan",
+      ],
+    },
+  },
   { id: "dropbox", label: "Dropbox", icon: "DB", ready: false },
-  { id: "repos", label: "Zenodo · OSF", icon: "ZO", ready: false },
+  { id: "box", label: "Box · Proton", icon: "BX", ready: false },
 ];
 
 export function ConnectGuide({ onTryExample }: { onTryExample?: (url: string) => void }) {
