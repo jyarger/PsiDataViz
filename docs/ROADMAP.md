@@ -60,8 +60,9 @@ The core mission. PsiDataViz is only as useful as the formats it can read.
   SpinSolve) are assembled, otherwise the **most-confidently-parseable member is chosen via the full
   reader registry** (so an OPUS-`.0`-only or structure-only zip works), and **nested zips** are unwrapped.
   Zipping each dataset (all its formats together) is the recommended upload pattern — see
-  [data-sources](data-sources.md#packaging-datasets-as-zip-recommended). *Next:* expand a zip that holds
-  **several distinct datasets** into separate records (treat the zip as a mini-source).
+  [data-sources](data-sources.md#packaging-datasets-as-zip-recommended). A zip that holds **several
+  distinct datasets** is expanded too: the inner datasets are listed and the UI lets you switch between
+  them (e.g. a zip of nine OPUS measurements → nine selectable spectra).
 - **New techniques** — XRD 1D (ASCII + PANalytical `.xrdml`/`.udf`), **2D XRD/SAXS detector images**
   (`.edf`, `.img` ADSC, `.mccd` MarCCD, `.tif`/`.raw.tif` via **FabIO**, NeXus `.h5` via h5py — shown as
   heatmaps), UV-Vis ASCII, and zipped Bruker/SpinSolve NMR readers are in. Calibrated detector frames are
