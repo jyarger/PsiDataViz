@@ -76,3 +76,24 @@ PsiDataViz handles both — and aims to unify them:
 The [roadmap](ROADMAP.md)'s sample-centric phase deep-parses headers to recover the **sample** and
 **instrument** for every dataset regardless of folder layout — so you can browse a molecule's complete
 data picture across many sources.
+
+## Packaging datasets as `.zip` (recommended)
+
+When uploading example data, **zipping each dataset is the preferred approach** — it compresses to save
+storage and keeps every format of a measurement together in one tidy file. PsiDataViz treats a `.zip` as a
+single dataset and reads it on demand.
+
+**Best practice — one dataset per zip, multiple formats inside:**
+
+- Put **all the formats of the *same* measurement** in one zip — raw vendor file + ASCII export +
+  spreadsheet, e.g. `2025_10_30_Aspirin_MDSC.zip` containing `…MDSC.csv`, `…MDSC.tri`, `…MDSC.xls`.
+- **Name the zip like the dataset** (`YYYY_MM_DD_Sample_Technique.zip`); the date/sample/technique are
+  recovered from the name.
+- The app picks the **most-confidently-parseable** format inside automatically — so a zip holding only a
+  Bruker **OPUS `.0`**, a `.dpt`, or a `.csv` all just work — and it understands assembled vendor exports
+  (a full **Bruker TopSpin** directory, a **Magritek SpinSolve** export).
+- **Nested zips** (a zip inside a zip) are unwrapped automatically (up to a few levels).
+
+**Putting several *different* datasets in one zip** also loads (the app currently surfaces the best one);
+expanding a multi-dataset zip into separate records is on the [roadmap](ROADMAP.md). For now, prefer
+**one dataset per zip** for the cleanest catalog.

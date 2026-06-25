@@ -26,10 +26,10 @@ from .model import Axis, Dataset, Signal, SourceInfo
 from .readers._tabular import parse_numeric_table
 from .readers.base import Candidate
 from .readers.nmr_jcamp import NMRMetadata
-from .registry import read
+from .registry import DETECT_THRESHOLD, read, score_readers
 
-_TEXT_DATA_EXTS = {".txt", ".csv", ".dx", ".jdx", ".dpt", ".asc", ".dat", ".tsv"}
 _BRUKER_MARKERS = {"acqus", "acqu", "fid", "ser", "pulseprogram", "procs"}
+_MAX_ZIP_DEPTH = 3  # guard against deeply-nested or self-referential archives
 
 
 class ArchiveError(Exception):
@@ -48,8 +48,16 @@ def _find(members: list[str], suffix: str) -> str | None:
     return next((m for m in members if m.endswith(suffix)), None)
 
 
-def read_zip(filename: str, content: bytes, *, technique_hint: str | None = None) -> Dataset:
-    """Parse the dataset contained in a zip archive's bytes into the universal model."""
+def read_zip(filename: str, content: bytes, *, technique_hint: str | None = None,
+             _depth: int = 0) -> Dataset:
+    """Parse the dataset contained in a zip archive's bytes into the universal model.
+
+    A common upload pattern is to zip together *several formats of the same dataset* (and sometimes to
+    nest a zip inside a zip). We first handle the assembled multi-file vendor exports (SpinSolve, Bruker),
+    then pick the **most-confidently-parseable** member using the full reader registry — so a zip holding
+    only a Bruker OPUS ``.0`` or a structure file parses just like one holding a ``.csv`` — and recurse
+    into a nested ``.zip`` when that is the best (or only) candidate.
+    """
     try:
         zf = zipfile.ZipFile(io.BytesIO(content))
     except zipfile.BadZipFile as exc:
@@ -71,12 +79,45 @@ def read_zip(filename: str, content: bytes, *, technique_hint: str | None = None
             f"{filename}: Bruker archive without processed data (expected pdata/1/1r + procs)."
         )
 
-    data_members = [m for m in members if os.path.splitext(m)[1].lower() in _TEXT_DATA_EXTS]
-    if not data_members:
+    pick = _best_member(zf, members, technique_hint)
+    if pick is None:
         raise ArchiveError(f"{filename}: no recognized data file inside (members: {members[:5]})")
-    member = max(data_members, key=lambda m: zf.getinfo(m).file_size)
-    return read(Candidate(filename=os.path.basename(member), content=zf.read(member),
+    kind, member = pick
+    data = zf.read(member)
+    if kind == "zip":
+        if _depth >= _MAX_ZIP_DEPTH:
+            raise ArchiveError(f"{filename}: nested archives too deep (> {_MAX_ZIP_DEPTH})")
+        return read_zip(member, data, technique_hint=technique_hint, _depth=_depth + 1)
+    return read(Candidate(filename=os.path.basename(member), content=data,
                           uri=filename, technique_hint=technique_hint))
+
+
+def _best_member(zf: zipfile.ZipFile, members: list[str],
+                 technique_hint: str | None) -> tuple[str, str] | None:
+    """Choose the member to parse: the one the registry is most confident about (ties → largest), or a
+    nested zip if no member is directly parseable. Returns ``(kind, member)`` with kind ``"file"``/``"zip"``."""
+    best: tuple[float, int, str] | None = None  # (score, size, member)
+    nested = [m for m in members if m.lower().endswith(".zip")]
+    for m in members:
+        if m.lower().endswith(".zip"):
+            continue  # considered only as a fallback, via recursion
+        try:
+            content = zf.read(m)
+        except (KeyError, RuntimeError):
+            continue
+        cand = Candidate(filename=os.path.basename(m), content=content, technique_hint=technique_hint)
+        scored = score_readers(cand)
+        score = scored[0][1] if scored else 0.0
+        key = (score, zf.getinfo(m).file_size, m)
+        if best is None or key > best:
+            best = key
+    if best and best[0] >= DETECT_THRESHOLD:
+        return ("file", best[2])
+    if nested:  # nothing parses directly, but there's an inner archive — recurse into the largest
+        return ("zip", max(nested, key=lambda m: zf.getinfo(m).file_size))
+    if best and best[0] > 0:  # a member matched weakly; let read() try and raise a clear error
+        return ("file", best[2])
+    return None  # nothing recognizable
 
 
 # --- SpinSolve ---------------------------------------------------------------------------------

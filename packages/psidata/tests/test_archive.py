@@ -45,6 +45,21 @@ def test_empty_or_unknown_archive_raises():
         read_zip("imgs.zip", _zip({"a.png": b"\x89PNG"}))
 
 
+def test_read_nested_zip(dsc_txt):
+    # a zip whose only useful content is another zip (a dataset bundled inside a bundle)
+    inner = _zip({"2023_06_14_Indium_wire_std.txt": dsc_txt})
+    outer = _zip({"bundle/inner.zip": inner, "bundle/notes.md": "# readme"})
+    ds = read_zip("bundle.zip", outer)
+    assert ds.technique == "DSC" and len(ds.signals) == 2
+
+
+def test_zip_picks_parseable_member_among_junk(dsc_txt):
+    # the registry (not a hard-coded extension list) chooses the data file amid previews/notes
+    content = _zip({"preview.png": b"\x89PNG\r\n", "readme.md": "# notes", "run.txt": dsc_txt})
+    ds = read_zip("mixed.zip", content)
+    assert ds.technique == "DSC"
+
+
 def test_read_spinsolve_zip():
     content = _zip({
         "NMR_x/spectrum_processed.csv": "Frequency(ppm),Intensity\n10.0,1.0\n9.0,2.0\n8.0,1.5\n",
