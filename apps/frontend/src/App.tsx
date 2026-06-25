@@ -10,6 +10,7 @@ import { Header, type View } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { SpectrumPlot } from "./components/SpectrumPlot";
 import { Heatmap } from "./components/Heatmap";
+import { MoleculeViewer } from "./components/MoleculeViewer";
 import { CompareView } from "./components/CompareView";
 import { ExportMenu } from "./components/ExportMenu";
 import { ConnectGuide } from "./components/ConnectGuide";
@@ -155,6 +156,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
   const selectedDatasets = selected.map((k) => datasets[k]).filter(Boolean);
   const signalDatasets = selectedDatasets.filter((d) => d.signals?.length > 0);
   const imageDatasets = selectedDatasets.filter((d) => d.images?.length > 0);
+  const structureDatasets = selectedDatasets.filter((d) => d.structure);
   const soleRecord = selected.length === 1 ? records.find((r) => r.key === selected[0]) : null;
   const canCompare = !!soleRecord && soleRecord.formats.length > 1;
   const needle = filter.trim().toLowerCase();
@@ -346,6 +348,13 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
           )}
           {imageDatasets.map((ds) => (
             <Heatmap key={ds.filename} dataset={ds} />
+          ))}
+          {structureDatasets.map((ds) => (
+            <MoleculeViewer
+              key={`mol-${ds.filename}`}
+              structure={ds.structure!}
+              title={(ds.metadata.sample_name as string) || ds.filename}
+            />
           ))}
           {compare && (
             <div className="cmp-panel">

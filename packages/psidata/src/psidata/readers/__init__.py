@@ -17,6 +17,7 @@ from . import (
     nmr_text,  # noqa: F401  (import triggers registration)
     nmr_totxt,  # noqa: F401  (import triggers registration)
     raman_text,  # noqa: F401  (import triggers registration)
+    structure_file,  # noqa: F401  (import triggers registration)
     uvvis_text,  # noqa: F401  (import triggers registration)
     xrd_image,  # noqa: F401  (import triggers registration)
     xrd_panalytical,  # noqa: F401  (import triggers registration)
@@ -24,5 +25,5 @@ from . import (
 )
 
 __all__ = ["comp_log", "comp_spectrum", "dsc_trios", "ftir_jcamp", "ftir_opus", "ftir_pe_asc",
-           "ftir_text", "nmr_jcamp", "nmr_text", "nmr_totxt", "raman_text", "uvvis_text", "xrd_image",
-           "xrd_panalytical", "xrd_text"]
+           "ftir_text", "nmr_jcamp", "nmr_text", "nmr_totxt", "raman_text", "structure_file",
+           "uvvis_text", "xrd_image", "xrd_panalytical", "xrd_text"]

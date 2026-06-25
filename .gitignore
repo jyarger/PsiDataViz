@@ -29,3 +29,6 @@ apps/frontend/dist/
 # Env / secrets
 .env
 .env.*
+
+# Claude Code local dev artifacts (preview launch config)
+.claude/

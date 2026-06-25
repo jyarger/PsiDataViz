@@ -9,7 +9,7 @@ from .archive import ArchiveError, read_zip
 from .compare import Comparison, compare_datasets, compare_record_formats
 from .convert import convert
 from .filename import ParsedName, parse_filename
-from .model import Axis, Dataset, Image2D, Metadata, Signal, SourceInfo
+from .model import Axis, Dataset, Image2D, Metadata, Signal, SourceInfo, Structure3D
 from .readers.base import BaseReader, Candidate
 from .registry import (
     UnknownFormatError,
@@ -34,6 +34,7 @@ __all__ = [
     "ParsedName",
     "Signal",
     "SourceInfo",
+    "Structure3D",
     "UnknownFormatError",
     "compare_datasets",
     "compare_record_formats",

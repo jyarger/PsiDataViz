@@ -15,7 +15,7 @@ import tempfile
 import numpy as np
 import pandas as pd
 
-from ..model import Axis, Dataset, Signal, SourceInfo
+from ..model import Axis, Dataset, Signal, SourceInfo, Structure3D
 from ..registry import register_reader
 from .base import BaseReader, Candidate
 from .comp_spectrum import ComputedMetadata, _method_basis
@@ -76,7 +76,25 @@ class CompLogReader(BaseReader):
                 spectrum_type=" + ".join(s.segment for s in signals), npoints=int(freqs.size),
             ),
             signals=signals,
+            structure=_structure_from_ccdata(data, candidate.stem),
         )
+
+
+def _structure_from_ccdata(data, title: str) -> Structure3D | None:
+    """Build an XYZ structure from cclib's final optimized geometry, for the 3D viewer."""
+    coords = getattr(data, "atomcoords", None) if data is not None else None
+    nums = getattr(data, "atomnos", None) if data is not None else None
+    if coords is None or nums is None or len(coords) == 0:
+        return None
+    from cclib.parser.utils import PeriodicTable
+
+    table = PeriodicTable()
+    geom = np.asarray(coords[-1], dtype=float)  # the last geometry is the optimized one (Å)
+    nums = np.asarray(nums, dtype=int)
+    lines = [str(len(nums)), title]
+    for z, (x, y, zc) in zip(nums, geom, strict=False):
+        lines.append(f"{table.element[int(z)]:2s} {x:14.6f} {y:14.6f} {zc:14.6f}")
+    return Structure3D(data="\n".join(lines) + "\n", fmt="xyz", title=title, n_atoms=int(nums.size))
 
 
 def _spectrum(label: str, freqs: np.ndarray, intensities: np.ndarray, y_label: str) -> Signal:

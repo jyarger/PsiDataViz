@@ -73,11 +73,12 @@ Lives in the **ANALYSIS / VISUALIZATION** tabs (QUICK stays simple):
 - **DSC** — select heating/cooling scans; glass transition; peak integration (enthalpy).
 - **IR / Raman** — overlay experimental spectra with **computed** spectra (from Gaussian/ORCA/Psi4 …,
   now read via cclib).
-- **3D structure viewer** (**3Dmol.js**) — visualize the molecule / compound / crystal alongside its
-  data: render a computational job's optimized geometry, then animate vibrational **normal modes** from a
-  frequency calc so an IR/Raman peak maps to a molecular motion; cube files (MOs/density) and `.cif`
-  crystals to follow. Mol\* behind a thin abstraction for large biomolecules/crystallography. Tracked in
-  [#5](https://github.com/jyarger/PsiDataViz/issues/5).
+- **3D structure viewer** (**3Dmol.js**) ✅ *phase 1* — molecular/crystal structure files
+  (`.xyz`/`.mol`/`.sdf`/`.pdb`/`.cif`) and a computational job's **optimized geometry** (from cclib) render
+  in an interactive viewer beside the data, so a Gaussian/ORCA `.log` shows its IR/Raman spectra *and* its
+  molecule. *Next:* animate vibrational **normal modes** (cclib `vibdisps`) so an IR/Raman peak maps to a
+  molecular motion; cube files (MOs/density) and crystal unit cells; Mol\* behind a thin abstraction for
+  large biomolecules/crystallography. Tracked in [#5](https://github.com/jyarger/PsiDataViz/issues/5).
 - Multiple datasets per plot, and series/grids of subplots.
 
 ### 4 — Documentation & feedback

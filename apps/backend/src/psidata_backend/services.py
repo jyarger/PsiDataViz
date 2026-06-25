@@ -182,6 +182,15 @@ def dataset_json(dataset: Dataset, max_points: int = 4000) -> dict:
             for sig in dataset.signals
         ],
         "images": [_image_json(im) for im in dataset.images],
+        "structure": (
+            {
+                "data": dataset.structure.data,
+                "format": dataset.structure.fmt,
+                "title": dataset.structure.title,
+                "n_atoms": dataset.structure.n_atoms,
+            }
+            if dataset.structure else None
+        ),
     }
 
 

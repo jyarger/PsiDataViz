@@ -98,14 +98,30 @@ class Image2D:
 
 
 @dataclass
+class Structure3D:
+    """A 3D molecular / crystal structure, kept as the **raw structure-file text** plus its format.
+
+    Rendering is done client-side by 3Dmol.js, which has parsers for these formats — so we transport the
+    original text verbatim rather than re-encoding atoms. ``fmt`` is a 3Dmol format string
+    (``xyz``/``mol``/``sdf``/``pdb``/``mol2``/``cif``).
+    """
+
+    data: str
+    fmt: str
+    title: str | None = None
+    n_atoms: int | None = None
+
+
+@dataclass
 class Dataset:
-    """A fully parsed measurement: provenance + metadata + 1D signals and/or 2D images."""
+    """A fully parsed measurement: provenance + metadata + 1D signals, 2D images, and/or a 3D structure."""
 
     technique: str
     source: SourceInfo
     metadata: Metadata
     signals: list[Signal] = field(default_factory=list)
     images: list[Image2D] = field(default_factory=list)
+    structure: Structure3D | None = None
 
     def to_tidy_df(self) -> pd.DataFrame:
         """Long-form concatenation of every signal, tagged with signal/segment columns."""
@@ -145,4 +161,8 @@ class Dataset:
                  "z": im.z.title}
                 for im in self.images
             ],
+            "structure": (
+                {"format": self.structure.fmt, "n_atoms": self.structure.n_atoms}
+                if self.structure else None
+            ),
         }

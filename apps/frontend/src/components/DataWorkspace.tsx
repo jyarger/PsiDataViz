@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api, type CatalogResult, type DatasetData, type RecordRow } from "../api";
 import { SpectrumPlot } from "./SpectrumPlot";
 import { Heatmap } from "./Heatmap";
+import { MoleculeViewer } from "./MoleculeViewer";
 
 type Source = { url: string; label: string; icon: string; catalog: CatalogResult };
 type Row = RecordRow & { source: string; ckey: string };
@@ -275,6 +276,15 @@ export function DataWorkspace() {
           {imageDatasets.map((ds) => (
             <Heatmap key={ds.filename} dataset={ds} />
           ))}
+          {selectedDatasets
+            .filter((d) => d.structure)
+            .map((ds) => (
+              <MoleculeViewer
+                key={`mol-${ds.filename}`}
+                structure={ds.structure!}
+                title={(ds.metadata.sample_name as string) || ds.filename}
+              />
+            ))}
         </div>
       )}
     </>

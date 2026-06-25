@@ -62,6 +62,12 @@ export interface ImageData {
   shape: [number, number];
   values: number[][];
 }
+export interface StructureData {
+  data: string;
+  format: string;
+  title: string | null;
+  n_atoms: number | null;
+}
 export interface DatasetData {
   technique: string;
   filename: string;
@@ -69,6 +75,7 @@ export interface DatasetData {
   metadata: Record<string, unknown>;
   signals: SignalData[];
   images: ImageData[];
+  structure: StructureData | null;
 }
 
 export interface FormatComparison {
