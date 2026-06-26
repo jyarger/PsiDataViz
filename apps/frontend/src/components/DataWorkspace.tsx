@@ -5,6 +5,7 @@ import { Heatmap } from "./Heatmap";
 import { MoleculeViewer } from "./MoleculeViewer";
 import { WaveformPlayer } from "./WaveformPlayer";
 import { DropZone } from "./DropZone";
+import { MetadataPanel, type EditableMetadata } from "./MetadataPanel";
 
 type Source = { url: string; label: string; icon: string; catalog: CatalogResult };
 type Row = RecordRow & { source: string; ckey: string };
@@ -42,6 +43,7 @@ export function DataWorkspace() {
   const [datasets, setDatasets] = useState<Record<string, DatasetData>>({});
   const [normalize, setNormalize] = useState(false);
   const [peak, setPeak] = useState<{ freq: number; label: string } | null>(null);
+  const [metaEdits, setMetaEdits] = useState<Record<string, EditableMetadata>>({});
 
   async function addSource(url: string) {
     const u = url.trim();
@@ -310,6 +312,17 @@ export function DataWorkspace() {
           {audioDatasets.map((ds) => (
             <WaveformPlayer key={`wav-${ds.filename}`} dataset={ds} />
           ))}
+          {selected
+            .map((k) => [k, datasets[k]] as const)
+            .filter(([, ds]) => ds)
+            .map(([k, ds]) => (
+              <MetadataPanel
+                key={`md-${k}`}
+                dataset={ds}
+                value={metaEdits[k]}
+                onChange={(m) => setMetaEdits((prev) => ({ ...prev, [k]: m }))}
+              />
+            ))}
         </div>
       )}
     </>

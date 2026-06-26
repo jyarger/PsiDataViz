@@ -57,7 +57,8 @@ library, and app share the **Psi** prefix and the **Ψ** mark.
   [roadmap](docs/ROADMAP.md).)*
 - **QUICK tab** — one source: scan → filter by technique → overlay → compare formats → convert/download.
 - **DATA tab** — a multi-source *workspace*: add several public sources, then filter and overlay datasets
-  across all of them.
+  across all of them, with an editable **metadata panel** (sample / instrument / conditions + tags,
+  pre-filled from the parse) under each loaded dataset.
 - **3D structure viewer** — molecular & crystal structures (`.xyz`/`.mol`/`.sdf`/`.pdb`/`.cif`, plus
   Gaussian/ORCA input geometries `.gjf`/`.inp`) and a
   computational job's **optimized geometry** render in an interactive **3Dmol.js** viewer beside the data,
