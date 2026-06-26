@@ -12,7 +12,7 @@ import numpy as np
 from psidata import Candidate, Dataset, archive_datasets, is_archive, read, read_archive
 from psidata.readers.raman_text import parse_spec_sidecar
 from psidata.sources import Catalog, FileRef, make_source
-from psidata.sources.catalog import _technique_has_reader, build_entry
+from psidata.sources.catalog import _technique_has_reader, build_entry, detect_organization
 from psidata.sources.records import IMAGE
 
 _listing_cache: dict[str, dict] = {}  # url -> {"label", "files"} (process-lifetime cache)
@@ -140,6 +140,7 @@ def scan_summary(catalog: Catalog) -> dict:
         "n_supported_records": summary["n_supported_records"],
         "techniques": techniques,
         "compounds": compound_list,
+        "organization": detect_organization(catalog.entries),
         "diagnostics": _diagnostics(groups, summary),
     }
 

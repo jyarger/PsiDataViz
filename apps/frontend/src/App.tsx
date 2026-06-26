@@ -3,6 +3,7 @@ import {
   api,
   type CompareResult,
   type DatasetData,
+  type Organization,
   type RecordRow,
   type ScanResult,
 } from "./api";
@@ -75,13 +76,54 @@ const PRESETS: { label: string; provider: string; url: string }[] = [
     provider: "gdrive",
     url: "https://drive.google.com/drive/folders/16VQhcRbCHkzhH2cq8T5DwyhTUBj2BrO4",
   },
-  { label: "Codeberg — PsiData (by sample)", provider: "codeberg", url: "https://codeberg.org/jyarger/PsiData" },
-  { label: "Box — PsiData (by sample)", provider: "box", url: "https://app.box.com/s/yigbg0fd5xj5n1hkxf8rcsemrkz7qgsx" },
+  { label: "Codeberg — PsiData", provider: "codeberg", url: "https://codeberg.org/jyarger/PsiData" },
+  { label: "Box — PsiData", provider: "box", url: "https://app.box.com/s/yigbg0fd5xj5n1hkxf8rcsemrkz7qgsx" },
 ];
 
 // A record's `key` (base name) repeats across techniques and sub-folders, so identify a selected row
 // by its source-unique `uid` (folder + base name).
 const rid = (r: RecordRow) => r.uid;
+
+const ORG_INFO: Record<Organization["kind"], { icon: string; title: string; detail: string; warn?: boolean }> = {
+  technique: { icon: "📂", title: "Organized by technique",
+    detail: "top folders are instruments/techniques (Raman, NMR, XRD …)." },
+  sample: { icon: "🧪", title: "Organized by sample / compound",
+    detail: "one folder per compound; the technique is read from each filename." },
+  mixed: { icon: "🧩", title: "Mixed organization", warn: true,
+    detail: "some data is in technique folders, some in sample folders." },
+  unstructured: { icon: "⚠️", title: "Looks unstructured", warn: true,
+    detail: "files aren't in recognizable technique or sample folders." },
+  empty: { icon: "—", title: "Nothing recognized", warn: true, detail: "no data files matched." },
+};
+
+// First-pass report of how the source is laid out, with a prompt when PsiDataViz is unsure.
+function OrgBanner({ org }: { org: Organization }) {
+  const m = ORG_INFO[org.kind] ?? ORG_INFO.mixed;
+  const uncertain =
+    org.kind === "unstructured" || org.kind === "mixed" || org.unstructured > 0.15 * (org.total || 1);
+  return (
+    <div className={"org-banner" + (m.warn ? " warn" : "")}>
+      <span className="org-icon">{m.icon}</span>
+      <span>
+        <b>{m.title}</b> — {m.detail}{" "}
+        <span className="muted">
+          ({org.by_technique} by technique · {org.by_sample} by sample
+          {org.unstructured ? ` · ${org.unstructured} unplaced` : ""})
+        </span>
+        {uncertain && (
+          <div className="org-uncertain">
+            PsiDataViz couldn't confidently place {org.unstructured || "some"} dataset
+            {org.unstructured === 1 ? "" : "s"} — focus the scan with a keyword filter above, or{" "}
+            <a className="link" href="mailto:jyarger@proton.me?subject=PsiDataViz%20data%20structure">
+              tell us how your data is organized
+            </a>
+            .
+          </div>
+        )}
+      </span>
+    </div>
+  );
+}
 
 function Quick({ onNav }: { onNav: (v: View) => void }) {
   const [repo, setRepo] = useState(DEFAULT_REPO);
@@ -300,6 +342,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
               files sharing a base name across formats count as one dataset.
             </span>
           </p>
+          <OrgBanner org={scan.organization} />
           <div className="dim-section">
             <div className="dim-head">
               <span className="bra">⟨Data|</span><span className="psi">Ψ</span>

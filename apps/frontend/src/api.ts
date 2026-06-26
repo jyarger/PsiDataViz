@@ -30,6 +30,13 @@ export interface Compound {
   compound: string;
   n_supported: number;
 }
+export interface Organization {
+  kind: "technique" | "sample" | "mixed" | "unstructured" | "empty";
+  by_technique: number;
+  by_sample: number;
+  unstructured: number;
+  total: number;
+}
 export interface ScanResult {
   source: string;
   n_files: number;
@@ -38,6 +45,7 @@ export interface ScanResult {
   n_supported_records: number;
   techniques: Technique[];
   compounds: Compound[];
+  organization: Organization;
   diagnostics: Diagnostics;
 }
 export interface RecordRow {

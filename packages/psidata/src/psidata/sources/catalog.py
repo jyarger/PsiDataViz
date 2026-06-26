@@ -215,6 +215,48 @@ def compound_for(directory: str, key: str) -> str:
     return guess_compound(key)
 
 
+# files that aren't datasets (don't let repo boilerplate skew the organization detection)
+_NON_DATA = re.compile(r"^(readme|license|contributing|changelog|\.|index)", re.IGNORECASE)
+
+
+def detect_organization(entries: list[CatalogEntry]) -> dict:
+    """A first-pass read of how a source is laid out, so the user doesn't have to declare it:
+
+    * **technique** — top folders are instruments/techniques (``Raman/``, ``NMR/`` …);
+    * **sample** — top folders are compounds, with the technique encoded in the filename;
+    * **unstructured** — files at the root or in folders we can't recognise as either.
+
+    Returns the dominant ``kind`` plus the per-bucket counts (so the UI can report what it found and flag
+    how many datasets it couldn't place)."""
+    by_technique = by_sample = unstructured = 0
+    for e in entries:
+        if _NON_DATA.match(e.file.name):
+            continue
+        top = e.file.top_dir
+        if not top:
+            unstructured += 1
+        elif _technique_has_reader(canonical_technique(top)):
+            by_technique += 1
+        elif infer_technique(e.file.name) or guess_compound(top):
+            by_sample += 1
+        else:
+            unstructured += 1
+
+    total = by_technique + by_sample + unstructured
+    if total == 0:
+        kind = "empty"
+    elif by_technique >= 0.6 * total:
+        kind = "technique"
+    elif by_sample >= 0.6 * total:
+        kind = "sample"
+    elif unstructured >= 0.5 * total:
+        kind = "unstructured"
+    else:
+        kind = "mixed"
+    return {"kind": kind, "by_technique": by_technique, "by_sample": by_sample,
+            "unstructured": unstructured, "total": total}
+
+
 _SIMS_RE = re.compile(r"(?:^|[_\-. ])sims(?:$|[_\-. ])", re.IGNORECASE)
 
 

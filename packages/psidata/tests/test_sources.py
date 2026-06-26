@@ -138,3 +138,18 @@ def test_compound_for_sample_vs_instrument_organized():
     assert compound_for("Raman", "Aspirin_532nm") == "Aspirin"
     # sample-organized (top folder is the compound, no reader for it) -> the folder
     assert compound_for("Cannabidiol/sub", "x_1H_400MHz") == "Cannabidiol"
+
+
+def test_detect_organization_classifies_layout():
+    from psidata.sources.base import FileRef
+    from psidata.sources.catalog import build_entry, detect_organization
+
+    def ents(paths):
+        return [build_entry(FileRef(path=p, size=1)) for p in paths]
+
+    tech = ents(["Raman/a.csv", "NMR/b.jdx", "XRD/c.xy", "README.md"])  # README ignored
+    assert detect_organization(tech)["kind"] == "technique"
+    samp = ents(["Aspirin/x_raman.csv", "Aspirin/y_1H_nmr.jdx", "CBD/z_raman.csv"])
+    assert detect_organization(samp)["kind"] == "sample"
+    un = ents(["a.bin", "b.dat", "c.qqq"])  # root files, no technique/compound
+    assert detect_organization(un)["kind"] == "unstructured"
