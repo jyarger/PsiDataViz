@@ -53,9 +53,12 @@ function Coming({ view }: { view: View }) {
   return (
     <div className="card">
       <p className="coming">
-        <b>{view}</b> — advanced {view.toLowerCase()} features are coming soon.
+        <span className="psi">Ψ</span>
+        <span className="ket">|Viz⟩</span> — advanced, interactive visualization & analysis are coming
+        soon (NMRium-style NMR, DSC glass-transition/enthalpy, spectrum overlays, subplots).
         <br />
-        Start from <b>QUICK</b> to point at a data source, overlay datasets, and compare formats.
+        For now, start from <b>QUICK</b> to point at a data source, overlay datasets, and compare
+        formats. <span className="muted">({view})</span>
       </p>
     </div>
   );
@@ -185,16 +188,22 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
 
   return (
     <>
-      <h1>Point at a data source</h1>
+      <div className="hero">
+        <div className="hero-mark" aria-label="Psi DataViz">
+          <span className="bra">⟨Data|</span>
+          <span className="psi">Ψ</span>
+          <span className="ket">|Viz⟩</span>
+        </div>
+        <h1>Point at a data source</h1>
+      </div>
       <p className="subtitle">
         Scan a public repository, overlay datasets, and compare formats —{" "}
         <span className="link" style={{ fontWeight: 600 }}>QUICK</span>.
       </p>
       <p className="nav-hint">
-        Want advanced filtering, multi-source views, deeper analysis, or richer plots? Continue to{" "}
-        <a className="link" onClick={() => onNav("DATA")}>DATA</a>,{" "}
-        <a className="link" onClick={() => onNav("ANALYSIS")}>ANALYSIS</a>, and{" "}
-        <a className="link" onClick={() => onNav("VISUALIZATION")}>VISUALIZATION</a>.
+        Want advanced filtering and multi-source views, or richer plots and analysis? Continue to{" "}
+        <a className="link" onClick={() => onNav("DATA")}>Ψ|Data⟩</a> and{" "}
+        <a className="link" onClick={() => onNav("VIZ")}>Ψ|Viz⟩</a>.
       </p>
 
       <div className="row">
