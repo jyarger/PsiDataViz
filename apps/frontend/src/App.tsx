@@ -12,7 +12,7 @@ import { Footer } from "./components/Footer";
 import { SpectrumPlot } from "./components/SpectrumPlot";
 import { Heatmap } from "./components/Heatmap";
 import { MatrixSliceViewer } from "./components/MatrixSliceViewer";
-import { NMR2DPlot } from "./components/NMR2DPlot";
+import { NMRPanel } from "./components/NMRPanel";
 import { LayoutTabs } from "./components/LayoutTabs";
 import { MoleculeViewer } from "./components/MoleculeViewer";
 import { CompoundViewer } from "./components/CompoundViewer";
@@ -228,9 +228,13 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
 
   const selectedDatasets = selected.map((k) => datasets[k]).filter(Boolean);
   const audioDatasets = selectedDatasets.filter((d) => d.audio);
+  // NMR (1D spectra + 2D contours) gets its own NMRium-style tabbed panel, grouped by nucleus
+  const nmrDatasets = selectedDatasets.filter((d) => d.technique === "NMR");
   // audio carries waveform + FFT as signals, but they go to the player, not the overlay plot
-  const signalDatasets = selectedDatasets.filter((d) => d.signals?.length > 0 && !d.audio);
-  const imageDatasets = selectedDatasets.filter((d) => d.images?.length > 0);
+  const signalDatasets = selectedDatasets.filter(
+    (d) => d.signals?.length > 0 && !d.audio && d.technique !== "NMR",
+  );
+  const imageDatasets = selectedDatasets.filter((d) => d.images?.length > 0 && d.technique !== "NMR");
   const structureDatasets = selectedDatasets.filter((d) => d.structure);
   // datasets without a computed 3D structure can still get a molecule view from a guessed compound
   const compoundSeed = structureDatasets.length === 0
@@ -475,6 +479,13 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
               </button>
             </div>
           </div>
+          {nmrDatasets.length > 0 && (
+            <NMRPanel
+              datasets={nmrDatasets}
+              normalize={normalize}
+              onPeak={(freq, label) => setPeak({ freq, label })}
+            />
+          )}
           {signalDatasets.length > 0 && (
             <SpectrumPlot
               datasets={signalDatasets}
@@ -485,13 +496,10 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
           <LayoutTabs
             items={imageDatasets.map((ds) => {
               const matrix = ds.images.find((im) => im.kind === "matrix");
-              const nmr2d = ds.images.find((im) => im.kind === "nmr2d");
               return {
                 key: ds.filename,
                 label: (ds.metadata.sample_name as string) || ds.filename,
-                node: nmr2d ? (
-                  <NMR2DPlot dataset={ds} />
-                ) : matrix ? (
+                node: matrix ? (
                   <MatrixSliceViewer dataset={ds} image={matrix} />
                 ) : (
                   <Heatmap dataset={ds} />

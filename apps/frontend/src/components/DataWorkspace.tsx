@@ -2,7 +2,7 @@ import { useState } from "react";
 import { api, type CatalogResult, type DatasetData, type RecordRow } from "../api";
 import { SpectrumPlot } from "./SpectrumPlot";
 import { Heatmap } from "./Heatmap";
-import { NMR2DPlot } from "./NMR2DPlot";
+import { NMRPanel } from "./NMRPanel";
 import { LayoutTabs } from "./LayoutTabs";
 import { MoleculeViewer } from "./MoleculeViewer";
 import { WaveformPlayer } from "./WaveformPlayer";
@@ -128,8 +128,11 @@ export function DataWorkspace() {
 
   const selectedDatasets = selected.map((k) => datasets[k]).filter(Boolean);
   const audioDatasets = selectedDatasets.filter((d) => d.audio);
-  const signalDatasets = selectedDatasets.filter((d) => d.signals?.length > 0 && !d.audio);
-  const imageDatasets = selectedDatasets.filter((d) => d.images?.length > 0);
+  const nmrDatasets = selectedDatasets.filter((d) => d.technique === "NMR");
+  const signalDatasets = selectedDatasets.filter(
+    (d) => d.signals?.length > 0 && !d.audio && d.technique !== "NMR",
+  );
+  const imageDatasets = selectedDatasets.filter((d) => d.images?.length > 0 && d.technique !== "NMR");
 
   return (
     <>
@@ -306,6 +309,13 @@ export function DataWorkspace() {
               </button>
             </div>
           </div>
+          {nmrDatasets.length > 0 && (
+            <NMRPanel
+              datasets={nmrDatasets}
+              normalize={normalize}
+              onPeak={(freq, label) => setPeak({ freq, label })}
+            />
+          )}
           {signalDatasets.length > 0 && (
             <SpectrumPlot
               datasets={signalDatasets}
@@ -317,11 +327,7 @@ export function DataWorkspace() {
             items={imageDatasets.map((ds) => ({
               key: ds.filename,
               label: (ds.metadata.sample_name as string) || ds.filename,
-              node: ds.images.some((im) => im.kind === "nmr2d") ? (
-                <NMR2DPlot dataset={ds} />
-              ) : (
-                <Heatmap dataset={ds} />
-              ),
+              node: <Heatmap dataset={ds} />,
             }))}
           />
           {selectedDatasets
