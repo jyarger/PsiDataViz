@@ -328,6 +328,8 @@ def _image_json(image, max_side: int = 240) -> dict:
         return _photo_json(image)
     if kind == "matrix":
         return _matrix_json(image)
+    if kind == "nmr2d":
+        return _nmr2d_json(image)
     a = image.data
     rows, cols = a.shape
     step = max(1, -(-max(rows, cols) // max_side))  # ceil division -> longest side <= max_side
@@ -342,6 +344,37 @@ def _image_json(image, max_side: int = 240) -> dict:
         "z": {"label": image.z.label, "unit": image.z.unit, "scale": "log1p"},
         "shape": [int(rows), int(cols)],
         "values": np.round(z, 3).tolist(),
+    }
+
+
+def _nmr2d_json(image, max_side: int = 256) -> dict:
+    """A 2D NMR spectrum (signed intensity over two ppm axes) for a contour view. Down-sampled by
+    abs-max pooling so sparse cross-peaks survive, with the real F2 (x) and F1 (y) ppm coordinates."""
+    a = np.nan_to_num(image.data, nan=0.0)
+    rows, cols = a.shape
+    rstep = max(1, -(-rows // max_side))
+    cstep = max(1, -(-cols // max_side))
+    xv = image.x_values if image.x_values is not None else np.arange(cols, dtype=float)
+    yv = image.y_values if image.y_values is not None else np.arange(rows, dtype=float)
+    if rstep > 1 or cstep > 1:
+        r, c = (rows // rstep) * rstep, (cols // cstep) * cstep
+        blocks = a[:r, :c].reshape(r // rstep, rstep, c // cstep, cstep).transpose(0, 2, 1, 3)
+        blocks = blocks.reshape(blocks.shape[0], blocks.shape[1], -1)
+        pick = np.abs(blocks).argmax(axis=2)  # keep the signed extreme of each block
+        a = np.take_along_axis(blocks, pick[:, :, None], axis=2)[:, :, 0]
+        xv, yv = xv[:c:cstep], yv[:r:rstep]
+    mag = np.abs(a[np.isfinite(a)])
+    # contour start just above the noise floor; the cross-peaks live in the top percentile
+    level = float(np.percentile(mag, 99.0)) if mag.size else 1.0
+    zmax = float(mag.max()) if mag.size else 1.0
+    return {
+        "name": image.name,
+        "kind": "nmr2d",
+        "x": {"label": image.x.label, "unit": image.x.unit, "values": np.round(xv, 4).tolist()},
+        "y": {"label": image.y.label, "unit": image.y.unit, "values": np.round(yv, 4).tolist()},
+        "z": {"label": image.z.label, "unit": image.z.unit, "level": round(level, 3), "max": round(zmax, 3)},
+        "shape": [int(a.shape[0]), int(a.shape[1])],
+        "values": np.round(a, 3).tolist(),
     }
 
 

@@ -8,6 +8,8 @@ and ASDF-compressed ``(X++(Y..Y))`` data are supported. Abscissa is reported in 
 
 from __future__ import annotations
 
+import re
+
 import numpy as np
 import pandas as pd
 
@@ -54,6 +56,8 @@ class JcampNmrReader(BaseReader):
             return 0.0
         if any(marker in head for marker in _NON_NMR):
             return 0.0  # belongs to FTIR / another technique's JCAMP reader
+        if "ND NMR SPECTRUM" in head or re.search(r"NUMDIM=\s*[2-9]", head):
+            return 0.0  # a 2D/nD NMR spectrum — nmr_2d_jcamp handles it
         # NTUPLES (multi-page) JCAMP: we decode the NMR-FID variant; decline others so the catalog
         # doesn't mark an undecodable NTUPLES class as "supported".
         if "DATA CLASS=NTUPLES" in head and "FID" not in head:

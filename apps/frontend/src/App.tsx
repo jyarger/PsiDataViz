@@ -12,6 +12,7 @@ import { Footer } from "./components/Footer";
 import { SpectrumPlot } from "./components/SpectrumPlot";
 import { Heatmap } from "./components/Heatmap";
 import { MatrixSliceViewer } from "./components/MatrixSliceViewer";
+import { NMR2DPlot } from "./components/NMR2DPlot";
 import { LayoutTabs } from "./components/LayoutTabs";
 import { MoleculeViewer } from "./components/MoleculeViewer";
 import { CompoundViewer } from "./components/CompoundViewer";
@@ -484,10 +485,13 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
           <LayoutTabs
             items={imageDatasets.map((ds) => {
               const matrix = ds.images.find((im) => im.kind === "matrix");
+              const nmr2d = ds.images.find((im) => im.kind === "nmr2d");
               return {
                 key: ds.filename,
                 label: (ds.metadata.sample_name as string) || ds.filename,
-                node: matrix ? (
+                node: nmr2d ? (
+                  <NMR2DPlot dataset={ds} />
+                ) : matrix ? (
                   <MatrixSliceViewer dataset={ds} image={matrix} />
                 ) : (
                   <Heatmap dataset={ds} />

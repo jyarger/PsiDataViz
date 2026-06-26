@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api, type CatalogResult, type DatasetData, type RecordRow } from "../api";
 import { SpectrumPlot } from "./SpectrumPlot";
 import { Heatmap } from "./Heatmap";
+import { NMR2DPlot } from "./NMR2DPlot";
 import { LayoutTabs } from "./LayoutTabs";
 import { MoleculeViewer } from "./MoleculeViewer";
 import { WaveformPlayer } from "./WaveformPlayer";
@@ -316,7 +317,11 @@ export function DataWorkspace() {
             items={imageDatasets.map((ds) => ({
               key: ds.filename,
               label: (ds.metadata.sample_name as string) || ds.filename,
-              node: <Heatmap dataset={ds} />,
+              node: ds.images.some((im) => im.kind === "nmr2d") ? (
+                <NMR2DPlot dataset={ds} />
+              ) : (
+                <Heatmap dataset={ds} />
+              ),
             }))}
           />
           {selectedDatasets

@@ -462,3 +462,6 @@ input[type="text"].kw { width: 210px; min-width: 140px; }
 .zoom-reset { position: absolute; top: 8px; right: 8px; background: rgba(13, 17, 23, 0.82);
   border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 3px 9px;
   font-size: 12px; cursor: pointer; }
+
+/* 2D NMR contour header */
+.nmr2d-head { font-size: 13px; color: var(--text); margin: 4px 0 6px; font-weight: 600; }

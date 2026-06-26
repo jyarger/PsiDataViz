@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
 from psidata import Candidate, detect, read
@@ -110,3 +111,28 @@ def test_ntuples_non_fid_is_declined():
         "##.OBSERVE NUCLEUS=^1H\n##NTUPLES=NMR SPECTRUM\n##END=\n"
     )
     assert JcampNmrReader().sniff(Candidate(filename="x.dx", text=spectrum)) == 0.0
+
+
+_NMR_2D = (
+    "##TITLE=synthetic 2d\n##JCAMP-DX=6.0\n##DATA TYPE=nD NMR SPECTRUM\n##DATA CLASS=NTUPLES\n"
+    "##NUMDIM=2\n##.OBSERVE FREQUENCY=100.0, 400.0\n##.NUCLEUS=13C, 1H\n"
+    "##NTUPLES=nD NMR SPECTRUM\n##VAR_NAME=FREQUENCY1, FREQUENCY2, SPECTRUM\n##SYMBOL=F1, F2, Y\n"
+    "##VAR_FORM=AFFN, AFFN, ASDF\n##VAR_DIM=2, 3, 6\n##UNITS=HZ, HZ, ARBITRARY UNITS\n"
+    "##FIRST=4000, 1200, 10\n##LAST=2000, 400, 60\n##FACTOR=1, 1, 1\n"
+    "##PAGE=F1=4000\n##DATA TABLE=(F2++(Y..Y)), PROFILE\n1200 10 20 30\n"
+    "##PAGE=F1=2000\n##DATA TABLE=(F2++(Y..Y)), PROFILE\n1200 40 50 60\n"
+    "##END NTUPLES=nD NMR SPECTRUM\n##END=\n"
+)
+
+
+def test_reads_2d_nmr_ntuples_as_contour_map():
+    cand = Candidate(filename="LBU_HSQC.jdx", text=_NMR_2D, technique_hint="NMR")
+    assert detect(cand).name == "nmr_2d_jcamp"  # wins over the 1D nmr_jcamp reader
+    ds = read(cand)
+    assert ds.technique == "NMR" and not ds.signals and len(ds.images) == 1
+    im = ds.images[0]
+    assert im.kind == "nmr2d" and im.data.shape == (2, 3)
+    assert im.x.unit == "ppm" and im.y.unit == "ppm"  # Hz / observe-frequency
+    np.testing.assert_allclose(im.x_values, [3.0, 2.0, 1.0])  # F2 (1H): 1200,800,400 / 400
+    np.testing.assert_allclose(im.y_values, [40.0, 20.0])     # F1 (13C): 4000,2000 / 100
+    assert im.data[1, 2] == 60

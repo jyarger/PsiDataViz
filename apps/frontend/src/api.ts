@@ -80,12 +80,12 @@ export interface SignalData {
 }
 export interface ImageData {
   name: string;
-  kind?: "map" | "photo" | "matrix";
+  kind?: "map" | "photo" | "matrix" | "nmr2d";
   data_uri?: string; // for kind === "photo": a PNG data URI of the micrograph
-  // for kind === "matrix", x/y carry their real coordinate values (e.g. retention times, wavelengths)
+  // for kind === "matrix"/"nmr2d", x/y carry their real coordinate values (ppm, retention times, …)
   x: { label: string; unit: string | null; values?: number[] };
   y: { label: string; unit: string | null; values?: number[] };
-  z: { label: string; unit: string | null; scale?: string };
+  z: { label: string; unit: string | null; scale?: string; level?: number; max?: number };
   shape: [number, number];
   values?: number[][]; // the grid: kind "map" = heatmap intensities, "matrix" = rows sliced by the UI
 }
