@@ -42,7 +42,8 @@ library, and app share the **Psi** prefix and the **Ψ** mark.
   pattern** when the header carries a calibration), UV-Vis (`.txt` + Thorlabs `.csv`), **TGA** (TA
   Instruments `.txt` → weight % vs temperature), **Brillouin** (multichannel-scaler `.asc`), **Acoustic**
   (interferometry FFT `Spectrum.csv` inside the `.zip`), **microscopy** (SEM / TEM / optical
-  `.tif`/`.jpg`/`.png` shown as the real micrograph), **electrochemistry** (Gamry `.DTA` cyclic
+  `.tif`/`.jpg`/`.png` shown as the real micrograph, plus Gatan TEM `.dm3`/`.dm4` via ncempy),
+  **electrochemistry** (Gamry `.DTA` cyclic
   voltammetry + Chemotion JCAMP-DX `.jdx` → Potential × Current), **mass spec & SIMS** (ChemSpectra
   JCAMP-DX `MASS SPECTRUM` → m/z × abundance; standard MS and secondary-ion MS grouped separately),
   **dielectric** (broadband ε′/ε″ vs frequency on a log axis, per

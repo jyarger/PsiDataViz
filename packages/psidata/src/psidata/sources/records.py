@@ -94,6 +94,8 @@ _EXT_TABLE: dict[str, FormatInfo] = {
     ".gif": FormatInfo(IMAGE, "Image / preview", False),
     ".bmp": FormatInfo(IMAGE, "Image / preview", False),
     ".svg": FormatInfo(IMAGE, "Vector image", False),
+    ".dm3": FormatInfo(IMAGE, "Gatan DigitalMicrograph (TEM)", True),
+    ".dm4": FormatInfo(IMAGE, "Gatan DigitalMicrograph (TEM)", True),
     ".tif": FormatInfo(IMAGE, "Image (TIFF)", False),
     ".tiff": FormatInfo(IMAGE, "Image (TIFF)", False),
     ".pdf": FormatInfo(DOCUMENT, "PDF document", False),

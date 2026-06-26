@@ -20,7 +20,8 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
 - **Readers** — DSC, NMR (JCAMP-DX + ASDF, Nanalysis NMReady NTUPLES/FID→spectrum, `.tsv`, 2D `totxt`),
   FTIR (`.dpt`, JCAMP, PerkinElmer `.asc`, **Bruker OPUS `.0`** via brukeropusreader), Raman, XRD (1D —
   `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`, `.dat`/`.asc`; 2D detector images via FabIO), **microscopy**
-  (SEM/TEM/optical `.tif`/`.jpg`/`.png` micrographs via Pillow), **electrochemistry** (Gamry `.DTA` CV +
+  (SEM/TEM/optical `.tif`/`.jpg`/`.png` micrographs via Pillow + Gatan TEM `.dm3`/`.dm4` via ncempy),
+  **electrochemistry** (Gamry `.DTA` CV +
   **Chemotion** JCAMP-DX `.jdx` exports → Potential × Current), **mass spec** (ChemSpectra JCAMP-DX
   `MASS SPECTRUM`), **dielectric** (broadband ε′/ε″ vs frequency, log axis), **HPLC** (chromatogram CSV),
   **circular dichroism** (`.dcs`), **generic spreadsheets** (`.xlsx`/`.xls` via openpyxl/xlrd — auto-finds
