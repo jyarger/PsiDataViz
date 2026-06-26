@@ -227,8 +227,10 @@ def dataset_json(dataset: Dataset, max_points: int = 4000) -> dict:
             {
                 "name": sig.name,
                 "segment": sig.segment,
-                "x": {"label": sig.x.label, "unit": sig.x.unit, "quantity": sig.x.quantity},
-                "y": {"label": sig.y.label, "unit": sig.y.unit, "quantity": sig.y.quantity},
+                "x": {"label": sig.x.label, "unit": sig.x.unit, "quantity": sig.x.quantity,
+                      "scale": sig.x.scale},
+                "y": {"label": sig.y.label, "unit": sig.y.unit, "quantity": sig.y.quantity,
+                      "scale": sig.y.scale},
                 "points": _downsample(sig.frame[sig.x.label].to_numpy(),
                                       sig.frame[sig.y.label].to_numpy(), max_points),
             }

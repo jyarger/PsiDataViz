@@ -28,6 +28,10 @@ _TECHNIQUE_ALIASES = {
     "uv-vis": "UV-Vis",
     "uv_vis": "UV-Vis",
     "uv-visible": "UV-Vis",
+    "mass_spec": "Mass Spec",
+    "massspec": "Mass Spec",
+    "ms": "Mass Spec",
+    "circular_dichroism": "CD",
 }
 
 
@@ -113,7 +117,7 @@ class Catalog:
 
 def _match_reader(top_dir: str, ext: str):
     """Find a registered reader whose technique matches the folder and whose extension fits."""
-    folder = top_dir.lower()
+    folder = canonical_technique(top_dir).lower()
     for reader in get_readers():
         tech = reader.technique.lower()
         if (tech == folder or (tech in folder) or (folder in tech and folder)) and (
@@ -125,7 +129,7 @@ def _match_reader(top_dir: str, ext: str):
 
 def _technique_has_reader(technique: str) -> bool:
     """True if any reader handles this technique (regardless of extension)."""
-    folder = technique.lower()
+    folder = canonical_technique(technique).lower()
     return any(
         r.technique.lower() == folder or r.technique.lower() in folder or (folder and folder in r.technique.lower())
         for r in get_readers()

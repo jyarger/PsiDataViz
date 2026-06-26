@@ -22,6 +22,7 @@ class Axis(BaseModel):
     label: str
     unit: str | None = None
     quantity: str | None = None  # canonical, e.g. "temperature", "heat_flow", "wavenumber"
+    scale: str | None = None  # display hint: "log" for axes best shown logarithmically (e.g. frequency)
 
     model_config = ConfigDict(frozen=True)
 

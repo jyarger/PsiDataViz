@@ -67,6 +67,7 @@ export function SpectrumPlot({
       xaxis: {
         title: { text: x0 ? axisTitle(x0) : "", font: { size: 16 } },
         tickfont: { size: 13 },
+        type: x0?.scale === "log" ? "log" : undefined,
         autorange: REVERSED.has(datasets[0].technique) ? "reversed" : true,
         gridcolor: "#21262d",
         zeroline: false,
@@ -74,6 +75,7 @@ export function SpectrumPlot({
       yaxis: {
         title: { text: yTitle, font: { size: 16 } },
         tickfont: { size: 13 },
+        type: y0?.scale === "log" ? "log" : undefined,
         gridcolor: "#21262d",
         zeroline: false,
       },

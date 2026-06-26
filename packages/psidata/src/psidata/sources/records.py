@@ -52,6 +52,7 @@ _EXT_TABLE: dict[str, FormatInfo] = {
     ".tsv": FormatInfo(DATA, "Tab-separated text", True),
     ".dat": FormatInfo(DATA, "ASCII data", True),
     ".dta": FormatInfo(DATA, "Gamry electrochemistry (text)", True),
+    ".dcs": FormatInfo(DATA, "Circular-dichroism spectrum (text)", True),
     ".dpt": FormatInfo(DATA, "Bruker data-point table (ASCII)", True),
     ".asc": FormatInfo(DATA, "ASCII spectrum", True),
     ".dx": FormatInfo(DATA, "JCAMP-DX (ASCII)", True),

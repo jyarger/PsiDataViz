@@ -21,7 +21,9 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
   FTIR (`.dpt`, JCAMP, PerkinElmer `.asc`, **Bruker OPUS `.0`** via brukeropusreader), Raman, XRD (1D —
   `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`, `.dat`/`.asc`; 2D detector images via FabIO), **microscopy**
   (SEM/TEM/optical `.tif`/`.jpg`/`.png` micrographs via Pillow), **electrochemistry** (Gamry `.DTA` CV +
-  **Chemotion** JCAMP-DX `.jdx` exports → Potential × Current), UV-Vis
+  **Chemotion** JCAMP-DX `.jdx` exports → Potential × Current), **mass spec** (ChemSpectra JCAMP-DX
+  `MASS SPECTRUM`), **dielectric** (broadband ε′/ε″ vs frequency, log axis), **HPLC** (chromatogram CSV),
+  **circular dichroism** (`.dcs`), UV-Vis
   (`.txt` / Thorlabs `.csv`), **TGA** (TA Instruments `.txt`), **Brillouin** (multichannel-scaler `.asc`),
   **Acoustic** (interferometry FFT `Spectrum.csv` inside the `.zip`), **Computational** (`.log`/`.out` via
   **cclib** → IR/Raman, plus GaussView `_ir.txt`/`_raman.txt`, and `.gjf`/`.inp` input geometries).

@@ -55,6 +55,7 @@ export interface AxisInfo {
   label: string;
   unit: string | null;
   quantity: string | null;
+  scale?: string | null; // "log" => show this axis logarithmically
 }
 export interface SignalData {
   name: string;
