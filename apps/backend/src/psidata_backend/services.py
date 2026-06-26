@@ -125,6 +125,13 @@ def scan_summary(catalog: Catalog) -> dict:
         if any(r.is_data_record for r in recs)
     ]
     techniques.sort(key=lambda t: (-t["n_supported"], t["technique"]))
+    # COMPOUND dimension: how many supported datasets each inferred sample/compound has
+    compounds: Counter[str] = Counter()
+    for recs in groups.values():
+        for r in recs:
+            if r.supported and r.compound:
+                compounds[r.compound] += 1
+    compound_list = [{"compound": c, "n_supported": n} for c, n in compounds.most_common()]
     return {
         "source": summary["source"],
         "n_files": summary["n_files"],
@@ -132,6 +139,7 @@ def scan_summary(catalog: Catalog) -> dict:
         "n_data_records": summary["n_data_records"],
         "n_supported_records": summary["n_supported_records"],
         "techniques": techniques,
+        "compounds": compound_list,
         "diagnostics": _diagnostics(groups, summary),
     }
 
@@ -223,6 +231,7 @@ def record_row(record) -> dict:
         "key": record.key,
         "uid": record.uid,
         "technique": record.technique,
+        "compound": record.compound,
         "date": record.parsed.date.isoformat() if record.parsed.date else None,
         "description": record.parsed.description,
         "formats": data_exts,

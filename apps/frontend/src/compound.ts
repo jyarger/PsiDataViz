@@ -7,6 +7,8 @@ const STOP = new Set([
   "meoh", "etoh", "h2o", "thf", "dcm", "dmso", "acn", "mecn", "si",
   "xtal", "crystal", "cryst", "powder", "film", "soln", "solution", "neat", "bulk", "thin", "depol",
   "pol", "run", "test", "rep", "deg", "rt",
+  "dft", "b3lyp", "hf", "mp2", "ccsd", "am1", "pm3", "wb97xd", "m06", "gaussian", "gaussian16",
+  "orca", "psi4", "sp", "scf", "pcsseg", "conformer", "conformers", "tablet",
 ]);
 
 // Best-effort compound guess from a dataset name: the leading word tokens up to the first technique /

@@ -94,6 +94,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
   const [datasets, setDatasets] = useState<Record<string, DatasetData>>({});
   const [compare, setCompare] = useState<CompareResult | null>(null);
   const [filter, setFilter] = useState("");
+  const [compoundFilter, setCompoundFilter] = useState<string | null>(null);
   const [normalize, setNormalize] = useState(false);
   const [peak, setPeak] = useState<{ freq: number; label: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -192,11 +193,11 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
   const soleRecord = selected.length === 1 ? records.find((r) => rid(r) === selected[0]) : null;
   const canCompare = !!soleRecord && soleRecord.formats.length > 1;
   const needle = filter.trim().toLowerCase();
-  const shown = needle
-    ? records.filter(
-        (r) => r.description.toLowerCase().includes(needle) || (r.date ?? "").includes(needle),
-      )
-    : records;
+  const shown = records.filter(
+    (r) =>
+      (!needle || r.description.toLowerCase().includes(needle) || (r.date ?? "").includes(needle)) &&
+      (!compoundFilter || r.compound === compoundFilter),
+  );
 
   return (
     <>
@@ -299,20 +300,47 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
               files sharing a base name across formats count as one dataset.
             </span>
           </p>
-          <div className="chips">
-            {scan.techniques
-              .filter((t) => t.n_supported > 0)
-              .map((t) => (
-                <span
-                  key={t.technique}
-                  className={"chip" + (t.technique === technique ? " active" : "")}
-                  onClick={() => pickTechnique(t.technique)}
-                >
-                  {t.technique}
-                  <span className="count">{t.n_supported}</span>
-                </span>
-              ))}
+          <div className="dim-section">
+            <div className="dim-head">
+              <span className="bra">⟨Data|</span><span className="psi">Ψ</span>
+              <span className="ket">|Technique⟩</span>
+            </div>
+            <div className="chips">
+              {scan.techniques
+                .filter((t) => t.n_supported > 0)
+                .map((t) => (
+                  <span
+                    key={t.technique}
+                    className={"chip" + (t.technique === technique ? " active" : "")}
+                    onClick={() => pickTechnique(t.technique)}
+                  >
+                    {t.technique}
+                    <span className="count">{t.n_supported}</span>
+                  </span>
+                ))}
+            </div>
           </div>
+          {scan.compounds.length > 0 && (
+            <div className="dim-section">
+              <div className="dim-head">
+                <span className="bra">⟨Data|</span><span className="psi">Ψ</span>
+                <span className="ket">|Compound⟩</span>
+              </div>
+              <div className="chips compounds">
+                {scan.compounds.map((c) => (
+                  <span
+                    key={c.compound}
+                    className={"chip compound" + (c.compound === compoundFilter ? " active" : "")}
+                    onClick={() => setCompoundFilter(compoundFilter === c.compound ? null : c.compound)}
+                    title="Filter the table to this compound"
+                  >
+                    {c.compound}
+                    <span className="count">{c.n_supported}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -340,6 +368,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
                 <tr>
                   <th style={{ width: 28 }}></th>
                   <th>Date</th>
+                  <th>Compound</th>
                   <th>Sample / description</th>
                   <th>Formats</th>
                 </tr>
@@ -355,6 +384,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
                       <input type="checkbox" readOnly checked={selected.includes(rid(r))} />
                     </td>
                     <td>{r.date ?? ""}</td>
+                    <td>{r.compound ? <span className="compound-tag">{r.compound}</span> : ""}</td>
                     <td>{r.description}</td>
                     <td className="fmt">
                       {r.formats.join(", ")}

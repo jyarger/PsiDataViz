@@ -26,6 +26,10 @@ export interface Diagnostics {
   unread_by_technique: { technique: string; count: number }[];
   unread_items: UnreadItem[];
 }
+export interface Compound {
+  compound: string;
+  n_supported: number;
+}
 export interface ScanResult {
   source: string;
   n_files: number;
@@ -33,12 +37,14 @@ export interface ScanResult {
   n_data_records: number;
   n_supported_records: number;
   techniques: Technique[];
+  compounds: Compound[];
   diagnostics: Diagnostics;
 }
 export interface RecordRow {
   key: string;
   uid: string;
   technique: string;
+  compound: string;
   date: string | null;
   description: string;
   formats: string[];

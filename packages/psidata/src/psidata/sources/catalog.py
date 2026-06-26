@@ -170,6 +170,51 @@ def infer_technique(filename: str) -> str | None:
     return None
 
 
+# Tokens that mark the end of the compound part of a name (techniques, instruments, conditions, solvents).
+_COMPOUND_STOP = {
+    "ms", "sims", "dsc", "nmr", "ir", "ftir", "raman", "xrd", "pxrd", "saxs", "waxs", "hplc", "dad",
+    "tga", "uv", "vis", "uvvis", "cd", "dielectric", "brillouin", "acoustic", "ea", "sem", "tem",
+    "data", "spectrum", "sample", "raw", "pos", "neg", "blank", "std", "opt", "freq", "scan", "edit",
+    "meoh", "etoh", "h2o", "thf", "dcm", "dmso", "acn", "mecn", "si",
+    "xtal", "crystal", "cryst", "powder", "film", "soln", "solution", "neat", "bulk", "thin", "depol",
+    "pol", "run", "test", "rep", "deg", "rt",
+    # computational methods / basis sets / descriptors that follow the compound name
+    "dft", "b3lyp", "hf", "mp2", "ccsd", "am1", "pm3", "wb97xd", "m06", "gaussian", "gaussian16",
+    "orca", "psi4", "sp", "scf", "pcsseg", "conformer", "conformers", "tablet",
+}
+_DATE_PREFIX = re.compile(r"^\d{4}[-_]\d{2}[-_]\d{2}[-_]?")
+_UNIT_SUFFIX = re.compile(r"(nm|mw|mg|ml|mm|cm|hz|mhz|kv|um|kev)$", re.IGNORECASE)
+
+
+def guess_compound(name: str) -> str:
+    """Best-effort compound/sample guess from a dataset name: the leading word tokens up to the first
+    technique / instrument / condition token. Returns "" when nothing looks like a real compound."""
+    stem = re.sub(r"\.[a-z0-9]+$", "", name, flags=re.IGNORECASE)
+    stem = _DATE_PREFIX.sub("", stem)
+    out: list[str] = []
+    for tok in re.split(r"[_\-\s.]+", stem):
+        if not tok:
+            continue
+        low = tok.lower()
+        if low in _COMPOUND_STOP or any(c.isdigit() for c in tok) or _UNIT_SUFFIX.search(low):
+            break
+        out.append(tok)
+    if not any(re.search(r"[a-zA-Z]{3,}", t) for t in out):
+        return ""
+    return " ".join(out)
+
+
+def compound_for(directory: str, key: str) -> str:
+    """The compound a record is about: the sample folder for sample-organized sources, otherwise guessed
+    from the filename for instrument-organized ones."""
+    top = directory.split("/")[0] if directory else ""
+    if top and _technique_has_reader(canonical_technique(top)):
+        return guess_compound(key)  # instrument-organized (folder is a technique) — compound is in the name
+    if top:  # sample-organized: the top folder is the compound
+        return top.replace("_", " ")
+    return guess_compound(key)
+
+
 _SIMS_RE = re.compile(r"(?:^|[_\-. ])sims(?:$|[_\-. ])", re.IGNORECASE)
 
 

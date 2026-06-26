@@ -415,3 +415,14 @@ input[type="text"].filter {
 
 /* keyword scan filter input */
 input[type="text"].kw { width: 210px; min-width: 140px; }
+
+/* TECHNIQUE / COMPOUND chip sections with Dirac-bracket headers */
+.dim-section { margin-top: 14px; }
+.dim-head { font-size: 13px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: baseline;
+  gap: 1px; }
+.dim-head .bra, .dim-head .ket { color: var(--dim); font-weight: 600; }
+.dim-head .psi { color: var(--accent); font-size: 16px; margin: 0 2px; }
+.chips.compounds { max-height: 104px; overflow-y: auto; padding: 2px; }
+.chip.compound.active { background: #163a22; border-color: #2f9e44; color: #b2f2bb; }
+.compound-tag { background: rgba(81, 207, 102, 0.14); color: #69db7c; border-radius: 5px;
+  padding: 1px 8px; font-size: 12px; white-space: nowrap; }

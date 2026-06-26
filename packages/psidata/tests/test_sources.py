@@ -119,3 +119,22 @@ def test_catalog_groups_and_flags_supported():
     assert summary["n_supported"] == 3  # DSC .txt + FTIR .csv + the .xls (generic spreadsheet reader)
     assert summary["groups"]["DSC"]["n_supported"] == 2  # the .txt and the .xls
     assert summary["groups"]["FTIR"]["n_supported"] == 1
+
+
+def test_guess_compound_from_filename():
+    from psidata.sources.catalog import guess_compound
+
+    assert guess_compound("2022_11_17_CBD_Xtal_532nm_DePol.csv") == "CBD"
+    assert guess_compound("Acetaminophen_DSC.txt") == "Acetaminophen"
+    assert guess_compound("Ethane_DFT_b3lyp.log") == "Ethane"      # method tokens stripped
+    assert guess_compound("Terpyridine_FeCl3_MS.zip") == "Terpyridine"
+    assert guess_compound("532nm_only.csv") == ""                   # no real word
+
+
+def test_compound_for_sample_vs_instrument_organized():
+    from psidata.sources.catalog import compound_for
+
+    # instrument-organized (Raman folder has a reader) -> compound from the filename
+    assert compound_for("Raman", "Aspirin_532nm") == "Aspirin"
+    # sample-organized (top folder is the compound, no reader for it) -> the folder
+    assert compound_for("Cannabidiol/sub", "x_1H_400MHz") == "Cannabidiol"

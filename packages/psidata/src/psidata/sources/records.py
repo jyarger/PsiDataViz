@@ -18,7 +18,7 @@ from dataclasses import dataclass
 
 from ..filename import ParsedName, parse_filename
 from .base import FileRef
-from .catalog import CatalogEntry
+from .catalog import CatalogEntry, compound_for
 
 # --- format roles -----------------------------------------------------------------------------
 DATA = "data"                  # ASCII/text the readers can (or could) parse
@@ -204,10 +204,17 @@ class DataRecord:
     def formats(self) -> list[str]:
         return sorted({v.ext for v in self.variants})
 
+    @property
+    def compound(self) -> str:
+        """The chemical/sample this record is about, inferred from the folder or filename ("" if unknown)."""
+        directory = os.path.dirname(self.variants[0].file.path) if self.variants else ""
+        return compound_for(directory, self.key)
+
     def summary(self) -> dict:
         return {
             "key": self.key,
             "technique": self.technique,
+            "compound": self.compound,
             "date": self.parsed.date.isoformat() if self.parsed.date else None,
             "description": self.parsed.description,
             "formats": self.formats,

@@ -249,6 +249,7 @@ export function DataWorkspace() {
                 <tr>
                   <th>Source</th>
                   <th>Technique</th>
+                  <th>Compound</th>
                   <th>Date</th>
                   <th>Sample / description</th>
                   <th>Formats</th>
@@ -263,6 +264,7 @@ export function DataWorkspace() {
                   >
                     <td className="muted">{r.source}</td>
                     <td>{r.technique}</td>
+                    <td>{r.compound ? <span className="compound-tag">{r.compound}</span> : ""}</td>
                     <td>{r.date ?? "—"}</td>
                     <td>{r.description}</td>
                     <td className="fmt">{r.formats.join(", ")}</td>
