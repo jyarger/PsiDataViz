@@ -161,6 +161,8 @@ export interface MoleculeData {
   iupac?: string | null;
   formula?: string | null;
   cid?: number | null;
+  cas?: string | null;
+  svg?: string | null; // a 2D structure depiction
 }
 
 export const api = {

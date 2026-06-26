@@ -1,5 +1,6 @@
-import { useMemo } from "react";
-import type { DatasetData } from "../api";
+import { useMemo, useState } from "react";
+import { api, type DatasetData, type MoleculeData } from "../api";
+import { guessCompound } from "../compound";
 
 export type TagCategory = "condition" | "instrument" | "chemical";
 export interface Tag {
@@ -82,10 +83,8 @@ export function MetadataPanel({
         <Field label="Solvent" value={meta.solvent} onChange={(v) => set({ solvent: v })} />
         <Field label="Temperature" value={meta.temperature} onChange={(v) => set({ temperature: v })} />
         <Field label="Pressure" value={meta.pressure} onChange={(v) => set({ pressure: v })} />
-        <Field label="Formula" value={meta.formula} onChange={(v) => set({ formula: v })} />
-        <Field label="SMILES" value={meta.smiles} onChange={(v) => set({ smiles: v })} mono />
-        <Field label="CAS no." value={meta.cas} onChange={(v) => set({ cas: v })} />
       </div>
+      <IdentitySection meta={meta} set={set} seed={meta.smiles || guessCompound(meta.sample_name)} />
       <label className="md-field md-notes">
         <span>Notes</span>
         <textarea value={meta.notes} onChange={(e) => set({ notes: e.target.value })} rows={2} />
@@ -97,6 +96,90 @@ export function MetadataPanel({
       </div>
     </div>
   );
+}
+
+// Chemical identity: resolve a name or SMILES (via the backend + RDKit/PubChem) to fill in the formula,
+// SMILES, and CAS number, and show a 2D structure depiction to confirm.
+function IdentitySection({
+  meta,
+  set,
+  seed,
+}: {
+  meta: EditableMetadata;
+  set: (patch: Partial<EditableMetadata>) => void;
+  seed: string;
+}) {
+  const [query, setQuery] = useState(seed);
+  const [mol, setMol] = useState<MoleculeData | null>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+
+  async function identify() {
+    const term = query.trim();
+    if (!term) return;
+    setStatus("loading");
+    try {
+      const m = await api.molecule(term);
+      setMol(m);
+      setStatus("idle");
+      set({
+        smiles: m.smiles || meta.smiles,
+        formula: m.formula || meta.formula,
+        cas: m.cas || meta.cas,
+      });
+    } catch {
+      setMol(null);
+      setStatus("error");
+    }
+  }
+
+  return (
+    <div className="md-identity">
+      <div className="md-subhead">Chemical identity</div>
+      <div className="md-idrow">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Compound name or SMILES — e.g. aspirin, caffeine, CC(=O)Oc1ccccc1C(=O)O"
+          spellCheck={false}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              identify();
+            }
+          }}
+        />
+        <button onClick={identify} disabled={status === "loading"}>
+          {status === "loading" ? "…" : "Identify"}
+        </button>
+      </div>
+      {mol && (
+        <div className="md-idresult">
+          {mol.svg && (
+            <div className="md-depiction" dangerouslySetInnerHTML={{ __html: stripXml(mol.svg) }} />
+          )}
+          <div className="md-idmeta">
+            {mol.iupac && <div className="md-iupac">{mol.iupac}</div>}
+            <div className="mono md-idsmiles">{mol.smiles}</div>
+            {mol.cid && (
+              <a href={`https://pubchem.ncbi.nlm.nih.gov/compound/${mol.cid}`} target="_blank" rel="noreferrer">
+                PubChem ↗
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+      <div className="md-grid md-chemgrid">
+        <Field label="Formula" value={meta.formula} onChange={(v) => set({ formula: v })} />
+        <Field label="SMILES" value={meta.smiles} onChange={(v) => set({ smiles: v })} mono />
+        <Field label="CAS no." value={meta.cas} onChange={(v) => set({ cas: v })} />
+      </div>
+      {status === "error" && <div className="md-iderr">No match for “{query}”. Try a different name or a SMILES.</div>}
+    </div>
+  );
+}
+
+function stripXml(svg: string): string {
+  return svg.replace(/<\?xml[^>]*\?>/, "").replace(/<!DOCTYPE[^>]*>/, "");
 }
 
 function Field({

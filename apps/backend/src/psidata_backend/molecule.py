@@ -6,11 +6,13 @@ SMILES via the public PubChem PUG REST API. The result is an MDL mol block that 
 
 from __future__ import annotations
 
+import re
 import urllib.parse
 
 import httpx
 
 _PUBCHEM = "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
+_CAS_RE = re.compile(r"^\d{2,7}-\d{2}-\d$")
 
 
 def smiles_to_molblock(smiles: str) -> str:
@@ -48,6 +50,39 @@ def resolve_name(name: str) -> dict:
             "formula": props.get("MolecularFormula"), "cid": props.get("CID")}
 
 
+def cas_for_cid(cid: int) -> str | None:
+    """Find a CAS registry number among a PubChem compound's synonyms (best-effort)."""
+    try:
+        resp = httpx.get(f"{_PUBCHEM}/compound/cid/{cid}/synonyms/JSON", timeout=10.0,
+                         follow_redirects=True)
+        if resp.status_code != 200:
+            return None
+        syns = resp.json()["InformationList"]["Information"][0].get("Synonym", [])
+        return next((s for s in syns if _CAS_RE.match(s)), None)
+    except Exception:  # noqa: BLE001  CAS is a nice-to-have; never fail the lookup over it
+        return None
+
+
+def mol_svg(smiles: str, size: int = 280) -> str | None:
+    """A 2D structure depiction (SVG) for confirming chemical identity."""
+    try:
+        from rdkit import Chem
+        from rdkit.Chem import AllChem
+        from rdkit.Chem.Draw import rdMolDraw2D
+
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            return None
+        AllChem.Compute2DCoords(mol)
+        drawer = rdMolDraw2D.MolDraw2DSVG(size, int(size * 0.72))
+        drawer.drawOptions().clearBackground = False
+        drawer.DrawMolecule(mol)
+        drawer.FinishDrawing()
+        return drawer.GetDrawingText()
+    except Exception:  # noqa: BLE001  depiction is optional
+        return None
+
+
 def molecule_payload(*, smiles: str | None = None, name: str | None = None,
                      q: str | None = None) -> dict:
     """Build the viewer payload from a SMILES string, a compound name, or a free-text ``q`` that is tried
@@ -66,11 +101,14 @@ def molecule_payload(*, smiles: str | None = None, name: str | None = None,
         smiles = resolved["smiles"]
     if not smiles:
         raise ValueError("provide either a SMILES string or a compound name")
+    cid = resolved.get("cid")
     return {
         "molblock": smiles_to_molblock(smiles),
         "smiles": smiles,
         "query": q or name or smiles,
         "iupac": resolved.get("iupac"),
         "formula": resolved.get("formula"),
-        "cid": resolved.get("cid"),
+        "cid": cid,
+        "cas": cas_for_cid(cid) if cid else None,
+        "svg": mol_svg(smiles),
     }

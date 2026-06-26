@@ -21,3 +21,14 @@ def test_molecule_payload_q_detects_smiles_offline():
 def test_invalid_smiles_raises():
     with pytest.raises(ValueError):
         molecule.smiles_to_molblock("this-is-not-smiles)((")
+
+
+def test_mol_svg_renders_for_smiles():
+    svg = molecule.mol_svg("c1ccccc1C=O")  # benzaldehyde
+    assert svg and "<svg" in svg
+
+
+def test_payload_includes_svg_for_smiles_offline():
+    payload = molecule.molecule_payload(q="CCO")  # ethanol — no network needed
+    assert payload["svg"] and "<svg" in payload["svg"]
+    assert payload["cas"] is None  # no CID without a name lookup, so no CAS
