@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api, type CatalogResult, type DatasetData, type RecordRow } from "../api";
 import { SpectrumPlot } from "./SpectrumPlot";
 import { Heatmap } from "./Heatmap";
+import { LayoutTabs } from "./LayoutTabs";
 import { MoleculeViewer } from "./MoleculeViewer";
 import { WaveformPlayer } from "./WaveformPlayer";
 import { DropZone } from "./DropZone";
@@ -310,9 +311,13 @@ export function DataWorkspace() {
               onPeakClick={(freq, label) => setPeak({ freq, label })}
             />
           )}
-          {imageDatasets.map((ds) => (
-            <Heatmap key={ds.filename} dataset={ds} />
-          ))}
+          <LayoutTabs
+            items={imageDatasets.map((ds) => ({
+              key: ds.filename,
+              label: (ds.metadata.sample_name as string) || ds.filename,
+              node: <Heatmap dataset={ds} />,
+            }))}
+          />
           {selectedDatasets
             .filter((d) => d.structure)
             .map((ds) => (

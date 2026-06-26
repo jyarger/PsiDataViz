@@ -12,6 +12,7 @@ import { Footer } from "./components/Footer";
 import { SpectrumPlot } from "./components/SpectrumPlot";
 import { Heatmap } from "./components/Heatmap";
 import { MatrixSliceViewer } from "./components/MatrixSliceViewer";
+import { LayoutTabs } from "./components/LayoutTabs";
 import { MoleculeViewer } from "./components/MoleculeViewer";
 import { CompoundViewer } from "./components/CompoundViewer";
 import { guessCompound } from "./compound";
@@ -474,14 +475,20 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
               onPeakClick={(freq, label) => setPeak({ freq, label })}
             />
           )}
-          {imageDatasets.map((ds) => {
-            const matrix = ds.images.find((im) => im.kind === "matrix");
-            return matrix ? (
-              <MatrixSliceViewer key={`mx-${ds.filename}`} dataset={ds} image={matrix} />
-            ) : (
-              <Heatmap key={ds.filename} dataset={ds} />
-            );
-          })}
+          <LayoutTabs
+            items={imageDatasets.map((ds) => {
+              const matrix = ds.images.find((im) => im.kind === "matrix");
+              return {
+                key: ds.filename,
+                label: (ds.metadata.sample_name as string) || ds.filename,
+                node: matrix ? (
+                  <MatrixSliceViewer dataset={ds} image={matrix} />
+                ) : (
+                  <Heatmap dataset={ds} />
+                ),
+              };
+            })}
+          />
           {structureDatasets.map((ds) => (
             <MoleculeViewer
               key={`mol-${ds.filename}`}

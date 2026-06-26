@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import Plotly from "plotly.js-dist-min";
 import type { DatasetData } from "../api";
+import { ZoomableImage } from "./ZoomableImage";
 
 // A 2D detector image (XRD/SAXS/WAXS area-detector frame) as a heatmap. The backend sends a
 // downsampled, log-scaled intensity grid (see services._image_json).
@@ -53,7 +54,7 @@ export function Heatmap({ dataset }: { dataset: DatasetData }) {
             · {photo.shape[1]}×{photo.shape[0]} px
           </span>
         </div>
-        <img className="micrograph-img" src={photo.data_uri} alt={label} />
+        <ZoomableImage src={photo.data_uri} alt={label} />
       </div>
     );
   }
