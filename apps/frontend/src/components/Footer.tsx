@@ -1,44 +1,46 @@
 import { useState } from "react";
 import { Resources } from "./Resources";
+import { FeedbackForm } from "./FeedbackForm";
+import { ProviderIcon } from "./ProviderIcon";
+
+const REPO = "https://github.com/jyarger/PsiDataViz";
 
 export function Footer() {
   const [showResources, setShowResources] = useState(false);
-  const open = () => setShowResources(true);
+  const [showFeedback, setShowFeedback] = useState(false);
   return (
     <>
       <footer className="footer">
         <div>
-          <h4>Tools</h4>
-          <ul>
-            <li>DSC reader</li>
-            <li>NMR (JCAMP / tsv / totxt)</li>
-            <li>FTIR · Raman</li>
-            <li>Format compare</li>
-          </ul>
-        </div>
-        <div>
           <h4>Resources</h4>
           <ul>
-            <li><a className="link" onClick={open}>Documentation</a></li>
-            <li><a className="link" onClick={open}>Tutorials</a></li>
-            <li><a className="link" onClick={open}>Examples</a></li>
-            <li><a className="link" onClick={open}>Adding a reader</a></li>
+            <li>
+              <a className="link" onClick={() => setShowResources(true)}>Documentation</a>
+            </li>
+            <li>
+              <span className="muted">Tutorials <em>(coming soon)</em></span>
+            </li>
+            <li>
+              <span className="muted">Gallery <em>(coming soon)</em></span>
+            </li>
           </ul>
         </div>
         <div>
-          <h4>Contacts</h4>
+          <h4>Project</h4>
           <ul>
             <li>
-              <a href="https://github.com/yargerlab" target="_blank" rel="noreferrer">
-                GitHub — yargerlab
+              <a className="footer-gh" href={REPO} target="_blank" rel="noreferrer">
+                <ProviderIcon id="github" size={16} /> GitHub
               </a>
             </li>
-            <li>Yarger Lab</li>
-            <li><a className="link" onClick={open}>Feedback</a></li>
+            <li>
+              <a className="link" onClick={() => setShowFeedback(true)}>Feedback</a>
+            </li>
           </ul>
         </div>
       </footer>
       {showResources && <Resources onClose={() => setShowResources(false)} />}
+      {showFeedback && <FeedbackForm onClose={() => setShowFeedback(false)} />}
     </>
   );
 }

@@ -15,6 +15,7 @@ import { WaveformPlayer } from "./components/WaveformPlayer";
 import { CompareView } from "./components/CompareView";
 import { ExportMenu } from "./components/ExportMenu";
 import { ConnectGuide } from "./components/ConnectGuide";
+import { ProviderIcon } from "./components/ProviderIcon";
 import { DataWorkspace } from "./components/DataWorkspace";
 import { Diagnostics } from "./components/Diagnostics";
 
@@ -64,15 +65,15 @@ function Coming({ view }: { view: View }) {
   );
 }
 
-const PRESETS: { label: string; icon: string; url: string }[] = [
-  { label: "yargerlab/Data", icon: "GH", url: "https://github.com/yargerlab/Data" },
+const PRESETS: { label: string; provider: string; url: string }[] = [
+  { label: "yargerlab/Data", provider: "github", url: "https://github.com/yargerlab/Data" },
   {
     label: "Google Drive — Psi_Data",
-    icon: "▲",
+    provider: "gdrive",
     url: "https://drive.google.com/drive/folders/16VQhcRbCHkzhH2cq8T5DwyhTUBj2BrO4",
   },
-  { label: "Codeberg — PsiData (by sample)", icon: "CB", url: "https://codeberg.org/jyarger/PsiData" },
-  { label: "Box — PsiData (by sample)", icon: "BX", url: "https://app.box.com/s/yigbg0fd5xj5n1hkxf8rcsemrkz7qgsx" },
+  { label: "Codeberg — PsiData (by sample)", provider: "codeberg", url: "https://codeberg.org/jyarger/PsiData" },
+  { label: "Box — PsiData (by sample)", provider: "box", url: "https://app.box.com/s/yigbg0fd5xj5n1hkxf8rcsemrkz7qgsx" },
 ];
 
 // A record's `key` (base name) repeats across techniques and sub-folders, so identify a selected row
@@ -228,7 +229,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
             disabled={!!busy}
             title={p.url}
           >
-            <span className="src-ic">{p.icon}</span>
+            <ProviderIcon id={p.provider} size={18} />
             {p.label}
           </button>
         ))}
@@ -236,6 +237,10 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
           How to share a public link?
         </a>
       </div>
+      <p className="tested-note">
+        Tested public storage: <b>GitHub</b>, <b>Codeberg</b>, <b>Google Drive</b>, <b>Box</b>.{" "}
+        <span className="muted">More public &amp; private sources are in the works.</span>
+      </p>
 
       {busy && <p className="spinner">{busy}</p>}
       {error && <p className="error">{error}</p>}

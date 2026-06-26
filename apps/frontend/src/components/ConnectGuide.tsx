@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ProviderIcon } from "./ProviderIcon";
 
 type Provider = {
   id: string;
@@ -72,14 +73,6 @@ const PROVIDERS: Provider[] = [
       ],
     },
   },
-  {
-    id: "dropbox",
-    label: "Dropbox · Proton",
-    icon: "DB",
-    ready: false,
-    status: "N/A",
-    note: "Not scannable from a public link — host your data on GitHub, Google Drive, Codeberg, or Box instead.",
-  },
 ];
 
 export function ConnectGuide({ onTryExample }: { onTryExample?: (url: string) => void }) {
@@ -102,7 +95,9 @@ export function ConnectGuide({ onTryExample }: { onTryExample?: (url: string) =>
             disabled={!p.ready}
             title={p.note}
           >
-            <span className="provider-ic">{p.icon}</span>
+            <span className="provider-ic">
+              <ProviderIcon id={p.id === "drive" ? "gdrive" : p.id} size={24} />
+            </span>
             <span className="provider-name">{p.label}</span>
             <span className={"provider-status" + (p.ready ? " ok" : "")}>
               {p.ready ? "Ready" : (p.status ?? "Soon")}
