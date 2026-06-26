@@ -35,6 +35,26 @@ _ENTRY_RE = re.compile(
 
 _FOLDER_VIEW = "https://drive.google.com/embeddedfolderview?id={}#list"
 _DOWNLOAD = "https://drive.google.com/uc?export=download&id={}"
+
+
+def download_drive(url: str, *, client: httpx.Client | None = None) -> bytes:
+    """Fetch a Drive ``uc?export=download`` URL, following the large-file virus-scan **confirm**
+    interstitial (an HTML form) when Drive can't scan the file — so big archives download in full."""
+    own = client is None
+    client = client or httpx.Client(timeout=120.0, follow_redirects=True)
+    try:
+        resp = client.get(url)
+        resp.raise_for_status()
+        if resp.headers.get("content-type", "").startswith("text/html"):
+            action = re.search(r'action="([^"]+)"', resp.text)
+            if action:  # re-issue the download through the confirm form's action + hidden fields
+                params = dict(re.findall(r'name="([^"]+)"\s+value="([^"]*)"', resp.text))
+                resp = client.get(html.unescape(action.group(1)), params=params)
+                resp.raise_for_status()
+        return resp.content
+    finally:
+        if own:
+            client.close()
 _UA = "Mozilla/5.0 (compatible; PsiData/1.0)"
 
 
@@ -111,31 +131,12 @@ class GoogleDriveSource(DataSource):
                         files.append(FileRef(path=path, download_url=_DOWNLOAD.format(eid)))
         return files
 
-    def _follow_confirm(self, page: str) -> bytes | None:
-        """Large-file virus-scan interstitial: re-issue the download via its confirm form."""
-        action = re.search(r'action="([^"]+)"', page)
-        if not action:
-            return None
-        params = dict(re.findall(r'name="([^"]+)"\s+value="([^"]*)"', page))
-        try:
-            resp = self._client.get(html.unescape(action.group(1)), params=params)
-            resp.raise_for_status()
-        except httpx.HTTPError:
-            return None
-        return resp.content
-
     def open_bytes(self, ref: FileRef) -> bytes:
         url = ref.download_url or _DOWNLOAD.format(ref.path)
         try:
-            resp = self._client.get(url)
-            resp.raise_for_status()
+            return download_drive(url, client=self._client)
         except httpx.HTTPError as exc:
             raise GoogleDriveError(f"Drive download failed for {ref.name!r}: {exc}") from exc
-        if resp.headers.get("content-type", "").startswith("text/html"):
-            confirmed = self._follow_confirm(resp.text)
-            if confirmed is not None:
-                return confirmed
-        return resp.content
 
     def open_text(self, ref: FileRef) -> str:
         return self.open_bytes(ref).decode("utf-8", errors="replace")

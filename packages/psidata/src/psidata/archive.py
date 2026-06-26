@@ -26,7 +26,7 @@ import zipfile
 import numpy as np
 import pandas as pd
 
-from .model import Axis, Dataset, Signal, SourceInfo
+from .model import Axis, Dataset, Image2D, Signal, SourceInfo
 from .readers._tabular import parse_numeric_table
 from .readers.base import Candidate
 from .readers.nmr_jcamp import NMRMetadata
@@ -133,6 +133,10 @@ def read_zip(filename: str, content: bytes, *, technique_hint: str | None = None
         raise ArchiveError(f"{filename}: archive is empty")
 
     if member is not None:  # caller chose a specific dataset inside a multi-dataset zip
+        if member.endswith("/2rr"):
+            return _read_bruker_2d(zf, member, filename, technique_hint)
+        if member.endswith("/1r"):
+            return _read_bruker(zf, member, filename, technique_hint)
         if member not in members:
             raise ArchiveError(f"{filename}: member {member!r} not found in archive")
         return _read_member(zf, member, filename, technique_hint, _depth)
@@ -142,11 +146,13 @@ def read_zip(filename: str, content: bytes, *, technique_hint: str | None = None
         return _read_spinsolve(zf, spinsolve, filename, technique_hint)
 
     if looks_like_bruker(members):
-        oner = _find(members, "pdata/1/1r") or _find(members, "/1r")
-        if oner and _sibling(oner, "procs") in members:
-            return _read_bruker(zf, oner, filename, technique_hint)
+        experiments = _bruker_experiments(zf, members)
+        if experiments:  # the first experiment (numbered subfolders -> use the bundle to pick others)
+            path, _label = experiments[0]
+            reader = _read_bruker_2d if path.endswith("/2rr") else _read_bruker
+            return reader(zf, path, filename, technique_hint)
         raise ArchiveError(
-            f"{filename}: Bruker archive without processed data (expected pdata/1/1r + procs)."
+            f"{filename}: Bruker archive without processed data (expected pdata/N/1r or 2rr + procs)."
         )
 
     pick = _best_member(zf, members, technique_hint)
@@ -184,8 +190,14 @@ def zip_datasets(filename: str, content: bytes, *, technique_hint: str | None = 
     members = _members(zf)
     if not members:
         return []
-    if (_find(members, "spectrum_processed.csv") or _find(members, "spectrum.csv")
-            or looks_like_bruker(members)):
+    if _find(members, "spectrum_processed.csv") or _find(members, "spectrum.csv"):
+        return [{"key": _stem(filename), "member": None, "formats": _exts(members)}]
+    if looks_like_bruker(members):
+        experiments = _bruker_experiments(zf, members)
+        if len(experiments) > 1:  # numbered subfolders -> one selectable dataset per experiment
+            return [{"key": label, "member": path,
+                     "formats": ["2rr" if path.endswith("/2rr") else "1r"]}
+                    for path, label in experiments]
         return [{"key": _stem(filename), "member": None, "formats": _exts(members)}]
 
     groups: dict[tuple[str, str], list[str]] = {}
@@ -284,6 +296,135 @@ def _read_bruker(zf: zipfile.ZipFile, oner: str, filename: str,
     meta = NMRMetadata(sample_name=sample, frequency_mhz=sf,
                        data_type="NMR processed spectrum (Bruker)", npoints=len(y))
     return _nmr_dataset(filename, technique_hint, "nmr_bruker_zip", _nmr_signal(ppm, y), meta)
+
+
+# --- multi-experiment Bruker zips (numbered subfolders 1/, 2/, … each a separate experiment) -----
+_PULPROG_NAMES = (
+    ("hsqc", "HSQC"), ("hmbc", "HMBC"), ("h2bc", "H2BC"), ("hmqc", "HMQC"), ("cosy", "COSY"),
+    ("noesy", "NOESY"), ("roesy", "ROESY"), ("tocsy", "TOCSY"), ("jres", "J-res"), ("dept", "DEPT"),
+)
+
+
+def _proc_key(path: str) -> int:
+    m = re.search(r"/pdata/(\d+)/", path)
+    return int(m.group(1)) if m else 0
+
+
+def _prefer_proc1(paths: list[str]) -> str:
+    return next((p for p in paths if "/pdata/1/" in p), min(paths, key=_proc_key))
+
+
+def _bruker_nuclei(acqus: str) -> tuple[str, str]:
+    """The direct (F2) and indirect (F1) nuclei. Bruker sets ``NUC2=off`` for homonuclear experiments,
+    where the indirect dimension shares the observed nucleus."""
+    nuc1 = (_par(acqus, "NUC1") or "").strip("<>")
+    nuc2 = (_par(acqus, "NUC2") or "").strip("<>")
+    if nuc2.lower() in ("off", "", "none"):
+        nuc2 = nuc1
+    return nuc1, nuc2
+
+
+def _bruker_label(zf: zipfile.ZipFile, expdir: str, mset: set[str], *, is_2d: bool) -> str:
+    acqus = zf.read(f"{expdir}/acqus").decode("latin1", "replace") if f"{expdir}/acqus" in mset else ""
+    pulprog = (_par(acqus, "PULPROG") or "").lower().strip("<>")
+    for key, name in _PULPROG_NAMES:
+        if key in pulprog:
+            return name
+    nuc1, nuc2 = _bruker_nuclei(acqus)
+    if is_2d:
+        return f"{nuc2 or 'F1'}-{nuc1 or 'F2'} 2D"
+    return nuc1 or "1D"
+
+
+def _bruker_experiments(zf: zipfile.ZipFile, members: list[str]) -> list[tuple[str, str]]:
+    """The processed experiments in a Bruker zip — one per numbered experiment folder, each as
+    ``(data_path, label)``. Picks 2D (``2rr``) data when present, else 1D (``1r``); prefers ``pdata/1``."""
+    mset = set(members)
+    by_exp: dict[str, list[str]] = {}
+    for m in members:
+        if "/pdata/" in m and os.path.basename(m) in ("1r", "2rr"):
+            by_exp.setdefault(m.split("/pdata/")[0], []).append(m)
+
+    out: list[tuple[str, str]] = []
+    seen: dict[str, int] = {}
+    for expdir in sorted(by_exp, key=lambda d: (0, int(t)) if (t := d.rsplit("/", 1)[-1]).isdigit() else (1, t)):
+        paths = by_exp[expdir]
+        two_d = [p for p in paths if p.endswith("/2rr")]
+        chosen = _prefer_proc1(two_d) if two_d else _prefer_proc1([p for p in paths if p.endswith("/1r")])
+        pdir = chosen.rsplit("/", 1)[0]
+        needed = ("procs", "proc2s") if chosen.endswith("/2rr") else ("procs",)
+        if any(f"{pdir}/{n}" not in mset for n in needed):
+            continue  # missing proc parameters -> can't decode
+        label = _bruker_label(zf, expdir, mset, is_2d=chosen.endswith("/2rr"))
+        seen[label] = seen.get(label, 0) + 1
+        if seen[label] > 1:  # disambiguate duplicate experiment types by experiment number
+            label = f"{label} ({expdir.rsplit('/', 1)[-1]})"
+        out.append((chosen, label))
+    return out
+
+
+def _detile(raw: np.ndarray, si1: int, si2: int, xd1: int, xd2: int) -> np.ndarray:
+    """Reassemble a Bruker 2D processed matrix from its submatrix (XDIM) tiling into a full grid."""
+    if raw.size < si1 * si2:
+        raw = np.pad(raw, (0, si1 * si2 - raw.size))
+    if xd1 >= si1 and xd2 >= si2:
+        return raw[: si1 * si2].reshape(si1, si2)
+    grid = np.zeros((si1, si2))
+    t = 0
+    for i1 in range(si1 // xd1):
+        for i2 in range(si2 // xd2):
+            grid[i1 * xd1:(i1 + 1) * xd1, i2 * xd2:(i2 + 1) * xd2] = raw[t:t + xd1 * xd2].reshape(xd1, xd2)
+            t += xd1 * xd2
+    return grid
+
+
+def _bruker_ppm(proc_text: str, n: int) -> np.ndarray | None:
+    sw_p, sf, offset = _float(_par(proc_text, "SW_p")), _float(_par(proc_text, "SF")), _float(_par(proc_text, "OFFSET"))
+    if sw_p and sf and offset is not None and n:
+        return offset - np.arange(n) * (sw_p / sf) / n
+    return None
+
+
+def _read_bruker_2d(zf: zipfile.ZipFile, twrr: str, filename: str,
+                    technique_hint: str | None) -> Dataset:
+    """Decode a Bruker 2D processed spectrum (``pdata/N/2rr`` + ``procs``/``proc2s``) into a contour
+    map with ppm axes — F2 (direct, columns) from ``procs``, F1 (indirect, rows) from ``proc2s``."""
+    pdir = twrr.rsplit("/", 1)[0]
+    procs = zf.read(f"{pdir}/procs").decode("latin1")
+    proc2s = zf.read(f"{pdir}/proc2s").decode("latin1")
+    si2, si1 = int(float(_par(procs, "SI") or 0)), int(float(_par(proc2s, "SI") or 0))
+    if not (si1 and si2):
+        raise ArchiveError(f"{filename}: Bruker 2rr missing SI dimensions")
+    xd2 = int(float(_par(procs, "XDIM") or si2)) or si2
+    xd1 = int(float(_par(proc2s, "XDIM") or si1)) or si1
+    bytord = int(float(_par(procs, "BYTORDP") or 0))
+    nc = int(float(_par(procs, "NC_proc") or 0))
+    raw = np.frombuffer(zf.read(twrr), dtype=(">" if bytord else "<") + "i4").astype(float) * 2.0**nc
+    grid = _detile(raw, si1, si2, xd1, xd2)
+
+    expdir = twrr.split("/pdata/")[0]
+    acqus = _member_text_exact(zf, f"{expdir}/acqus") or ""
+    nuc1, nuc2 = _bruker_nuclei(acqus)  # direct (F2, columns/x), indirect (F1, rows/y)
+    x_ppm, y_ppm = _bruker_ppm(procs, si2), _bruker_ppm(proc2s, si1)
+    image = Image2D(
+        name=_stem(filename), data=grid,
+        x=Axis(label=f"{nuc1} F2".strip(), unit="ppm" if x_ppm is not None else None, quantity="chemical_shift"),
+        y=Axis(label=f"{nuc2} F1".strip(), unit="ppm" if y_ppm is not None else None, quantity="chemical_shift"),
+        z=Axis(label="Intensity", unit="a.u.", quantity="intensity"),
+        kind="nmr2d", x_values=x_ppm, y_values=y_ppm,
+    )
+    title = _member_text_exact(zf, _sibling(twrr, "title"))
+    sample = (title.strip().splitlines()[0].strip() if title and title.strip() else "") or _stem(filename)
+    meta = NMRMetadata(sample_name=sample, nucleus=nuc1 or None,
+                       data_type="2D NMR processed spectrum (Bruker)")
+    meta.experiment = f"{nuc2}-{nuc1} 2D" if (nuc1 and nuc2) else "2D NMR"
+    meta.dimensions = f"{si1} × {si2}"
+    return Dataset(
+        technique=technique_hint or "NMR",
+        source=SourceInfo(uri=filename, filename=os.path.basename(filename),
+                          reader="nmr_bruker_zip", reader_version="0.1.0"),
+        metadata=meta, images=[image],
+    )
 
 
 # --- shared helpers ----------------------------------------------------------------------------

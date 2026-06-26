@@ -17,6 +17,7 @@ from psidata.readers.raman_text import parse_spec_sidecar
 from psidata.sources import Catalog, FileRef, make_source
 from psidata.sources.catalog import _technique_has_reader, build_entry, detect_organization
 from psidata.sources.chemotion import ZIP_MEMBER_SEP
+from psidata.sources.gdrive import download_drive
 from psidata.sources.records import IMAGE
 
 _listing_cache: dict[str, dict] = {}  # url -> {"label", "files"} (process-lifetime cache)
@@ -80,6 +81,8 @@ def _fetch_bytes(url: str) -> bytes:
         cut = url.lower().index(marker) + len(".zip")
         zip_url, member = url[:cut], url[cut + len(ZIP_MEMBER_SEP):]
         return zipfile.ZipFile(io.BytesIO(_download_archive(zip_url))).read(member)
+    if "drive.google.com/uc" in url:  # follow Drive's large-file virus-scan confirm interstitial
+        return download_drive(url)
     headers = {}
     token = os.environ.get("GITHUB_TOKEN")
     if token and "githubusercontent" in url:
@@ -89,10 +92,18 @@ def _fetch_bytes(url: str) -> bytes:
     return resp.content
 
 
+@lru_cache(maxsize=3)
+def _fetch_archive(url: str) -> bytes:
+    """Whole-archive bytes, process-cached so switching between datasets inside a multi-dataset zip
+    (e.g. a numbered-subfolder Bruker NMR archive) doesn't re-download the archive each time."""
+    return _fetch_bytes(url)
+
+
 def load_dataset(name: str, url: str, *, technique: str | None = None,
                  sidecar_url: str | None = None, member: str | None = None) -> Dataset:
-    content = _fetch_bytes(url)
-    if is_archive(name) or is_archive(url):
+    archive = is_archive(name) or is_archive(url)
+    content = _fetch_archive(url) if archive else _fetch_bytes(url)
+    if archive:
         ds = read_archive(name, content, technique_hint=technique, member=member)
     else:
         ds = read(Candidate(filename=name, content=content, uri=url, technique_hint=technique))
@@ -125,7 +136,7 @@ def zip_bundle(name: str, url: str, *, technique: str | None = None) -> list[dic
     the bytes are already cached by ``_fetch_bytes`` from the dataset load."""
     if not (is_archive(name) or is_archive(url)):
         return []
-    members = archive_datasets(name, _fetch_bytes(url), technique_hint=technique)
+    members = archive_datasets(name, _fetch_archive(url), technique_hint=technique)
     return members if len(members) > 1 else []
 
 
