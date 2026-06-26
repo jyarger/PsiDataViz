@@ -58,7 +58,12 @@ export function SpectrumPlot({
 
     const x0 = datasets[0].signals[0]?.x;
     const y0 = datasets[0].signals[0]?.y;
-    const yTitle = y0 ? (normalize ? `${y0.label} (normalized)` : axisTitle(y0)) : "";
+    // when overlaid signals carry different units (e.g. a spreadsheet's strain+stress+modulus), don't
+    // label the shared y-axis with just the first signal's name — it would be misleading.
+    const yUnits = new Set(datasets.flatMap((d) => d.signals.map((s) => s.y.unit ?? "")).filter(Boolean));
+    const yTitle = yUnits.size > 1
+      ? (normalize ? "Value (normalized)" : "Value (mixed units)")
+      : y0 ? (normalize ? `${y0.label} (normalized)` : axisTitle(y0)) : "";
     const layout = {
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",

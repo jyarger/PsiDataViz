@@ -80,3 +80,32 @@ def test_cd_dcs_reads_first_section_only():
     assert len(s.frame) == 3  # only the first ">" section, not the replicate
     assert ds.metadata.sample_name == "test sample"
     assert "2 replicate" in (ds.metadata.notes or "")
+
+
+def _xlsx(rows: list[list], sheet: str = "Sheet1") -> bytes:
+    import io
+
+    import pandas as pd
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as w:
+        pd.DataFrame(rows).to_excel(w, header=False, index=False, sheet_name=sheet)
+    return buf.getvalue()
+
+
+def test_spreadsheet_reader_extracts_xy_and_uses_hint():
+    rows = [["Time", "Strain", "Stress"], ["s", "mm/mm", "MPa"]]
+    rows += [[float(i) * 0.1, i * 0.001, i * 5.0] for i in range(20)]  # >=10 data rows
+    ds = read(Candidate(filename="run.xlsx", content=_xlsx(rows, "Test 1"), technique_hint="Mechanical"))
+    assert ds.source.reader == "spreadsheet_table"
+    assert ds.technique == "Mechanical"  # from the folder hint, not the reader class
+    assert (ds.signals[0].x.label, ds.signals[0].x.unit) == ("Time", "s")
+    ylabels = {(s.y.label, s.y.unit) for s in ds.signals}
+    assert ("Stress", "MPa") in ylabels and ("Strain", "mm/mm") in ylabels
+
+
+def test_spreadsheet_reader_declines_categorical_summary():
+    from psidata.readers.spreadsheet_table import SpreadsheetReader
+
+    rows = [["Amino acid", "Sample"], *[["His", "high"], ["Ser", "low"], ["Arg", "mid"]]]
+    cand = Candidate(filename="summary.xlsx", content=_xlsx(rows))
+    assert SpreadsheetReader().sniff(cand) == 0.0  # no numeric x/y table -> declined

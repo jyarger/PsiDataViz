@@ -125,14 +125,14 @@ def test_scan_diagnostics_reports_unread_formats():
         return_value=httpx.Response(200, json={"default_branch": "main"}))
     tree = {"tree": [
         {"path": "Raman/2026_01_01_x.csv", "type": "blob", "size": 10},  # supported
-        {"path": "Mystery/scan.xls", "type": "blob", "size": 10},        # data file, no reader
+        {"path": "Mystery/scan.spe", "type": "blob", "size": 10},        # data file, no reader
     ]}
     respx.get("https://api.github.com/repos/o/r/git/trees/main").mock(
         return_value=httpx.Response(200, json=tree))
     diag = client.get("/api/scan", params={"url": "o/r"}).json()["diagnostics"]
     assert diag["coverage"] == 50.0
     assert diag["n_supported"] == 1 and diag["n_unsupported"] == 1
-    assert ".xls" in [f["ext"] for f in diag["unread_formats"]]
+    assert ".spe" in [f["ext"] for f in diag["unread_formats"]]
 
 
 @respx.mock

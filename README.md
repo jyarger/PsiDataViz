@@ -45,7 +45,8 @@ library, and app share the **Psi** prefix and the **Ψ** mark.
   `.tif`/`.jpg`/`.png` shown as the real micrograph), **electrochemistry** (Gamry `.DTA` cyclic
   voltammetry + Chemotion JCAMP-DX `.jdx` → Potential × Current), **mass spec** (ChemSpectra JCAMP-DX
   `MASS SPECTRUM` → m/z × abundance), **dielectric** (broadband ε′/ε″ vs frequency on a log axis, per
-  temperature), **HPLC** (chromatogram CSV), **circular dichroism** (`.dcs`), and **computed
+  temperature), **HPLC** (chromatogram CSV), **circular dichroism** (`.dcs`), **mechanical / generic
+  spreadsheets** (`.xlsx`/`.xls` — finds the data table across sheets), and **computed
   IR/Raman** spectra from Gaussian/ORCA/Psi4 frequency jobs — `.log`/`.out` via **cclib** (Gaussian/ORCA/Q-Chem/NWChem/Psi4), or pre-extracted `_ir.txt`/`_raman.txt` — for overlay on
   experiment.
   *(More formats are the active focus; see the

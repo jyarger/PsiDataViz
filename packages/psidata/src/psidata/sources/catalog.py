@@ -116,22 +116,31 @@ class Catalog:
 
 
 def _match_reader(top_dir: str, ext: str):
-    """Find a registered reader whose technique matches the folder and whose extension fits."""
+    """Find a registered reader whose technique matches the folder and whose extension fits.
+
+    A generic reader (``technique == "*"``, e.g. the spreadsheet reader) is used only as a fallback when
+    no technique-specific reader matches.
+    """
     folder = canonical_technique(top_dir).lower()
+    generic = None
     for reader in get_readers():
         tech = reader.technique.lower()
-        if (tech == folder or (tech in folder) or (folder in tech and folder)) and (
-            not reader.extensions or ext in reader.extensions
-        ):
+        ext_ok = not reader.extensions or ext in reader.extensions
+        if tech == "*":
+            if ext_ok and generic is None:
+                generic = reader
+        elif ext_ok and (tech == folder or tech in folder or (folder in tech and folder)):
             return reader
-    return None
+    return generic
 
 
 def _technique_has_reader(technique: str) -> bool:
-    """True if any reader handles this technique (regardless of extension)."""
+    """True if a *technique-specific* reader handles this technique (generic readers don't count)."""
     folder = canonical_technique(technique).lower()
     return any(
-        r.technique.lower() == folder or r.technique.lower() in folder or (folder and folder in r.technique.lower())
+        r.technique.lower() != "*" and (
+            r.technique.lower() == folder or r.technique.lower() in folder
+            or (folder and folder in r.technique.lower()))
         for r in get_readers()
     )
 

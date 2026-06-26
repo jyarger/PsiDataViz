@@ -42,7 +42,8 @@ def test_dsc_multiformat_collapses_to_one_record():
     roles = {v.ext: v.info.role for v in r.variants}
     assert roles[".tri"] == BINARY_ORIGINAL               # Trios binary original
     assert roles[".xls"] == SPREADSHEET
-    assert {v.ext for v in r.parseable_variants} == {".csv"}  # only the csv is parseable today
+    # .csv (DSC reader) and .xls (generic spreadsheet reader) are both parseable; .csv stays primary
+    assert {v.ext for v in r.parseable_variants} == {".csv", ".xls"}
 
 
 def test_dsc_txt_variant_is_primary_when_no_csv():

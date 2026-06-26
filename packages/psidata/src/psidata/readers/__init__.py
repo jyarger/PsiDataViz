@@ -27,6 +27,7 @@ from . import (
     nmr_text,  # noqa: F401  (import triggers registration)
     nmr_totxt,  # noqa: F401  (import triggers registration)
     raman_text,  # noqa: F401  (import triggers registration)
+    spreadsheet_table,  # noqa: F401  (import triggers registration)
     structure_file,  # noqa: F401  (import triggers registration)
     tga_text,  # noqa: F401  (import triggers registration)
     uvvis_text,  # noqa: F401  (import triggers registration)
@@ -38,5 +39,5 @@ from . import (
 
 __all__ = ["acoustic_spectrum", "brillouin_asc", "comp_input", "comp_log", "cd_dcs", "comp_spectrum", "dielectric_text", "dsc_trios",
            "ftir_jcamp", "ftir_opus", "ftir_pe_asc", "ftir_text", "gamry_dta", "hplc_text", "jcamp_electrochem", "jcamp_ms",
-           "microscopy_image", "nmr_jcamp", "nmr_text", "nmr_totxt", "raman_text", "structure_file",
+           "microscopy_image", "nmr_jcamp", "nmr_text", "nmr_totxt", "raman_text", "spreadsheet_table", "structure_file",
            "tga_text", "uvvis_text", "wav_audio", "xrd_image", "xrd_panalytical", "xrd_text"]

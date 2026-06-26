@@ -97,7 +97,7 @@ def test_catalog_groups_and_flags_supported():
     src = FakeSource([
         "DSC/2023_06_14_Indium_wire_std.txt",   # supported (DSC reader, .txt)
         "DSC/2023_06_14_Indium_wire_std.tri",   # unsupported (.tri not handled)
-        "DSC/2023_04_21_CBD.xls",               # unsupported (.xls not in v1)
+        "DSC/2023_04_21_CBD.xls",               # supported via the generic spreadsheet reader
         "FTIR/2024_01_02_sample.csv",           # supported: FTIR reader claims .csv in FTIR/
         "README.md",                            # root group
     ])
@@ -116,6 +116,6 @@ def test_catalog_groups_and_flags_supported():
 
     summary = cat.summary()
     assert summary["n_files"] == 5
-    assert summary["n_supported"] == 2
-    assert summary["groups"]["DSC"]["n_supported"] == 1
+    assert summary["n_supported"] == 3  # DSC .txt + FTIR .csv + the .xls (generic spreadsheet reader)
+    assert summary["groups"]["DSC"]["n_supported"] == 2  # the .txt and the .xls
     assert summary["groups"]["FTIR"]["n_supported"] == 1

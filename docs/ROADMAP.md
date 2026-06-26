@@ -23,7 +23,8 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
   (SEM/TEM/optical `.tif`/`.jpg`/`.png` micrographs via Pillow), **electrochemistry** (Gamry `.DTA` CV +
   **Chemotion** JCAMP-DX `.jdx` exports → Potential × Current), **mass spec** (ChemSpectra JCAMP-DX
   `MASS SPECTRUM`), **dielectric** (broadband ε′/ε″ vs frequency, log axis), **HPLC** (chromatogram CSV),
-  **circular dichroism** (`.dcs`), UV-Vis
+  **circular dichroism** (`.dcs`), **generic spreadsheets** (`.xlsx`/`.xls` via openpyxl/xlrd — auto-finds
+  the data table; used for Mechanical test data), UV-Vis
   (`.txt` / Thorlabs `.csv`), **TGA** (TA Instruments `.txt`), **Brillouin** (multichannel-scaler `.asc`),
   **Acoustic** (interferometry FFT `Spectrum.csv` inside the `.zip`), **Computational** (`.log`/`.out` via
   **cclib** → IR/Raman, plus GaussView `_ir.txt`/`_raman.txt`, and `.gjf`/`.inp` input geometries).
