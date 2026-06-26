@@ -20,6 +20,7 @@ from psidata import __version__, compare_record_formats, get_readers
 from psidata.convert import convert as run_convert
 from starlette.background import BackgroundTask
 
+from . import molecule as molecule_service
 from . import services
 
 app = FastAPI(title="PsiData API", version=__version__)
@@ -173,6 +174,21 @@ def convert_endpoint(url: str, name: str, technique: str | None = None, fmt: str
     run_convert(ds, tmp.name, fmt=fmt)
     return FileResponse(tmp.name, media_type=media, filename=f"{stem}.{ext}",
                         background=BackgroundTask(lambda: os.unlink(tmp.name)))
+
+
+@app.get("/api/molecule")
+def molecule(smiles: str | None = None, name: str | None = None, q: str | None = None) -> dict:
+    """Resolve a SMILES string or compound name to a 3D structure (mol block) for the viewer.
+
+    ``q`` is free text that is auto-detected (SMILES first, else a name lookup)."""
+    if not smiles and not name and not q:
+        raise HTTPException(status_code=400, detail="provide a smiles, name, or q parameter")
+    try:
+        return molecule_service.molecule_payload(smiles=smiles, name=name, q=q)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"structure lookup failed: {exc}") from exc
 
 
 @app.post("/api/compare")

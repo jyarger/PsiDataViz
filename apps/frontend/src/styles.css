@@ -321,3 +321,16 @@ input[type="text"].filter {
   font-weight: 600; color: var(--text); }
 .micrograph-img { display: block; width: 100%; height: auto; max-height: 640px; object-fit: contain;
   background: #000; }
+
+/* CompoundViewer — SMILES/name search + resolved info */
+.mol-search { display: flex; gap: 8px; padding: 10px 12px; }
+.mol-search input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text); padding: 8px 10px; font-size: 14px; font-family: inherit; }
+.mol-search input:focus { outline: none; border-color: var(--accent); }
+.mol-search button { background: var(--accent); color: #06121f; border: none; border-radius: 8px;
+  padding: 8px 16px; font-weight: 600; cursor: pointer; }
+.mol-search button:disabled { opacity: 0.6; cursor: default; }
+.mol-info { padding: 0 12px 8px; font-size: 13px; color: var(--text); }
+.mol-info .mol-iupac { color: var(--muted); }
+.mol-info .mol-smiles { color: var(--muted); font-family: ui-monospace, monospace; font-size: 12px; }
+.mol-empty { padding: 18px 12px 22px; color: var(--muted); font-size: 13px; text-align: center; }

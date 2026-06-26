@@ -11,6 +11,8 @@ import { Footer } from "./components/Footer";
 import { SpectrumPlot } from "./components/SpectrumPlot";
 import { Heatmap } from "./components/Heatmap";
 import { MoleculeViewer } from "./components/MoleculeViewer";
+import { CompoundViewer } from "./components/CompoundViewer";
+import { guessCompound } from "./compound";
 import { WaveformPlayer } from "./components/WaveformPlayer";
 import { CompareView } from "./components/CompareView";
 import { ExportMenu } from "./components/ExportMenu";
@@ -178,6 +180,13 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
   const signalDatasets = selectedDatasets.filter((d) => d.signals?.length > 0 && !d.audio);
   const imageDatasets = selectedDatasets.filter((d) => d.images?.length > 0);
   const structureDatasets = selectedDatasets.filter((d) => d.structure);
+  // datasets without a computed 3D structure can still get a molecule view from a guessed compound
+  const compoundSeed = structureDatasets.length === 0
+    ? guessCompound(
+        (signalDatasets[0] ?? imageDatasets[0] ?? selectedDatasets[0])?.metadata.sample_name as string
+        ?? (signalDatasets[0] ?? imageDatasets[0] ?? selectedDatasets[0])?.filename ?? "",
+      )
+    : "";
   const soleRecord = selected.length === 1 ? records.find((r) => rid(r) === selected[0]) : null;
   const canCompare = !!soleRecord && soleRecord.formats.length > 1;
   const needle = filter.trim().toLowerCase();
@@ -392,6 +401,9 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
               peak={peak}
             />
           ))}
+          {structureDatasets.length === 0 && selectedDatasets.length > 0 && (
+            <CompoundViewer key={`cmp-${compoundSeed}`} initialQuery={compoundSeed} />
+          )}
           {audioDatasets.map((ds) => (
             <WaveformPlayer key={`wav-${ds.filename}`} dataset={ds} />
           ))}

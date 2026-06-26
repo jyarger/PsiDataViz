@@ -153,8 +153,18 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 
 const q = encodeURIComponent;
 
+export interface MoleculeData {
+  molblock: string;
+  smiles: string;
+  query: string;
+  iupac?: string | null;
+  formula?: string | null;
+  cid?: number | null;
+}
+
 export const api = {
   scan: (url: string) => get<ScanResult>(`/api/scan?url=${q(url)}`),
+  molecule: (query: string) => get<MoleculeData>(`/api/molecule?q=${q(query)}`),
   catalog: (url: string) => get<CatalogResult>(`/api/catalog?url=${q(url)}`),
   records: (url: string, technique: string) =>
     get<RecordRow[]>(`/api/records?url=${q(url)}&technique=${q(technique)}`),

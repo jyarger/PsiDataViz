@@ -60,6 +60,9 @@ library, and app share the **Psi** prefix and the **Ψ** mark.
   computational job's **optimized geometry** render in an interactive **3Dmol.js** viewer beside the data,
   so a Gaussian/ORCA `.log` shows its IR/Raman spectra *and* its molecule — with **animated vibrational
   normal modes** (pick a frequency and watch the atoms move).
+- **Molecule viewer everywhere** — type a **SMILES** or a **compound name** (resolved via RDKit + PubChem)
+  to see its 3D structure, and the viewer **auto-shows the compound** when a dataset's name implies one
+  (e.g. a CBD Raman spectrum displays cannabidiol). **Mass spectra** render as stick/peak plots.
 - **ΨDataSound** — for acoustic `.wav` recordings, **play the sound in the browser** and toggle between the
   **waveform** (time vs amplitude) and its **FFT spectrum**.
 - **Convert** any dataset to **CSDM, HDF5, CSV, Parquet, Feather,** or per-signal **CSV (zip)**.
