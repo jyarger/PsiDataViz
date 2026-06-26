@@ -13,7 +13,7 @@ from __future__ import annotations
 import os
 import tempfile
 
-from fastapi import Body, FastAPI, HTTPException, Query
+from fastapi import Body, FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from psidata import __version__, compare_record_formats, get_readers
@@ -70,6 +70,43 @@ def catalog(url: str) -> dict:
         for r in recs
         if r.supported
     ]
+    return summary
+
+
+@app.post("/api/upload")
+async def upload(files: list[UploadFile] = File(...)) -> dict:
+    """Receive a dropped local folder/zip, keep it in memory, and return its catalog (same shape as
+    /api/catalog) plus an `upload://…` url the DATA workspace uses for follow-up record/dataset calls."""
+    collected: dict[str, bytes] = {}
+    total = 0
+    for f in files:
+        data = await f.read()
+        total += len(data)
+        if total > 250 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Upload too large (250 MB limit).")
+        collected[(f.filename or "file").lstrip("/")] = data
+    if len(collected) == 1:  # a single dropped .zip is treated as a folder archive — expand it
+        (path, blob), = collected.items()
+        if path.lower().endswith(".zip"):
+            import io
+            import zipfile
+            try:
+                zf = zipfile.ZipFile(io.BytesIO(blob))
+                expanded = {m: zf.read(m) for m in zf.namelist()
+                            if not m.endswith("/") and "__MACOSX" not in m}
+                if expanded:
+                    collected = expanded
+            except zipfile.BadZipFile:
+                pass
+    if not collected:
+        raise HTTPException(status_code=400, detail="No files received.")
+    token = services.store_upload(collected, f"Local upload · {len(collected)} files")
+    cat = services.scan_repo(token)
+    summary = services.scan_summary(cat)
+    summary["records"] = [
+        services.record_row(r) for recs in cat.record_groups().values() for r in recs if r.supported
+    ]
+    summary["url"] = token
     return summary
 
 

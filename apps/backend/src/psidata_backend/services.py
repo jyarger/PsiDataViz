@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import os
-from collections import Counter
+import uuid
+from collections import Counter, OrderedDict
 from dataclasses import asdict
 
 import httpx
@@ -15,6 +16,27 @@ from psidata.sources.catalog import _technique_has_reader, build_entry
 from psidata.sources.records import IMAGE
 
 _listing_cache: dict[str, dict] = {}  # url -> {"label", "files"} (process-lifetime cache)
+
+# Locally-uploaded data (drag-and-drop): kept in memory, addressed by an "upload://<id>|<path>" URL so it
+# flows through the same scan/records/dataset pipeline. LRU-capped (drag-drop is per-session, not storage).
+_UPLOAD_STORE: OrderedDict[str, dict[str, bytes]] = OrderedDict()
+_UPLOAD_MAX = 12
+UPLOAD_SCHEME = "upload://"
+
+
+def store_upload(files: dict[str, bytes], label: str) -> str:
+    """Stash uploaded files in memory and pre-fill the listing cache so scan_repo() can read them."""
+    upload_id = uuid.uuid4().hex[:12]
+    _UPLOAD_STORE[upload_id] = files
+    _UPLOAD_STORE.move_to_end(upload_id)
+    while len(_UPLOAD_STORE) > _UPLOAD_MAX:
+        evicted, _ = _UPLOAD_STORE.popitem(last=False)
+        _listing_cache.pop(f"{UPLOAD_SCHEME}{evicted}", None)
+    refs = [FileRef(path=p, size=len(b), download_url=f"{UPLOAD_SCHEME}{upload_id}|{p}")
+            for p, b in files.items()]
+    _listing_cache[f"{UPLOAD_SCHEME}{upload_id}"] = {"label": label,
+                                                     "files": [asdict(r) for r in refs]}
+    return f"{UPLOAD_SCHEME}{upload_id}"
 
 
 def scan_repo(url: str, *, use_cache: bool = True) -> Catalog:
@@ -31,6 +53,12 @@ def scan_repo(url: str, *, use_cache: bool = True) -> Catalog:
 
 
 def _fetch_bytes(url: str) -> bytes:
+    if url.startswith(UPLOAD_SCHEME):  # locally-uploaded data, served from memory
+        upload_id, _, path = url[len(UPLOAD_SCHEME):].partition("|")
+        store = _UPLOAD_STORE.get(upload_id)
+        if store is None or path not in store:
+            raise FileNotFoundError("Uploaded data not found (it may have expired — drop the files again).")
+        return store[path]
     headers = {}
     token = os.environ.get("GITHUB_TOKEN")
     if token and "githubusercontent" in url:

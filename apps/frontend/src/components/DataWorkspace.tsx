@@ -4,6 +4,7 @@ import { SpectrumPlot } from "./SpectrumPlot";
 import { Heatmap } from "./Heatmap";
 import { MoleculeViewer } from "./MoleculeViewer";
 import { WaveformPlayer } from "./WaveformPlayer";
+import { DropZone } from "./DropZone";
 
 type Source = { url: string; label: string; icon: string; catalog: CatalogResult };
 type Row = RecordRow & { source: string; ckey: string };
@@ -61,6 +62,12 @@ export function DataWorkspace() {
     } finally {
       setBusy(null);
     }
+  }
+
+  function addUploaded(cat: CatalogResult & { url: string }) {
+    setError(null);
+    if (sources.some((s) => s.url === cat.url)) return;
+    setSources((s) => [...s, { url: cat.url, label: cat.source, icon: "⬆", catalog: cat }]);
   }
 
   function removeSource(url: string) {
@@ -144,6 +151,8 @@ export function DataWorkspace() {
           </button>
         ))}
       </div>
+
+      <DropZone onLoaded={addUploaded} />
 
       {busy && <p className="spinner">{busy}</p>}
       {error && <p className="error">{error}</p>}

@@ -169,6 +169,17 @@ export const api = {
     ),
   compare: (url: string, technique: string, key: string) =>
     post<CompareResult>(`/api/compare`, { url, technique, key }),
+  // upload local files (each with a relative path) -> catalog + an upload:// url for follow-up calls
+  upload: async (files: { file: File; path: string }[]): Promise<CatalogResult & { url: string }> => {
+    const form = new FormData();
+    for (const { file, path } of files) form.append("files", file, path);
+    const res = await fetch(`${BASE}/api/upload`, { method: "POST", body: form });
+    if (!res.ok) {
+      const b = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(b.detail ?? res.statusText);
+    }
+    return res.json();
+  },
 };
 
 // Direct download URL for converting a dataset to a standard format (csdf | h5).

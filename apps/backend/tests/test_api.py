@@ -176,3 +176,31 @@ def test_dataset_merges_raman_spec_sidecar():
                                             "sidecar_url": spec}).json()["metadata"]
     assert md["laser"] == "Green" and md["laser_power_mw"] == 1.3
     assert md["spectrometer"] == "Andor750 (3)" and md["polarization"] == "Depolarized"
+
+
+def test_upload_endpoint_scans_and_loads_local_files():
+    # a dropped "folder": an XRD .xy at a folder path
+    xy = b"10 100\n20 350\n30 80\n40 1200\n50 60\n"
+    res = client.post("/api/upload", files=[("files", ("XRD/pattern.xy", xy, "text/plain"))])
+    assert res.status_code == 200
+    body = res.json()
+    assert body["url"].startswith("upload://")
+    rec = next(r for r in body["records"] if r["technique"] == "XRD")
+    assert rec["url"].startswith("upload://")
+    # the uploaded file loads back through the normal dataset endpoint
+    ds = client.get("/api/dataset", params={"url": rec["url"], "name": rec["name"],
+                                            "technique": "XRD"}).json()
+    assert ds["reader"] == "xrd_text" and ds["signals"]
+
+
+def test_upload_expands_a_single_dropped_zip():
+    import io
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("XRD/a.xy", "10 1\n20 2\n30 3\n")
+    res = client.post("/api/upload", files=[("files", ("bundle.zip", buf.getvalue(), "application/zip"))])
+    assert res.status_code == 200
+    # the zip is expanded -> the inner .xy becomes a record, not a single .zip record
+    assert any(r["name"] == "a.xy" for r in res.json()["records"])
