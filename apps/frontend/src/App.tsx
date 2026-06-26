@@ -405,7 +405,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
               {datasets[rid(soleRecord)].bundle && (
                 <div className="bundle-row">
                   <span className="muted">
-                    {datasets[rid(soleRecord)].bundle!.members.length} datasets in this zip — show:
+                    {datasets[rid(soleRecord)].bundle!.members.length} datasets in this archive — show:
                   </span>
                   {datasets[rid(soleRecord)].bundle!.members.map((m) => (
                     <button

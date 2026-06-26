@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from . import (
     acoustic_spectrum,  # noqa: F401  (import triggers registration)
+    agilent_dad,  # noqa: F401  (import triggers registration)
     brillouin_asc,  # noqa: F401  (import triggers registration)
     cd_dcs,  # noqa: F401  (import triggers registration)
     comp_input,  # noqa: F401  (import triggers registration)
@@ -37,7 +38,7 @@ from . import (
     xrd_text,  # noqa: F401  (import triggers registration)
 )
 
-__all__ = ["acoustic_spectrum", "brillouin_asc", "comp_input", "comp_log", "cd_dcs", "comp_spectrum", "dielectric_text", "dsc_trios",
+__all__ = ["acoustic_spectrum", "agilent_dad", "brillouin_asc", "comp_input", "comp_log", "cd_dcs", "comp_spectrum", "dielectric_text", "dsc_trios",
            "ftir_jcamp", "ftir_opus", "ftir_pe_asc", "ftir_text", "gamry_dta", "hplc_text", "jcamp_electrochem", "jcamp_ms",
            "microscopy_image", "nmr_jcamp", "nmr_text", "nmr_totxt", "raman_text", "spreadsheet_table", "structure_file",
            "tga_text", "uvvis_text", "wav_audio", "xrd_image", "xrd_panalytical", "xrd_text"]

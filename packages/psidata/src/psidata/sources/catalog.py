@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 
+from ..archive import is_archive
 from ..filename import ParsedName, parse_filename
 from ..registry import get_readers
 from .base import DataSource, FileRef
@@ -176,10 +177,11 @@ def build_entry(ref: FileRef) -> CatalogEntry:
     reader = _match_reader(technique, ref.ext)
     supported = reader is not None
     reader_name = reader.name if reader else None
-    # A `.zip` is a packaged dataset (e.g. zipped Bruker/SpinSolve NMR); mark it supported when the
-    # technique has a reader, and let `read_zip` extract/parse it on open.
-    if ref.ext == ".zip" and not supported and _technique_has_reader(technique):
-        supported, reader_name = True, "archive_zip"
+    # An archive (.zip or a .tar.bz2/.tar.gz tarball) is a packaged dataset (e.g. zipped Bruker/SpinSolve
+    # NMR, or a tarball of Agilent .D runs); mark it supported when the technique has a reader, and let
+    # `read_archive` unwrap/parse it on open.
+    if is_archive(ref.name) and not supported and _technique_has_reader(technique):
+        supported, reader_name = True, "archive"
     return CatalogEntry(
         file=ref,
         technique=technique,

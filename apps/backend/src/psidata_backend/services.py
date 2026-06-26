@@ -9,7 +9,7 @@ from dataclasses import asdict
 
 import httpx
 import numpy as np
-from psidata import Candidate, Dataset, read, read_zip, zip_datasets
+from psidata import Candidate, Dataset, archive_datasets, is_archive, read, read_archive
 from psidata.readers.raman_text import parse_spec_sidecar
 from psidata.sources import Catalog, FileRef, make_source
 from psidata.sources.catalog import _technique_has_reader, build_entry
@@ -71,8 +71,8 @@ def _fetch_bytes(url: str) -> bytes:
 def load_dataset(name: str, url: str, *, technique: str | None = None,
                  sidecar_url: str | None = None, member: str | None = None) -> Dataset:
     content = _fetch_bytes(url)
-    if name.lower().endswith(".zip") or url.lower().endswith(".zip"):
-        ds = read_zip(name, content, technique_hint=technique, member=member)
+    if is_archive(name) or is_archive(url):
+        ds = read_archive(name, content, technique_hint=technique, member=member)
     else:
         ds = read(Candidate(filename=name, content=content, uri=url, technique_hint=technique))
     if sidecar_url:  # merge a Raman *_spec.txt companion (laser/power/spectrometer) into metadata
@@ -84,11 +84,11 @@ def load_dataset(name: str, url: str, *, technique: str | None = None,
 
 
 def zip_bundle(name: str, url: str, *, technique: str | None = None) -> list[dict]:
-    """The distinct datasets inside a zip (empty for a non-zip or single-dataset zip). Cheap: the bytes
-    are already cached by ``_fetch_bytes`` from the dataset load."""
-    if not (name.lower().endswith(".zip") or url.lower().endswith(".zip")):
+    """The distinct datasets inside an archive (empty for a non-archive or single-dataset one). Cheap:
+    the bytes are already cached by ``_fetch_bytes`` from the dataset load."""
+    if not (is_archive(name) or is_archive(url)):
         return []
-    members = zip_datasets(name, _fetch_bytes(url), technique_hint=technique)
+    members = archive_datasets(name, _fetch_bytes(url), technique_hint=technique)
     return members if len(members) > 1 else []
 
 

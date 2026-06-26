@@ -82,6 +82,12 @@ _EXT_TABLE: dict[str, FormatInfo] = {
     ".xls": FormatInfo(SPREADSHEET, "Excel spreadsheet", True),
     ".xlsx": FormatInfo(SPREADSHEET, "Excel spreadsheet", True),
     ".zip": FormatInfo(ARCHIVE, "Compressed archive", True),
+    ".bz2": FormatInfo(ARCHIVE, "Compressed archive (tar.bz2)", True),
+    ".gz": FormatInfo(ARCHIVE, "Compressed archive (tar.gz)", True),
+    ".tgz": FormatInfo(ARCHIVE, "Compressed archive (tar.gz)", True),
+    ".tbz2": FormatInfo(ARCHIVE, "Compressed archive (tar.bz2)", True),
+    ".xz": FormatInfo(ARCHIVE, "Compressed archive (tar.xz)", True),
+    ".tar": FormatInfo(ARCHIVE, "Tar archive", True),
     ".jpg": FormatInfo(IMAGE, "Image / preview", False),
     ".jpeg": FormatInfo(IMAGE, "Image / preview", False),
     ".png": FormatInfo(IMAGE, "Image / preview", False),
@@ -109,8 +115,10 @@ def classify_format(filename: str) -> FormatInfo:
 
 
 def record_key(filename: str) -> str:
-    """Normalized base name used to group format variants (strips known sidecar suffixes)."""
+    """Normalized base name used to group format variants (strips known sidecar/tarball suffixes)."""
     stem = os.path.splitext(os.path.basename(filename))[0]
+    if stem.lower().endswith(".tar"):  # e.g. "foo.tar.bz2" -> stem "foo.tar" -> "foo"
+        stem = stem[:-4]
     return _SIDECAR_STEM.sub("", stem)
 
 

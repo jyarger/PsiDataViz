@@ -64,9 +64,11 @@ The core mission. PsiDataViz is only as useful as the formats it can read.
   extensions.
 - **Honest detection** — `sniff()` should never claim a format it can't actually decode (a scan must not
   flag a file "supported" that then fails to load).
-- **Zip bundles** — a `.zip` is read as one dataset: vendor multi-file exports (Bruker TopSpin,
-  SpinSolve) are assembled, otherwise the **most-confidently-parseable member is chosen via the full
-  reader registry** (so an OPUS-`.0`-only or structure-only zip works), and **nested zips** are unwrapped.
+- **Archive bundles** — a `.zip` **or a tarball** (`.tar.bz2`/`.tar.gz`/`.tgz`, plus single `.bz2`/`.gz`)
+  is read as one dataset (tarballs are repackaged into a zip so the whole zip pipeline applies): vendor
+  multi-file exports (Bruker TopSpin, SpinSolve) are assembled, otherwise the **most-confidently-parseable
+  member is chosen via the full reader registry** (so an OPUS-`.0`-only or structure-only archive works,
+  or a `.tar.bz2` of Agilent ChemStation `.D` runs), and **nested zips** are unwrapped.
   Zipping each dataset (all its formats together) is the recommended upload pattern — see
   [data-sources](data-sources.md#packaging-datasets-as-zip-recommended). A zip that holds **several
   distinct datasets** is expanded too: the inner datasets are listed and the UI lets you switch between

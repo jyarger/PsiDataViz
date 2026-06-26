@@ -14,9 +14,13 @@ macOS ``__MACOSX`` resource-fork entries are ignored.
 
 from __future__ import annotations
 
+import bz2
+import gzip
 import io
+import lzma
 import os
 import re
+import tarfile
 import zipfile
 
 import numpy as np
@@ -30,6 +34,66 @@ from .registry import DETECT_THRESHOLD, read, score_readers
 
 _BRUKER_MARKERS = {"acqus", "acqu", "fid", "ser", "pulseprogram", "procs"}
 _MAX_ZIP_DEPTH = 3  # guard against deeply-nested or self-referential archives
+
+# tarball suffixes (handled by repackaging into a zip so the whole zip pipeline applies unchanged)
+_TAR_SUFFIXES = (".tar.bz2", ".tbz2", ".tar.gz", ".tgz", ".tar.xz", ".txz", ".tar")
+_SINGLE_SUFFIXES = (".bz2", ".gz", ".xz")  # a single compressed file (no tar wrapper)
+
+
+def is_archive(name: str) -> bool:
+    """True for any archive/compressed container we can unwrap (zip, tarball, or a single .bz2/.gz/.xz)."""
+    low = name.lower()
+    return low.endswith(".zip") or low.endswith(_TAR_SUFFIXES) or low.endswith(_SINGLE_SUFFIXES)
+
+
+def _tar_to_zip(content: bytes) -> bytes:
+    """Repackage a tarball (any compression) into an in-memory zip, reusing all the zip logic below."""
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=io.BytesIO(content)) as tf, \
+            zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for member in tf.getmembers():
+            if member.isfile():
+                extracted = tf.extractfile(member)
+                if extracted is not None:
+                    zf.writestr(member.name, extracted.read())
+    return buf.getvalue()
+
+
+def _decompress_single(filename: str, content: bytes) -> tuple[str, bytes]:
+    """Decompress a single .bz2/.gz/.xz file and return (inner_filename, bytes)."""
+    low = filename.lower()
+    if low.endswith(".bz2"):
+        return filename[:-4], bz2.decompress(content)
+    if low.endswith(".gz"):
+        return filename[:-3], gzip.decompress(content)
+    if low.endswith(".xz"):
+        return filename[:-3], lzma.decompress(content)
+    return filename, content
+
+
+def read_archive(filename: str, content: bytes, *, technique_hint: str | None = None,
+                 member: str | None = None) -> Dataset:
+    """Parse a dataset from any supported archive — zip, tarball (``.tar.bz2``/``.tar.gz``/…), or a
+    single compressed file — into the universal model. Tarballs reuse the full zip pipeline."""
+    low = filename.lower()
+    if low.endswith(_TAR_SUFFIXES):
+        return read_zip(filename, _tar_to_zip(content), technique_hint=technique_hint, member=member)
+    if low.endswith(_SINGLE_SUFFIXES):
+        inner, data = _decompress_single(filename, content)
+        return read(Candidate(filename=inner, content=data, technique_hint=technique_hint))
+    return read_zip(filename, content, technique_hint=technique_hint, member=member)
+
+
+def archive_datasets(filename: str, content: bytes, *,
+                     technique_hint: str | None = None) -> list[dict]:
+    """List the distinct datasets inside an archive (for the multi-dataset selector). A single
+    compressed file holds one dataset, so it returns ``[]`` (load it directly with read_archive)."""
+    low = filename.lower()
+    if low.endswith(_TAR_SUFFIXES):
+        return zip_datasets(filename, _tar_to_zip(content), technique_hint=technique_hint)
+    if low.endswith(_SINGLE_SUFFIXES):
+        return []
+    return zip_datasets(filename, content, technique_hint=technique_hint)
 
 
 class ArchiveError(Exception):
@@ -100,8 +164,9 @@ def _read_member(zf: zipfile.ZipFile, member: str, filename: str, technique_hint
         if depth >= _MAX_ZIP_DEPTH:
             raise ArchiveError(f"{filename}: nested archives too deep (> {_MAX_ZIP_DEPTH})")
         return read_zip(member, data, technique_hint=technique_hint, _depth=depth + 1)
+    # uri carries the full member path (e.g. "run/ba_1.D/DAD1.CSV") so readers can recover folder context
     return read(Candidate(filename=os.path.basename(member), content=data,
-                          uri=filename, technique_hint=technique_hint))
+                          uri=member, technique_hint=technique_hint))
 
 
 def zip_datasets(filename: str, content: bytes, *, technique_hint: str | None = None) -> list[dict]:
@@ -132,8 +197,20 @@ def zip_datasets(filename: str, content: bytes, *, technique_hint: str | None = 
         # only confidently-parseable groups count as datasets (skip notes / previews / junk)
         if pick is None or (pick[0] != "zip" and pick[2] < DETECT_THRESHOLD):
             continue
-        datasets.append({"key": base, "member": pick[1], "formats": _exts(group_members)})
+        datasets.append({"key": _dataset_key(pick[1], base), "member": pick[1],
+                         "formats": _exts(group_members)})
     return datasets
+
+
+def _dataset_key(member: str, stem: str) -> str:
+    """A human label for a dataset inside an archive — the run folder when the filename is a generic
+    instrument export (e.g. an Agilent ``ba_1.D/DAD1.CSV`` lists as ``ba_1``, not ``DAD1``)."""
+    parent = os.path.basename(os.path.dirname(member))
+    if parent.lower().endswith(".d"):  # Agilent ChemStation run folder
+        return parent[:-2]
+    if stem.lower() in ("dad1", "dad", "spectrum", "spectrum_processed", "data", "fid", "1r") and parent:
+        return parent
+    return stem
 
 
 def _exts(members: list[str]) -> list[str]:

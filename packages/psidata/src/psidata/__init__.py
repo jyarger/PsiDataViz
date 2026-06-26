@@ -5,7 +5,14 @@ experimental & computational scientific data into one universal model.
 from __future__ import annotations
 
 from . import readers as _readers  # noqa: F401  (import registers all built-in readers)
-from .archive import ArchiveError, read_zip, zip_datasets
+from .archive import (
+    ArchiveError,
+    archive_datasets,
+    is_archive,
+    read_archive,
+    read_zip,
+    zip_datasets,
+)
 from .compare import Comparison, compare_datasets, compare_record_formats
 from .convert import convert
 from .filename import ParsedName, parse_filename
@@ -24,6 +31,7 @@ __version__ = "0.2.0"
 
 __all__ = [
     "ArchiveError",
+    "archive_datasets",
     "Audio",
     "Axis",
     "BaseReader",
@@ -33,6 +41,8 @@ __all__ = [
     "Image2D",
     "Metadata",
     "ParsedName",
+    "is_archive",
+    "read_archive",
     "Signal",
     "SourceInfo",
     "Structure3D",
