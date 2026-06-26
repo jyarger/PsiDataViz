@@ -19,7 +19,8 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
   comparison; conversion to CSDM/HDF5/Zarr/CSV/Parquet/Feather.
 - **Readers** — DSC, NMR (JCAMP-DX + ASDF, Nanalysis NMReady NTUPLES/FID→spectrum, `.tsv`, 2D `totxt`),
   FTIR (`.dpt`, JCAMP, PerkinElmer `.asc`, **Bruker OPUS `.0`** via brukeropusreader), Raman, XRD (1D —
-  `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`, `.dat`/`.asc`; 2D detector images via FabIO), UV-Vis
+  `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`, `.dat`/`.asc`; 2D detector images via FabIO), **microscopy**
+  (SEM/TEM/optical `.tif`/`.jpg`/`.png` micrographs via Pillow), UV-Vis
   (`.txt` / Thorlabs `.csv`), **TGA** (TA Instruments `.txt`), **Brillouin** (multichannel-scaler `.asc`),
   **Acoustic** (interferometry FFT `Spectrum.csv` inside the `.zip`), **Computational** (`.log`/`.out` via
   **cclib** → IR/Raman, plus GaussView `_ir.txt`/`_raman.txt`, and `.gjf`/`.inp` input geometries).

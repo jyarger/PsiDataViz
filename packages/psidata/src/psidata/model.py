@@ -91,6 +91,9 @@ class Image2D:
     x: Axis
     y: Axis
     z: Axis  # the intensity (colour) axis
+    # "map" = a scientific intensity array (shown as a false-colour heatmap); "photo" = a real
+    # micrograph/image (grayscale or RGB) shown as-is.
+    kind: str = "map"
 
     @property
     def shape(self) -> tuple[int, int]:

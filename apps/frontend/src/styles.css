@@ -313,3 +313,11 @@ input[type="text"].filter {
 .dz-text { color: var(--text); font-size: 14px; margin: 6px 0 12px; }
 .dz-actions { display: flex; gap: 10px; justify-content: center; }
 .dz-note { font-size: 12px; margin: 10px 0 0; }
+
+/* micrographs (SEM/TEM/optical microscopy) — shown as the real image */
+.micrograph { margin-top: 14px; background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden; }
+.micrograph-head { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 14px;
+  font-weight: 600; color: var(--text); }
+.micrograph-img { display: block; width: 100%; height: auto; max-height: 640px; object-fit: contain;
+  background: #000; }

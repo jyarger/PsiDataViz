@@ -6,10 +6,12 @@ import type { DatasetData } from "../api";
 // downsampled, log-scaled intensity grid (see services._image_json).
 export function Heatmap({ dataset }: { dataset: DatasetData }) {
   const ref = useRef<HTMLDivElement>(null);
+  const photo = dataset.images?.find((im) => im.kind === "photo");
 
   useEffect(() => {
     if (!ref.current || !dataset.images?.length) return;
     const im = dataset.images[0];
+    if (im.kind === "photo") return; // micrographs render as <img>, not a Plotly heatmap
     const axisTitle = (a: { label: string; unit: string | null }) =>
       a.unit ? `${a.label} (${a.unit})` : a.label;
 
@@ -39,6 +41,22 @@ export function Heatmap({ dataset }: { dataset: DatasetData }) {
       modeBarButtonsToRemove: ["lasso2d", "select2d"],
     });
   }, [dataset]);
+
+  if (photo?.data_uri) {
+    const label = (dataset.metadata.sample_name as string) || dataset.filename;
+    return (
+      <div className="micrograph">
+        <div className="micrograph-head">
+          🔬 {label}
+          <span className="mol-meta">
+            {" "}
+            · {photo.shape[1]}×{photo.shape[0]} px
+          </span>
+        </div>
+        <img className="micrograph-img" src={photo.data_uri} alt={label} />
+      </div>
+    );
+  }
 
   return <div ref={ref} style={{ width: "100%", height: 540 }} />;
 }

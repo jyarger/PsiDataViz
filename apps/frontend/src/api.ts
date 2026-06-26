@@ -65,11 +65,13 @@ export interface SignalData {
 }
 export interface ImageData {
   name: string;
+  kind?: "map" | "photo";
+  data_uri?: string; // for kind === "photo": a PNG data URI of the micrograph
   x: { label: string; unit: string | null };
   y: { label: string; unit: string | null };
-  z: { label: string; unit: string | null; scale: string };
+  z: { label: string; unit: string | null; scale?: string };
   shape: [number, number];
-  values: number[][];
+  values?: number[][]; // for kind === "map": the heatmap intensity grid
 }
 export interface VibModeData {
   freq: number;

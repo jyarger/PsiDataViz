@@ -272,7 +272,9 @@ def audio_wav(url: str, name: str, member: str | None = None) -> bytes:
 
 
 def _image_json(image, max_side: int = 240) -> dict:
-    """Downsample a 2D image (block max-pool) and log-scale it for compact, viewable transport."""
+    """A scientific map -> downsampled log-scaled heatmap; a micrograph (`photo`) -> a real image."""
+    if getattr(image, "kind", "map") == "photo":
+        return _photo_json(image)
     a = image.data
     rows, cols = a.shape
     step = max(1, -(-max(rows, cols) // max_side))  # ceil division -> longest side <= max_side
@@ -287,6 +289,34 @@ def _image_json(image, max_side: int = 240) -> dict:
         "z": {"label": image.z.label, "unit": image.z.unit, "scale": "log1p"},
         "shape": [int(rows), int(cols)],
         "values": np.round(z, 3).tolist(),
+    }
+
+
+def _photo_json(image, max_side: int = 1100) -> dict:
+    """Encode a micrograph (grayscale or RGB) as a downsampled PNG data-URI shown as-is in the UI."""
+    import base64
+    import io
+
+    from PIL import Image as PILImage
+
+    a = image.data
+    if a.dtype != np.uint8:  # normalize 16-bit / float micrographs to 8-bit for display
+        a = np.nan_to_num(a, nan=0.0)
+        hi = float(a.max()) or 1.0
+        a = (np.clip(a, 0, hi) / hi * 255.0).astype(np.uint8) if hi > 255 else a.astype(np.uint8)
+    pil = PILImage.fromarray(a)
+    pil.thumbnail((max_side, max_side))
+    buf = io.BytesIO()
+    pil.convert("RGB").save(buf, format="JPEG", quality=85)  # JPEG keeps the data-URI small
+    uri = "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+    return {
+        "name": image.name,
+        "kind": "photo",
+        "data_uri": uri,
+        "shape": [int(image.shape[0]), int(image.shape[1])],
+        "x": {"label": image.x.label, "unit": image.x.unit},
+        "y": {"label": image.y.label, "unit": image.y.unit},
+        "z": {"label": image.z.label, "unit": image.z.unit},
     }
 
 
