@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import io
 import os
 import uuid
+import zipfile
 from collections import Counter, OrderedDict
 from dataclasses import asdict
+from functools import lru_cache
 
 import httpx
 import numpy as np
@@ -13,6 +16,7 @@ from psidata import Candidate, Dataset, archive_datasets, is_archive, read, read
 from psidata.readers.raman_text import parse_spec_sidecar
 from psidata.sources import Catalog, FileRef, make_source
 from psidata.sources.catalog import _technique_has_reader, build_entry, detect_organization
+from psidata.sources.chemotion import ZIP_MEMBER_SEP
 from psidata.sources.records import IMAGE
 
 _listing_cache: dict[str, dict] = {}  # url -> {"label", "files"} (process-lifetime cache)
@@ -55,6 +59,15 @@ def scan_repo(url: str, *, use_cache: bool = True, keyword: str | None = None) -
     return Catalog(source_label=payload["label"], entries=[build_entry(r) for r in refs])
 
 
+@lru_cache(maxsize=6)
+def _download_archive(url: str) -> bytes:
+    """Download (and process-cache) a whole archive — used to serve many inner members of one
+    Chemotion/BagIt zip without re-downloading the multi-megabyte archive each time."""
+    resp = httpx.get(url, follow_redirects=True, timeout=180.0)
+    resp.raise_for_status()
+    return resp.content
+
+
 def _fetch_bytes(url: str) -> bytes:
     if url.startswith(UPLOAD_SCHEME):  # locally-uploaded data, served from memory
         upload_id, _, path = url[len(UPLOAD_SCHEME):].partition("|")
@@ -62,6 +75,11 @@ def _fetch_bytes(url: str) -> bytes:
         if store is None or path not in store:
             raise FileNotFoundError("Uploaded data not found (it may have expired — drop the files again).")
         return store[path]
+    marker = ".zip" + ZIP_MEMBER_SEP  # "<archive>.zip!<member>" -> extract that member
+    if marker in url.lower():
+        cut = url.lower().index(marker) + len(".zip")
+        zip_url, member = url[:cut], url[cut + len(ZIP_MEMBER_SEP):]
+        return zipfile.ZipFile(io.BytesIO(_download_archive(zip_url))).read(member)
     headers = {}
     token = os.environ.get("GITHUB_TOKEN")
     if token and "githubusercontent" in url:

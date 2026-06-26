@@ -116,25 +116,28 @@ def decode_xpp_yy(data_lines: list[str], npoints: int | None = None
     n_boundaries = len(per_line) - 1
     if npoints is not None:
         if total == npoints:
-            overlap = False
+            overlap: bool | None = False
         elif total - n_boundaries == npoints:
             overlap = True
         else:
-            raise ValueError(
-                f"ASDF decoded {total} ordinates ({total - n_boundaries} de-overlapped) "
-                f"but NPOINTS={npoints}"
-            )
+            # Some real exports (e.g. edited Chemotion JCAMP) match neither convention exactly —
+            # mixed/duplicated boundaries. Rather than reject the spectrum, de-overlap adaptively:
+            # drop only the line boundaries whose first ordinate actually repeats the previous value.
+            overlap = None
     else:
         overlap = len(per_line) > 1 and per_line[1][1][0] == per_line[0][1][-1]
 
     ordinates: list[int | float] = []
     for idx, (_lead, ys) in enumerate(per_line):
-        if overlap and ordinates:
-            if ys[0] != ordinates[-1]:
-                raise ValueError(
-                    f"ASDF Y-value check failed at data line {idx}: {ys[0]} != {ordinates[-1]}"
-                )
-            ys = ys[1:]
+        if ordinates:
+            if overlap is True:
+                if ys[0] != ordinates[-1]:
+                    raise ValueError(
+                        f"ASDF Y-value check failed at data line {idx}: {ys[0]} != {ordinates[-1]}"
+                    )
+                ys = ys[1:]
+            elif overlap is None and ys[0] == ordinates[-1]:
+                ys = ys[1:]
         ordinates.extend(ys)
 
     leads = [lead for lead, _ in per_line]

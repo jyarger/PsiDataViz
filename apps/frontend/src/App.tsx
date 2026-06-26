@@ -79,6 +79,11 @@ const PRESETS: { label: string; provider: string; url: string }[] = [
   },
   { label: "Codeberg — PsiData", provider: "codeberg", url: "https://codeberg.org/jyarger/PsiData" },
   { label: "Box — PsiData", provider: "box", url: "https://app.box.com/s/yigbg0fd5xj5n1hkxf8rcsemrkz7qgsx" },
+  {
+    label: "Chemotion — published data",
+    provider: "chemotion",
+    url: "https://www.chemotion-repository.net/",
+  },
 ];
 
 // A record's `key` (base name) repeats across techniques and sub-folders, so identify a selected row
@@ -302,7 +307,8 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
         </a>
       </div>
       <p className="tested-note">
-        Tested public storage: <b>GitHub</b>, <b>Codeberg</b>, <b>Google Drive</b>, <b>Box</b>.{" "}
+        Tested public storage: <b>GitHub</b>, <b>Codeberg</b>, <b>Google Drive</b>, <b>Box</b>, and the{" "}
+        <b>Chemotion</b> repository.{" "}
         <span className="muted">More public &amp; private sources are in the works.</span>
       </p>
 

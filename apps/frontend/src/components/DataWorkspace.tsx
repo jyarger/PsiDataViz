@@ -26,6 +26,7 @@ const PRESETS = [
     icon: "BX",
     label: "Box — PsiData",
   },
+  { url: "https://www.chemotion-repository.net/", icon: "CT", label: "Chemotion — published data" },
 ];
 
 function labelFor(url: string, source: string): { label: string; icon: string } {

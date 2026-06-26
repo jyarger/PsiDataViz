@@ -40,6 +40,15 @@ export function ProviderIcon({ id, size = 22 }: { id: string; size?: number }) {
             fontFamily="Arial, sans-serif">box</text>
         </svg>
       );
+    case "chemotion":
+      return (
+        <svg viewBox="0 0 24 24" style={box} aria-hidden>
+          <rect width="24" height="24" rx="5" fill="#13a89e" />
+          <path fill="none" stroke="#fff" strokeWidth="1.6" strokeLinejoin="round"
+            d="M12 5.4 17 8.3v5.8L12 17l-5-2.9V8.3z" />
+          <circle cx="12" cy="11.2" r="1.7" fill="#fff" />
+        </svg>
+      );
     default:
       return (
         <span className="src-ic" style={{ width: size, height: size }}>

@@ -64,11 +64,13 @@ def test_decodes_compressed_asdf():
     assert ds.metadata.nucleus == "13C"
 
 
-def test_asdf_rejects_mismatched_npoints():
-    # validation guard: a decode that disagrees with the header must raise, not emit wrong data
+def test_asdf_tolerates_mismatched_npoints():
+    # Real exports (e.g. edited Chemotion JCAMP) sometimes disagree with the header NPOINTS via
+    # mixed/duplicated line boundaries. Rather than reject the spectrum, we de-overlap adaptively and
+    # decode the ordinates that are actually present.
     bad = _ASDF.replace("##NPOINTS=7", "##NPOINTS=99")
-    with pytest.raises(ValueError, match="NPOINTS"):
-        read(Candidate(filename="bruker.jdx", text=bad))
+    ds = read(Candidate(filename="bruker.jdx", text=bad))
+    assert ds.signals and ds.signals[0].npoints == 7
 
 
 # A tiny NTUPLES NMR FID (Nanalysis NMReady style): REAL + IMAG pages, decayed so the FFT is well
