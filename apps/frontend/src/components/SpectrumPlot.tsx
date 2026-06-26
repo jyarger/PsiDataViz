@@ -6,6 +6,8 @@ const PALETTE = ["#4aa3ff", "#ff6b6b", "#51cf66", "#fcc419", "#b197fc", "#ff8787
 
 // NMR & FTIR plot with a reversed abscissa by convention.
 const REVERSED = new Set(["NMR", "FTIR"]);
+// Mass spectra are drawn as sticks (vertical lines from baseline), not a connected line.
+const STICK = new Set(["Mass Spec"]);
 
 function axisTitle(a: { label: string; unit: string | null }): string {
   return a.unit ? `${a.label} (${a.unit})` : a.label;
@@ -40,18 +42,31 @@ export function SpectrumPlot({
     const traceLabels: string[] = []; // dataset label per trace (curveNumber -> sample), for click routing
     const traces = datasets.flatMap((ds) => {
       const label = ds.metadata.sample_name ? String(ds.metadata.sample_name) : ds.filename;
+      const stick = STICK.has(ds.technique);
       return ds.signals.map((s) => {
         const segLabel = s.segment ?? s.name;
         const name = multi ? `${label} · ${segLabel}` : segLabel;
-        const ys = s.points.map((p) => p[1]);
+        const xs = s.points.map((p) => p[0]);
+        const ysRaw = s.points.map((p) => p[1]);
+        const ys = normalize ? normalizeY(ysRaw) : ysRaw;
+        const clr = PALETTE[color++ % PALETTE.length];
         traceLabels.push(label);
+        if (stick) {
+          // draw each peak as a vertical line from baseline: x=[m,m,gap], y=[0,i,gap]
+          const sx: (number | null)[] = [];
+          const sy: (number | null)[] = [];
+          for (let i = 0; i < xs.length; i++) {
+            sx.push(xs[i], xs[i], null);
+            sy.push(0, ys[i], null);
+          }
+          return {
+            x: sx, y: sy, type: "scattergl", mode: "lines", name,
+            line: { color: clr, width: 1 }, hoverinfo: "x+y" as const,
+          };
+        }
         return {
-          x: s.points.map((p) => p[0]),
-          y: normalize ? normalizeY(ys) : ys,
-          type: "scattergl",
-          mode: "lines",
-          name,
-          line: { color: PALETTE[color++ % PALETTE.length], width: 1.4 },
+          x: xs, y: ys, type: "scattergl", mode: "lines", name,
+          line: { color: clr, width: 1.4 },
         };
       });
     });
