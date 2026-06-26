@@ -1,7 +1,10 @@
 # Design / scoping — Sample-centric catalog
 
-**Status:** draft for review (not yet implemented). **Owner:** @jyarger + Claude.
-This folds in the overnight review comments on metadata, chemical identity, formats, and deployment.
+**Status:** decisions agreed (§10); not yet implemented. **Owner:** @jyarger + Claude.
+Headlines: **RDKit** for chemical identity · two editions **PsiDataViz Lite** (stateless) & **Pro**
+(multi-user + DB + admin) · **top-level by-instrument ⇄ by-sample** plus organizing **unorganized** data ·
+**tags** for conditions/instrument/chemical · enriched **CSDM/JCAMP-DX** re-save. Build starts with the
+**Lite track** (phases 1–3, §9).
 
 ---
 
@@ -93,26 +96,48 @@ embedded. Per review, lead with **CSDM** and **JCAMP-DX**, plus a **tidy CSV** f
 
 **Sketch schema** (PostgreSQL):
 ```
+users(id, email UNIQUE, name, provider, role, created)            -- Pro: oauth/email + admin role
 samples(id, inchikey UNIQUE, smiles, iupac_name, cas_rn, formula, names[], created)
 instruments(id, make, model, technique, …)
-datasets(id, sample_id?, instrument_id?, technique, source_url, member, file_name,
+datasets(id, owner_id, sample_id?, instrument_id?, technique, source_url, member, file_name,
          date, operator, conditions JSONB, params JSONB, created)
-sources(id, url, kind, label, last_scanned)
-tags(id, name) · dataset_tags(dataset_id, tag_id)
+sources(id, owner_id, url, kind, label, last_scanned)
+tags(id, category, name) · dataset_tags(dataset_id, tag_id)       -- category: condition|instrument|chemical
 ```
 - `datasets.conditions/params` as **JSONB** keeps per-technique flexibility without schema churn.
 - Sample resolution: on save, RDKit → InChIKey → upsert into `samples`; link the dataset.
-- **Auth ties in here** — the `⟨Registration|Ψ|Login⟩` placeholder becomes real so uploads/catalog rows
-  are per-user (deferred; the schema leaves room for `owner_id`).
+- **Auth ties in here** — the `Ψ|Login⟩` placeholder becomes real so uploads/catalog rows are per-user
+  (Pro only; the schema leaves room for `owner_id`).
+
+### 5a. Tags & labels
+
+A typed tag taxonomy makes datasets searchable/filterable and seeds the metadata panel's suggestions:
+
+- **Conditions** — solvent, temperature, pressure, atmosphere, date, time, … (the common fields).
+- **Instrument** — make/model/technique labels (e.g. *Bruker 500 MHz*, *TA Q2000 DSC*).
+- **Chemical** — sample/structure labels (e.g. *aspirin*, *polymorph form II*, *deuterated*).
+
+Stored as `tags(id, category, name)` + `dataset_tags`. Tags start as **free entry with autocomplete**
+from existing values; common ones get promoted to typed fields. Available in Lite (session-local, exported
+into the enriched file's header) and persisted/searchable in Pro.
 
 ---
 
-## 6. Browse-by-compound UX
+## 6. Organize & browse — by instrument, by sample, or from chaos
 
-- A **"by Sample"** view (lives under **Ψ|Data⟩**): a searchable list/grid of samples (name + structure
-  thumbnail via the 3D/2D viewer) → expand to every dataset of that molecule across sources, grouped by
-  technique, each openable in the existing viewers.
-- Complements the current **by-technique** view (a toggle: *by technique* ⇄ *by sample*).
+Both layouts are first-class (a top-level **by instrument ⇄ by sample** toggle), and the parser also helps
+turn an unorganized pile into either.
+
+- **By instrument / technique** — the current view (folders/inferred technique).
+- **By sample / compound** — a searchable list/grid of samples (name + structure thumbnail) → expand to
+  every dataset of that molecule across sources, grouped by technique, openable in the existing viewers.
+- **Unorganized → organized.** When a user drops a flat pile (or points at a messy source), PsiDataViz
+  parses each file, infers **technique** (filename/headers) and **sample** (identifiers/headers, or the
+  user fills it in), and proposes an organized view — grouped **by instrument** *or* **by sample** — that
+  the user curates. This is the same metadata/identity machinery (§§2–4) applied to triage.
+
+In **Lite** this organizes the current session (and can drive enriched re-save). In **Pro** the organization
+is persisted to the catalog and searchable across sessions/sources.
 
 ---
 
@@ -125,41 +150,69 @@ tags(id, name) · dataset_tags(dataset_id, tag_id)
 
 ---
 
-## 8. Deployment & portability (per review)
+## 8. Two editions — PsiDataViz **Lite** and **Pro**
 
-- **Everything in Docker.** Today: single image (frontend + FastAPI). Add a **`docker-compose`** with the
-  app + a **`postgres:16`** container + a volume; `DATABASE_URL` env wires them.
-- **Portable** to a self-hosted Linux mini-PC, an AWS account, or a Hostinger VPS — compose is the common
-  denominator; no cloud-specific services in the core.
-- **Cloudflare** for DNS + reverse proxy / TLS in front of the app (the app stays HTTP on its port behind
-  the tunnel/proxy). Document the Cloudflare Tunnel + compose setup for the **PsiDataViz** domain.
-- DB migrations via a lightweight tool (Alembic) so schema changes are reproducible across hosts.
+A single codebase, two deployment profiles chosen at install:
+
+| | **Lite** | **Pro** |
+| --- | --- | --- |
+| Use | quick, private, stateless | a server everyone logs into |
+| Auth / users | none | multi-user (Google, GitHub, email) + admin |
+| Storage | in-memory per session | **PostgreSQL** catalog (persisted) |
+| Browse by sample/instrument | session-local | persisted + searchable across sources |
+| Re-save | download enriched file | download **and** write-back / save to the catalog |
+| Footprint | one container | app + `postgres:16` (+ auth) via compose |
+
+- **Shared core:** the `psidata` library, the React frontend, and the FastAPI backend are identical. Pro is
+  Lite **plus** an auth layer + a DB layer, gated by config (`PSIDATA_MODE=lite|pro`) so Lite ships nothing
+  it doesn't use. The frontend hides login / persistence affordances in Lite.
+- **Install choice:** `docker run psidataviz` (Lite, today's single image) **or** `docker compose --profile
+  pro up` (Pro: app + postgres volume; `DATABASE_URL` + OAuth secrets via env).
+- **Portable** to a self-hosted Linux mini-PC, AWS, or Hostinger — compose is the common denominator, no
+  cloud-specific services. **Cloudflare** for DNS + reverse proxy / TLS (Tunnel in front of the container);
+  documented for the **PsiDataViz** domain. DB migrations via **Alembic** for reproducible schema across hosts.
+
+### 8a. Pro auth & administration
+
+- **Multi-user from the start.** Sign in with **Google** or **GitHub** OAuth, or **email + password**
+  (verification + password reset). Standard session/JWT authz; bcrypt-hashed passwords. Candidate stack:
+  **Authlib** (OAuth) + **fastapi-users** (or a thin equivalent) over the same Postgres.
+- **Per-user data** — uploads and catalog rows carry `owner_id`; sharing/visibility flags later.
+- **Admin area** — a secure, admin-only page to manage users (roles, disable/delete), review uploads, and
+  see app health/usage. Implemented as a protected route + a small React admin view (or SQLAdmin).
 
 ---
 
-## 9. Phased rollout (proposed)
+## 9. Phased rollout
 
-1. **Interactive metadata panel** — editable sample/instrument/conditions fields on a loaded dataset
-   (pre-filled from parse/inference). *No DB.*
-2. **Chemical identity** — RDKit `[chem]` extra; SMILES/InChIKey/CAS/formula resolution + a small
-   structure preview. *No DB.*
-3. **Enriched re-save** — write the curated metadata into CSDM / JCAMP-DX (`##SMILES=` etc.) / tidy CSV.
-   *Delivers the "organize & re-save" use case with zero persistence.*
-4. **PostgreSQL catalog + compose** — persist samples/datasets; **browse-by-sample** view; tags/search.
-5. **Auth** (`⟨Registration|Ψ|Login⟩`) — per-user catalogs & uploads.
-6. **FAIR-repo connector** (Chemotion) + the deployment/Cloudflare playbook.
+**Lite track (no DB — ships value now):**
+1. **Interactive metadata panel** — editable sample/instrument/conditions fields + **tags** on a loaded
+   dataset, pre-filled from parse/inference.
+2. **Chemical identity** — RDKit `[chem]` extra; SMILES/InChIKey/CAS/formula resolution + a structure
+   preview.
+3. **Organize + enriched re-save** — the by-instrument ⇄ by-sample / unorganized triage (§6), and write the
+   curated metadata + tags into **CSDM / JCAMP-DX** (`##SMILES=` …) / tidy CSV for **download**.
 
-Phases 1–3 are independently shippable and high-value; 4 is the real "catalog"; 5–6 follow.
+**Pro track (server edition):**
+4. **PostgreSQL catalog + compose** — persist samples/datasets/tags; persisted **browse by sample &
+   instrument**; search.
+5. **Auth + admin** (`Ψ|Login⟩`) — Google/GitHub/email, password reset, per-user data, admin area; the
+   `lite|pro` config split.
+6. **Write-back** (save to catalog / export targets) + **FAIR-repo connector** (Chemotion) + the
+   Cloudflare/compose deployment playbook.
+
+Phases 1–3 land in **Lite** and are independently shippable; 4–6 build **Pro** on top.
 
 ---
 
-## 10. Open questions for review
+## 10. Decisions (from review)
 
-1. **RDKit** as a server-side `[chem]` extra (heavier image) — OK? Or a lighter identifier approach first
-   (store SMILES/CAS as given, defer canonicalization)?
-2. **Where does enriched re-save write?** Download-only at first (stateless), or also write back to the
-   source where possible (e.g., a GitHub PR / a user upload area)?
-3. **Browse-by-sample placement** — under **Ψ|Data⟩** (as proposed), or its own area?
-4. **Auth scope** for v1 of the DB — single-user/self-host first, or multi-user from the start?
-5. **Conditions taxonomy** — fixed common fields (solvent, temperature, atmosphere, …) vs. free-form
-   JSONB only?
+1. **RDKit — yes.** Add it as a server-side `[chem]` extra for SMILES⇄InChI⇄name⇄formula + InChIKey dedup.
+2. **Re-save — download-only at first (stateless).** Write-back (and the DB/login it implies) comes with the
+   **Pro** edition (see §11). Lite never persists.
+3. **Browse-by-sample — top level.** Both *by-instrument* and *by-sample* are first-class, and the parser
+   helps organize **unorganized** drops into either (see §6).
+4. **Auth (Pro) — multi-user from the start**, with Google + GitHub OAuth and email sign-up (password reset,
+   modern session/JWT authz), plus a secure **admin** area for app/user administration (see §11).
+5. **Tags/labels — yes.** A tag taxonomy across **conditions** (solvent, temperature, pressure, date/time…),
+   **instrument** tags, and **chemical** tags (see §5a).
