@@ -6,8 +6,8 @@ const PALETTE = ["#4aa3ff", "#ff6b6b", "#51cf66", "#fcc419", "#b197fc", "#ff8787
 
 // NMR & FTIR plot with a reversed abscissa by convention.
 const REVERSED = new Set(["NMR", "FTIR"]);
-// Mass spectra are drawn as sticks (vertical lines from baseline), not a connected line.
-const STICK = new Set(["Mass Spec"]);
+// Mass spectra (standard MS and secondary-ion SIMS) are drawn as sticks, not a connected line.
+const STICK = new Set(["Mass Spec", "SIMS"]);
 
 function axisTitle(a: { label: string; unit: string | null }): string {
   return a.unit ? `${a.label} (${a.unit})` : a.label;

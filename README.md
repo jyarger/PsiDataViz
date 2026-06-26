@@ -43,8 +43,9 @@ library, and app share the **Psi** prefix and the **Ψ** mark.
   Instruments `.txt` → weight % vs temperature), **Brillouin** (multichannel-scaler `.asc`), **Acoustic**
   (interferometry FFT `Spectrum.csv` inside the `.zip`), **microscopy** (SEM / TEM / optical
   `.tif`/`.jpg`/`.png` shown as the real micrograph), **electrochemistry** (Gamry `.DTA` cyclic
-  voltammetry + Chemotion JCAMP-DX `.jdx` → Potential × Current), **mass spec** (ChemSpectra JCAMP-DX
-  `MASS SPECTRUM` → m/z × abundance), **dielectric** (broadband ε′/ε″ vs frequency on a log axis, per
+  voltammetry + Chemotion JCAMP-DX `.jdx` → Potential × Current), **mass spec & SIMS** (ChemSpectra
+  JCAMP-DX `MASS SPECTRUM` → m/z × abundance; standard MS and secondary-ion MS grouped separately),
+  **dielectric** (broadband ε′/ε″ vs frequency on a log axis, per
   temperature), **HPLC** (chromatogram CSV + Agilent ChemStation DAD `.D` runs inside `.tar.bz2`),
   **circular dichroism** (`.dcs`), **mechanical / generic
   spreadsheets** (`.xlsx`/`.xls` — finds the data table across sheets), and **computed

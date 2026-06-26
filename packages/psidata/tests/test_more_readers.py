@@ -109,3 +109,20 @@ def test_spreadsheet_reader_declines_categorical_summary():
     rows = [["Amino acid", "Sample"], *[["His", "high"], ["Ser", "low"], ["Arg", "mid"]]]
     cand = Candidate(filename="summary.xlsx", content=_xlsx(rows))
     assert SpreadsheetReader().sniff(cand) == 0.0  # no numeric x/y table -> declined
+
+
+def test_jcamp_sims_labelled_distinctly_from_ms():
+    # the same JCAMP mass-spectrum format, but a SIMS hint -> SIMS technique (not standard Mass Spec)
+    sims = read(Candidate(filename="surface.itax.peak.jdx", content=MS_JCAMP.encode(),
+                          technique_hint="SIMS"))
+    assert sims.technique == "SIMS"
+    ms = read(Candidate(filename="ms.jdx", content=MS_JCAMP.encode(), technique_hint="Mass Spec"))
+    assert ms.technique == "Mass Spec"
+
+
+def test_catalog_splits_sims_from_mass_spec():
+    from psidata.sources.catalog import _refine_subtechnique
+
+    assert _refine_subtechnique("Mass Spec", "Sample_ZnO_SIMS.zip") == "SIMS"
+    assert _refine_subtechnique("Mass Spec", "Terpyridine_FeCl3_MS.zip") == "Mass Spec"
+    assert _refine_subtechnique("Raman", "thing_sims_extra.txt") == "Raman"  # only refines MS folders

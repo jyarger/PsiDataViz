@@ -18,10 +18,12 @@ from .base import BaseReader, Candidate
 _LDR_RE = re.compile(r"^##\$?([^=]+)=(.*)$")
 
 
-@register_reader
-class JcampMassSpecReader(BaseReader):
-    technique = "Mass Spec"
-    name = "jcamp_ms"
+_MS_TECHNIQUES = {"MASS SPEC", "SIMS"}  # standard MS vs secondary-ion MS (same JCAMP, different hint)
+
+
+class _JcampMassSpecReader(BaseReader):
+    """Shared JCAMP mass-spectrum parsing; concrete subclasses bind the technique (MS vs SIMS)."""
+
     version = "0.1.0"
     extensions = (".jdx", ".dx")
 
@@ -33,7 +35,8 @@ class JcampMassSpecReader(BaseReader):
             return 0.0
         if "MASS SPECTRUM" in head:
             return 0.92
-        if (candidate.technique_hint or "").upper().startswith("MASS"):
+        hint = (candidate.technique_hint or "").upper()
+        if hint.startswith("MASS") or hint == "SIMS":
             return 0.6
         return 0.0
 
@@ -76,11 +79,26 @@ class JcampMassSpecReader(BaseReader):
             y=Axis(label="Relative abundance", unit="a.u.", quantity="intensity"),
             frame=frame,
         )
+        # MS and SIMS share this JCAMP format; honour the folder/filename hint so each is labelled right
+        hint = candidate.technique_hint
+        technique = hint if (hint or "").upper() in _MS_TECHNIQUES else self.technique
         return Dataset(
-            technique=self.technique,
+            technique=technique,
             source=SourceInfo(uri=candidate.uri, filename=candidate.filename, reader=self.name,
                               reader_version=self.version),
             metadata=Metadata(sample_name=title or candidate.stem,
                               notes=f"{pages} scan page(s) merged" if pages > 1 else None),
             signals=[signal],
         )
+
+
+@register_reader
+class JcampMassSpecReader(_JcampMassSpecReader):
+    technique = "Mass Spec"
+    name = "jcamp_ms"
+
+
+@register_reader
+class JcampSimsReader(_JcampMassSpecReader):
+    technique = "SIMS"
+    name = "jcamp_sims"

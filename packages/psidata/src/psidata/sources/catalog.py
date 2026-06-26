@@ -7,6 +7,7 @@ registered reader is likely to handle them. Full parsing happens later, on deman
 
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 
@@ -169,11 +170,23 @@ def infer_technique(filename: str) -> str | None:
     return None
 
 
+_SIMS_RE = re.compile(r"(?:^|[_\-. ])sims(?:$|[_\-. ])", re.IGNORECASE)
+
+
+def _refine_subtechnique(technique: str, filename: str) -> str:
+    """Split a coarse folder technique by filename when two methods share a folder. Mass-spec folders
+    hold both standard MS and **secondary-ion MS (SIMS)** — a distinct surface technique."""
+    if technique in ("Mass Spec", "SIMS") and _SIMS_RE.search(filename):
+        return "SIMS"
+    return technique
+
+
 def build_entry(ref: FileRef) -> CatalogEntry:
     technique = canonical_technique(ref.top_dir)
     if not _technique_has_reader(technique):
         # sample-organized source (the top folder is a compound): infer technique from the filename
         technique = infer_technique(ref.name) or technique
+    technique = _refine_subtechnique(technique, ref.name)
     reader = _match_reader(technique, ref.ext)
     supported = reader is not None
     reader_name = reader.name if reader else None
