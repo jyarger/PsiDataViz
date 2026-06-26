@@ -5,7 +5,9 @@ import { Heatmap } from "./Heatmap";
 import { MoleculeViewer } from "./MoleculeViewer";
 import { WaveformPlayer } from "./WaveformPlayer";
 import { DropZone } from "./DropZone";
-import { MetadataPanel, type EditableMetadata } from "./MetadataPanel";
+import { MetadataPanel } from "./MetadataPanel";
+import { ExportMenu } from "./ExportMenu";
+import { deriveMetadata, type EditableMetadata } from "../metadata";
 
 type Source = { url: string; label: string; icon: string; catalog: CatalogResult };
 type Row = RecordRow & { source: string; ckey: string };
@@ -313,16 +315,32 @@ export function DataWorkspace() {
             <WaveformPlayer key={`wav-${ds.filename}`} dataset={ds} />
           ))}
           {selected
-            .map((k) => [k, datasets[k]] as const)
+            .map((k) => [k, datasets[k], rows.find((r) => r.ckey === k)] as const)
             .filter(([, ds]) => ds)
-            .map(([k, ds]) => (
-              <MetadataPanel
-                key={`md-${k}`}
-                dataset={ds}
-                value={metaEdits[k]}
-                onChange={(m) => setMetaEdits((prev) => ({ ...prev, [k]: m }))}
-              />
-            ))}
+            .map(([k, ds, row]) => {
+              const md = metaEdits[k] ?? deriveMetadata(ds);
+              return (
+                <div key={`md-${k}`}>
+                  <MetadataPanel
+                    dataset={ds}
+                    value={metaEdits[k]}
+                    onChange={(m) => setMetaEdits((prev) => ({ ...prev, [k]: m }))}
+                  />
+                  {row && (
+                    <div className="export-row">
+                      <span className="muted">Export with this metadata:</span>
+                      <ExportMenu
+                        url={row.url}
+                        name={row.name}
+                        technique={row.technique}
+                        dataset={ds}
+                        metadata={md}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
         </div>
       )}
     </>

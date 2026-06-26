@@ -445,6 +445,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
                   url={soleRecord.url}
                   name={soleRecord.name}
                   technique={soleRecord.technique}
+                  dataset={datasets[rid(soleRecord)]}
                 />
               </div>
               <Metadata meta={datasets[rid(soleRecord)].metadata} />

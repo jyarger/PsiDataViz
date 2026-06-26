@@ -86,3 +86,27 @@ def test_convert_dispatch_tabular_formats(dsc_txt, tmp_path):
     ds = _dataset(dsc_txt)
     for ext in ("csv", "parquet", "feather", "zip"):
         assert convert(ds, tmp_path / f"x.{ext}").endswith(ext)
+
+
+def test_to_jcamp_embeds_metadata_headers(tmp_path):
+    import pandas as pd
+
+    from psidata.convert import to_jcamp
+    from psidata.model import Axis, Dataset, Metadata, Signal, SourceInfo
+
+    md = Metadata(sample_name="Aspirin")
+    md.smiles = "CC(=O)Oc1ccccc1C(=O)O"
+    md.cas = "50-78-2"
+    md.formula = "C9H8O4"
+    md.tags = [{"category": "condition", "value": "298 K"}]
+    sig = Signal(name="s", x=Axis(label="Wavenumber", unit="cm-1"), y=Axis(label="A", unit="a.u."),
+                 frame=pd.DataFrame({"Wavenumber": [4000.0, 2000.0], "A": [0.1, 0.9]}))
+    ds = Dataset(technique="FTIR", source=SourceInfo(filename="x.dpt"), metadata=md, signals=[sig])
+    text = open(to_jcamp(ds, tmp_path / "out.jdx")).read()
+    assert "##TITLE=Aspirin" in text
+    assert "##DATA TYPE=INFRARED SPECTRUM" in text
+    assert "##SMILES=CC(=O)Oc1ccccc1C(=O)O" in text
+    assert "##CAS REGISTRY NO=50-78-2" in text
+    assert "##MOLECULAR FORMULA=C9H8O4" in text
+    assert "##$TAG CONDITION=298 K" in text
+    assert text.rstrip().endswith("##END=")

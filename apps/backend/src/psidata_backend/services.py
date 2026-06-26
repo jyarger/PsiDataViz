@@ -83,6 +83,22 @@ def load_dataset(name: str, url: str, *, technique: str | None = None,
     return ds
 
 
+_EDITABLE_META = ("sample_name", "instrument", "operator", "date", "time", "solvent",
+                  "temperature", "pressure", "formula", "smiles", "cas", "notes")
+
+
+def apply_metadata(dataset: Dataset, overrides: dict) -> None:
+    """Overlay the user's edited metadata (sample / chemical identity / conditions / tags) onto a loaded
+    dataset, so an enriched export carries it. Unknown keys land in the (extra-allowing) Metadata model."""
+    meta = dataset.metadata
+    for key in _EDITABLE_META:
+        value = overrides.get(key)
+        if value not in (None, ""):
+            setattr(meta, key, value)
+    if overrides.get("tags"):
+        meta.tags = overrides["tags"]
+
+
 def zip_bundle(name: str, url: str, *, technique: str | None = None) -> list[dict]:
     """The distinct datasets inside an archive (empty for a non-archive or single-dataset one). Cheap:
     the bytes are already cached by ``_fetch_bytes`` from the dataset load."""

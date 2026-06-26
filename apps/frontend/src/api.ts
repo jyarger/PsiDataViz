@@ -198,9 +198,30 @@ export const api = {
   },
 };
 
-// Direct download URL for converting a dataset to a standard format (csdf | h5).
+// Direct download URL for converting a dataset to a standard format (csdf | h5 | jcamp | …).
 export function convertUrl(url: string, name: string, technique: string, fmt: string): string {
   return `${BASE}/api/convert?url=${q(url)}&name=${q(name)}&technique=${q(technique)}&fmt=${fmt}`;
+}
+
+// Enriched export: POST the user-edited metadata so it's embedded in the converted file. Returns the
+// file as a Blob (triggered as a download by the caller).
+export async function exportEnriched(payload: {
+  url: string;
+  name: string;
+  technique: string;
+  fmt: string;
+  metadata: unknown;
+}): Promise<Blob> {
+  const res = await fetch(`${BASE}/api/convert`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const b = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(b.detail ?? res.statusText);
+  }
+  return res.blob();
 }
 
 // Absolute URL for an <audio> element to stream a dataset's .wav (the backend returns a relative path).

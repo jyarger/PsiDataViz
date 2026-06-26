@@ -20,8 +20,8 @@ import numpy as np
 
 from ..model import Dataset
 
-__all__ = ["convert", "to_csdm", "to_csv", "to_csv_zip", "to_feather", "to_hdf5", "to_parquet",
-           "to_zarr"]
+__all__ = ["convert", "to_csdm", "to_csv", "to_csv_zip", "to_feather", "to_hdf5", "to_jcamp",
+           "to_parquet", "to_zarr"]
 
 
 def _meta_attrs(dataset: Dataset) -> dict[str, Any]:
@@ -130,13 +130,16 @@ def to_csdm(dataset: Dataset, path: str | Path | None = None) -> str:
             "name": sig.segment or sig.name, "unit": _csdm_unit(sig.y.unit),
             "components": [y.tolist()],
         })
+    meta = {k: v for k, v in _flat_metadata(dataset).items() if v not in (None, "", [])}
     doc = {"csdm": {
         "version": "1.0",
         "description": f"{dataset.technique} {dataset.source.filename or ''}".strip(),
         "dimensions": [_csdm_dimension(x, sig0.x)],
         "dependent_variables": dependent,
+        # embed the sample / chemical-identity / condition metadata so the export is self-describing
+        "application": {"com.psidataviz": {"technique": dataset.technique, **meta}},
     }}
-    text = json.dumps(doc)
+    text = json.dumps(doc, default=str)  # default=str serializes dates/other metadata values
     if path is not None:
         Path(path).write_text(text, encoding="utf-8")
         return str(path)
@@ -177,14 +180,101 @@ def to_csv_zip(dataset: Dataset, path: str | Path) -> str:
     return str(path)
 
 
+# --- JCAMP-DX (spectroscopy interchange; carries sample + chemical-identity headers) --------------
+_JCAMP_DATA_TYPE = {
+    "FTIR": "INFRARED SPECTRUM", "Raman": "RAMAN SPECTRUM", "NMR": "NMR SPECTRUM",
+    "UV-Vis": "UV/VIS SPECTRUM", "Mass Spec": "MASS SPECTRUM", "SIMS": "MASS SPECTRUM",
+    "Electrochem": "CYCLIC VOLTAMMETRY",
+}
+
+
+def _flat_metadata(dataset: Dataset) -> dict:
+    """Flatten the dataset's metadata (universal fields + technique-specific extras) into one dict."""
+    d = dataset.metadata.model_dump()
+    d.update(d.pop("extra", {}) or {})
+    return d
+
+
+def _jcamp_headers(dataset: Dataset, meta: dict) -> list[str]:
+    """The ##-record header block: sample, chemical identity, and measurement conditions."""
+    def g(*keys):
+        for k in keys:
+            v = meta.get(k)
+            if v not in (None, "", []):
+                return v
+        return None
+
+    title = g("sample_name") or dataset.source.filename or "spectrum"
+    out = [
+        f"##TITLE={title}",
+        "##JCAMP-DX=5.01 $$ exported by PsiDataViz",
+        f"##DATA TYPE={_JCAMP_DATA_TYPE.get(dataset.technique, (dataset.technique or 'SPECTRUM').upper())}",
+        "##ORIGIN=PsiDataViz",
+    ]
+    # sample / chemical identity + conditions -> standard and ChemSpectra-style records
+    for label, value in (
+        ("##OWNER", g("operator", "owner")),
+        ("##DATE", g("date")),
+        ("##TIME", g("time")),
+        ("##MOLECULAR FORMULA", g("formula", "molecular_formula")),
+        ("##CAS REGISTRY NO", g("cas", "cas_rn")),
+        ("##SMILES", g("smiles")),
+        ("##$SOLVENT", g("solvent")),
+        ("##$TEMPERATURE", g("temperature", "temperature_k")),
+        ("##$PRESSURE", g("pressure")),
+    ):
+        if value not in (None, ""):
+            out.append(f"{label}={value}")
+    for tag in (meta.get("tags") or []):
+        cat = tag.get("category", "tag") if isinstance(tag, dict) else "tag"
+        val = tag.get("value", tag) if isinstance(tag, dict) else tag
+        out.append(f"##$TAG {cat.upper()}={val}")
+    return out
+
+
+def to_jcamp(dataset: Dataset, path: str | Path) -> str:
+    """Export 1D signals as JCAMP-DX, embedding the sample/chemical/condition metadata in ## headers.
+
+    Recommended for spectroscopy (IR/Raman/NMR/UV/MS). Each signal becomes one ``(XY..XY)`` block; the
+    chemical identity (``##SMILES=`` / ``##CAS REGISTRY NO=`` / ``##MOLECULAR FORMULA=``) is repeated per
+    block so each spectrum is self-describing.
+    """
+    if not dataset.signals:
+        raise ValueError("JCAMP-DX export needs at least one 1D signal")
+    meta = _flat_metadata(dataset)
+    multi = len(dataset.signals) > 1
+    headers = _jcamp_headers(dataset, meta)
+    blocks: list[str] = []
+    for sig in dataset.signals:
+        x = np.asarray(sig.frame[sig.x.label].to_numpy(), dtype=float)
+        y = np.asarray(sig.frame[sig.y.label].to_numpy(), dtype=float)
+        block = list(headers)
+        if multi:
+            block[0] = f"{headers[0]} · {sig.segment or sig.name}"
+        block += [
+            f"##XUNITS={sig.x.unit or sig.x.label}",
+            f"##YUNITS={sig.y.unit or sig.y.label}",
+            "##XFACTOR=1.0", "##YFACTOR=1.0",
+            f"##FIRSTX={x[0] if len(x) else 0}", f"##LASTX={x[-1] if len(x) else 0}",
+            f"##NPOINTS={len(x)}", "##XYDATA=(XY..XY)",
+            *[f"{xv:.6g} {yv:.6g}" for xv, yv in zip(x, y, strict=False)],
+            "##END=",
+        ]
+        blocks.append("\n".join(block))
+    Path(path).write_text("\n".join(blocks) + "\n", encoding="utf-8")
+    return str(path)
+
+
 def convert(dataset: Dataset, path: str | Path, fmt: str | None = None) -> str:
-    """Dispatch by ``fmt`` (or path suffix): hdf5/h5 · zarr · csdf/csdm · csv · parquet · feather · zip."""
+    """Dispatch by ``fmt`` (or path suffix): hdf5/h5 · zarr · csdf/csdm · jcamp/jdx · csv · parquet ·
+    feather · zip."""
     fmt = (fmt or Path(str(path)).suffix.lstrip(".")).lower()
     dispatch = {
         "h5": to_hdf5, "hdf5": to_hdf5, "zarr": to_zarr, "csdf": to_csdm, "csdm": to_csdm,
+        "jcamp": to_jcamp, "jdx": to_jcamp, "dx": to_jcamp,
         "csv": to_csv, "parquet": to_parquet, "feather": to_feather, "zip": to_csv_zip,
     }
     if fmt not in dispatch:
         raise ValueError(f"unknown convert format {fmt!r} "
-                         "(use hdf5, zarr, csdf, csv, parquet, feather, or zip)")
+                         "(use hdf5, zarr, csdf, jcamp, csv, parquet, feather, or zip)")
     return dispatch[fmt](dataset, path)

@@ -1,54 +1,7 @@
 import { useMemo, useState } from "react";
 import { api, type DatasetData, type MoleculeData } from "../api";
 import { guessCompound } from "../compound";
-
-export type TagCategory = "condition" | "instrument" | "chemical";
-export interface Tag {
-  category: TagCategory;
-  value: string;
-}
-export interface EditableMetadata {
-  sample_name: string;
-  formula: string;
-  smiles: string;
-  cas: string;
-  instrument: string;
-  operator: string;
-  date: string;
-  time: string;
-  solvent: string;
-  temperature: string;
-  pressure: string;
-  notes: string;
-  tags: Tag[];
-}
-
-const str = (v: unknown): string => (v == null ? "" : String(v));
-const first = (m: Record<string, unknown>, ...keys: string[]): string => {
-  for (const k of keys) if (m[k] != null) return String(m[k]);
-  return "";
-};
-
-// Pre-fill the editable metadata from whatever the reader recovered (the universal metadata + the
-// technique-specific extras surfaced at the top level, e.g. solvent / temperature_k).
-function deriveMetadata(ds: DatasetData): EditableMetadata {
-  const m = ds.metadata;
-  return {
-    sample_name: first(m, "sample_name") || ds.filename,
-    formula: first(m, "formula", "molecular_formula"),
-    smiles: first(m, "smiles"),
-    cas: first(m, "cas", "cas_rn", "cas_registry_no"),
-    instrument: first(m, "instrument", "spectrometer"),
-    operator: first(m, "operator", "owner"),
-    date: first(m, "date"),
-    time: first(m, "time"),
-    solvent: first(m, "solvent"),
-    temperature: first(m, "temperature", "temperature_k"),
-    pressure: first(m, "pressure"),
-    notes: first(m, "notes"),
-    tags: [],
-  };
-}
+import { deriveMetadata, type EditableMetadata, type Tag, type TagCategory } from "../metadata";
 
 const CATEGORY_LABEL: Record<TagCategory, string> = {
   condition: "Condition",

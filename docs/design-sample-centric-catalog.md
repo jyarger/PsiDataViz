@@ -1,12 +1,14 @@
 # Design / scoping — Sample-centric catalog
 
-**Status:** decisions agreed (§10); **Lite phases 1–2 shipped** — the editable metadata panel + tags, and
-chemical-identity resolution (name/SMILES → formula/SMILES/CAS + 2D structure) — phase 3 next.
-**Owner:** @jyarger + Claude.
+**Status:** decisions agreed (§10); **Lite track complete (phases 1–3 shipped)** — the editable metadata
+panel + tags, chemical-identity resolution (name/SMILES → formula/SMILES/CAS + 2D structure), and enriched
+export (edited metadata embedded in JCAMP-DX/CSDM, with format recommendations by data type). **Pro track
+next.** **Owner:** @jyarger + Claude.
 Headlines: **RDKit** for chemical identity · two editions **PsiDataViz Lite** (stateless) & **Pro**
 (multi-user + DB + admin) · **top-level by-instrument ⇄ by-sample** plus organizing **unorganized** data ·
-**tags** for conditions/instrument/chemical · enriched **CSDM/JCAMP-DX** re-save. Build follows the
-**Lite track** (phases 1–3, §9): **1–2 done**, 3 (enriched export) next.
+**tags** for conditions/instrument/chemical · enriched **CSDM/JCAMP-DX** re-save. The **Lite track**
+(phases 1–3, §9) is **done**; the **Pro track** (phases 4–6: PostgreSQL catalog, auth + admin, write-back)
+is next.
 
 ---
 

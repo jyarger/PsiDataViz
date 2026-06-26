@@ -146,6 +146,8 @@ def audio(url: str, name: str, member: str | None = None) -> Response:
 _CONVERT_FORMATS = {
     "csdf": ("csdf", "application/json"),
     "csdm": ("csdf", "application/json"),
+    "jcamp": ("jdx", "chemical/x-jcamp-dx"),
+    "jdx": ("jdx", "chemical/x-jcamp-dx"),
     "h5": ("h5", "application/x-hdf5"),
     "hdf5": ("h5", "application/x-hdf5"),
     "csv": ("csv", "text/csv"),
@@ -155,25 +157,46 @@ _CONVERT_FORMATS = {
 }
 
 
-@app.get("/api/convert")
-def convert_endpoint(url: str, name: str, technique: str | None = None, fmt: str = "csdf"):
-    """Convert a dataset to a standard format and return it as a download."""
+def _convert_response(url: str, name: str, technique: str | None, fmt: str,
+                      member: str | None = None, metadata: dict | None = None):
     fmt = fmt.lower()
     if fmt not in _CONVERT_FORMATS:
         raise HTTPException(status_code=400, detail=f"unsupported format {fmt!r} "
                             f"(use {', '.join(sorted(set(_CONVERT_FORMATS)))})")
     try:
-        ds = services.load_dataset(name, url, technique=technique)
+        ds = services.load_dataset(name, url, technique=technique, member=member)
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f"Could not load {name!r}: {exc}") from exc
+    if metadata:  # overlay the user's edited sample / chemical-identity / condition fields
+        services.apply_metadata(ds, metadata)
 
     ext, media = _CONVERT_FORMATS[fmt]
-    stem = (ds.source.filename or "dataset").rsplit(".", 1)[0]
+    stem = (ds.metadata.sample_name or ds.source.filename or "dataset").rsplit(".", 1)[0]
     tmp = tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=False)
     tmp.close()
-    run_convert(ds, tmp.name, fmt=fmt)
+    try:
+        run_convert(ds, tmp.name, fmt=fmt)
+    except Exception as exc:  # noqa: BLE001
+        os.unlink(tmp.name)
+        raise HTTPException(status_code=400, detail=f"Cannot export {name!r} as {fmt}: {exc}") from exc
     return FileResponse(tmp.name, media_type=media, filename=f"{stem}.{ext}",
                         background=BackgroundTask(lambda: os.unlink(tmp.name)))
+
+
+@app.get("/api/convert")
+def convert_endpoint(url: str, name: str, technique: str | None = None, fmt: str = "csdf",
+                     member: str | None = None):
+    """Convert a dataset to a standard format and return it as a download."""
+    return _convert_response(url, name, technique, fmt, member=member)
+
+
+@app.post("/api/convert")
+def convert_enriched(payload: dict = Body(...)):
+    """Convert with user-edited metadata embedded (enriched export from the metadata panel)."""
+    return _convert_response(
+        payload["url"], payload["name"], payload.get("technique"), payload.get("fmt", "jcamp"),
+        member=payload.get("member"), metadata=payload.get("metadata"),
+    )
 
 
 @app.get("/api/molecule")
