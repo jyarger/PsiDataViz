@@ -28,8 +28,7 @@ export function Header({ view, onNav }: { view: View; onNav: (v: View) => void }
             )}
           </button>
         ))}
-        <button className="nav-soon" disabled title="Accounts & saved data — coming soon">
-          <span className="bra">⟨Registration|</span>
+        <button className="nav-soon" disabled title="Sign in / register — coming soon">
           <span className="psi">Ψ</span>
           <span className="ket">|Login⟩</span>
         </button>
