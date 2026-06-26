@@ -25,7 +25,8 @@ from ._jcamp import (
 )
 from .base import BaseReader, Candidate
 
-_NON_NMR = ("INFRARED", "RAMAN", "UV/VIS", "UV-VIS", "UVVIS", "MASS SPECTRUM")
+_NON_NMR = ("INFRARED", "RAMAN", "UV/VIS", "UV-VIS", "UVVIS", "MASS SPECTRUM",
+            "VOLTAMMETRY", "VOLTAMMOGRAM", "AMPEROMETRY", "POTENTIOMETRY")
 
 
 class NMRMetadata(Metadata):
