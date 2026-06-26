@@ -66,13 +66,14 @@ export interface SignalData {
 }
 export interface ImageData {
   name: string;
-  kind?: "map" | "photo";
+  kind?: "map" | "photo" | "matrix";
   data_uri?: string; // for kind === "photo": a PNG data URI of the micrograph
-  x: { label: string; unit: string | null };
-  y: { label: string; unit: string | null };
+  // for kind === "matrix", x/y carry their real coordinate values (e.g. retention times, wavelengths)
+  x: { label: string; unit: string | null; values?: number[] };
+  y: { label: string; unit: string | null; values?: number[] };
   z: { label: string; unit: string | null; scale?: string };
   shape: [number, number];
-  values?: number[][]; // for kind === "map": the heatmap intensity grid
+  values?: number[][]; // the grid: kind "map" = heatmap intensities, "matrix" = rows sliced by the UI
 }
 export interface VibModeData {
   freq: number;

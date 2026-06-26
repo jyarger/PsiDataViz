@@ -9,11 +9,14 @@ from __future__ import annotations
 
 import io
 
+import numpy as np
 import pandas as pd
 
-from ..model import Axis, Dataset, Metadata, Signal, SourceInfo
+from ..model import Axis, Dataset, Image2D, Metadata, Signal, SourceInfo
 from ..registry import register_reader
 from .base import BaseReader, Candidate
+
+_MATRIX_MAX_TIME = 600  # downsample the time axis of the full matrix for compact, sliceable transport
 
 _TARGET_WAVELENGTHS = (210, 230, 254, 280, 320)  # common HPLC-DAD detection wavelengths
 
@@ -70,6 +73,7 @@ class AgilentDadReader(BaseReader):
             ))
         if not signals:
             raise ValueError(f"{candidate.filename}: no usable chromatograms")
+        matrix = _dad_matrix(df, time, wl_cols, available)
         return Dataset(
             technique=self.technique,
             source=SourceInfo(uri=candidate.uri, filename=candidate.filename, reader=self.name,
@@ -77,7 +81,28 @@ class AgilentDadReader(BaseReader):
             metadata=Metadata(sample_name=_run_name(candidate),
                               notes=f"DAD {available[0]}–{available[-1]} nm"),
             signals=signals,
+            images=[matrix],
         )
+
+
+def _dad_matrix(df: pd.DataFrame, time: pd.Series, wl_cols: dict[int, str],
+                wavelengths: list[int]) -> Image2D:
+    """The full time x wavelength absorbance matrix (rows = wavelength), for the wavelength-slider view."""
+    grid = np.column_stack([pd.to_numeric(df[wl_cols[w]], errors="coerce").to_numpy()
+                            for w in wavelengths]).T  # (n_wavelength, n_time)
+    times = time.to_numpy()
+    step = max(1, len(times) // _MATRIX_MAX_TIME)
+    grid = np.nan_to_num(grid[:, ::step])
+    return Image2D(
+        name="DAD matrix",
+        data=grid,
+        x=Axis(label="Retention time", unit="min", quantity="time"),
+        y=Axis(label="Wavelength", unit="nm", quantity="wavelength"),
+        z=Axis(label="Absorbance", unit="mAU", quantity="absorbance"),
+        kind="matrix",
+        x_values=times[::step],
+        y_values=np.asarray(wavelengths, dtype=float),
+    )
 
 
 def _is_int(value: str) -> bool:

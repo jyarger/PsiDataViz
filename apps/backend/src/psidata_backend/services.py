@@ -274,9 +274,13 @@ def audio_wav(url: str, name: str, member: str | None = None) -> bytes:
 
 
 def _image_json(image, max_side: int = 240) -> dict:
-    """A scientific map -> downsampled log-scaled heatmap; a micrograph (`photo`) -> a real image."""
-    if getattr(image, "kind", "map") == "photo":
+    """A scientific map -> downsampled log-scaled heatmap; a micrograph (`photo`) -> a real image; a
+    `matrix` (e.g. HPLC-DAD time x wavelength) -> the linear grid + axis coordinates for UI slicing."""
+    kind = getattr(image, "kind", "map")
+    if kind == "photo":
         return _photo_json(image)
+    if kind == "matrix":
+        return _matrix_json(image)
     a = image.data
     rows, cols = a.shape
     step = max(1, -(-max(rows, cols) // max_side))  # ceil division -> longest side <= max_side
@@ -291,6 +295,26 @@ def _image_json(image, max_side: int = 240) -> dict:
         "z": {"label": image.z.label, "unit": image.z.unit, "scale": "log1p"},
         "shape": [int(rows), int(cols)],
         "values": np.round(z, 3).tolist(),
+    }
+
+
+def _matrix_json(image, max_cols: int = 600) -> dict:
+    """Linear grid + real axis coordinates, for a UI that slices it interactively (a row/column at a
+    time). Rows (y) are kept at full resolution (the slider granularity); columns (x) are downsampled."""
+    a = np.nan_to_num(image.data, nan=0.0)
+    rows, cols = a.shape
+    step = max(1, cols // max_cols)
+    a = a[:, ::step]
+    xv = image.x_values[::step] if image.x_values is not None else np.arange(a.shape[1], dtype=float)
+    yv = image.y_values if image.y_values is not None else np.arange(rows, dtype=float)
+    return {
+        "name": image.name,
+        "kind": "matrix",
+        "x": {"label": image.x.label, "unit": image.x.unit, "values": np.round(xv, 4).tolist()},
+        "y": {"label": image.y.label, "unit": image.y.unit, "values": np.round(yv, 3).tolist()},
+        "z": {"label": image.z.label, "unit": image.z.unit},
+        "shape": [int(rows), int(a.shape[1])],
+        "values": np.round(a, 3).tolist(),
     }
 
 

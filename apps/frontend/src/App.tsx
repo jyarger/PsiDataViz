@@ -10,6 +10,7 @@ import { Header, type View } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { SpectrumPlot } from "./components/SpectrumPlot";
 import { Heatmap } from "./components/Heatmap";
+import { MatrixSliceViewer } from "./components/MatrixSliceViewer";
 import { MoleculeViewer } from "./components/MoleculeViewer";
 import { CompoundViewer } from "./components/CompoundViewer";
 import { guessCompound } from "./compound";
@@ -390,9 +391,14 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
               onPeakClick={(freq, label) => setPeak({ freq, label })}
             />
           )}
-          {imageDatasets.map((ds) => (
-            <Heatmap key={ds.filename} dataset={ds} />
-          ))}
+          {imageDatasets.map((ds) => {
+            const matrix = ds.images.find((im) => im.kind === "matrix");
+            return matrix ? (
+              <MatrixSliceViewer key={`mx-${ds.filename}`} dataset={ds} image={matrix} />
+            ) : (
+              <Heatmap key={ds.filename} dataset={ds} />
+            );
+          })}
           {structureDatasets.map((ds) => (
             <MoleculeViewer
               key={`mol-${ds.filename}`}

@@ -93,8 +93,13 @@ class Image2D:
     y: Axis
     z: Axis  # the intensity (colour) axis
     # "map" = a scientific intensity array (shown as a false-colour heatmap); "photo" = a real
-    # micrograph/image (grayscale or RGB) shown as-is.
+    # micrograph/image (grayscale or RGB) shown as-is; "matrix" = a grid the UI slices interactively
+    # (e.g. an HPLC-DAD time x wavelength matrix sliced by a wavelength slider).
     kind: str = "map"
+    # actual coordinate values for the columns (x) and rows (y); needed when the grid is not a plain
+    # pixel index (e.g. real wavelengths / retention times for a "matrix").
+    x_values: np.ndarray | None = None
+    y_values: np.ndarray | None = None
 
     @property
     def shape(self) -> tuple[int, int]:

@@ -46,8 +46,9 @@ library, and app share the **Psi** prefix and the **Ψ** mark.
   voltammetry + Chemotion JCAMP-DX `.jdx` → Potential × Current), **mass spec & SIMS** (ChemSpectra
   JCAMP-DX `MASS SPECTRUM` → m/z × abundance; standard MS and secondary-ion MS grouped separately),
   **dielectric** (broadband ε′/ε″ vs frequency on a log axis, per
-  temperature), **HPLC** (chromatogram CSV + Agilent ChemStation DAD `.D` runs inside `.tar.bz2`),
-  **circular dichroism** (`.dcs`), **mechanical / generic
+  temperature), **HPLC** (chromatogram CSV + Agilent ChemStation DAD `.D` runs inside `.tar.bz2`, with an
+  interactive **wavelength slider** over the time×wavelength matrix), **circular dichroism** (`.dcs`),
+  **mechanical / generic
   spreadsheets** (`.xlsx`/`.xls` — finds the data table across sheets), and **computed
   IR/Raman** spectra from Gaussian/ORCA/Psi4 frequency jobs — `.log`/`.out` via **cclib** (Gaussian/ORCA/Q-Chem/NWChem/Psi4), or pre-extracted `_ir.txt`/`_raman.txt` — for overlay on
   experiment.
