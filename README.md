@@ -7,7 +7,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/License-Apache_2.0-blue.svg"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-136%20passing-success">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-177%20passing-success">
   <img alt="Python" src="https://img.shields.io/badge/python-3.12-blue">
 </p>
 

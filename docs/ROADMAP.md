@@ -5,7 +5,7 @@
 Scientific data is scattered across instruments, formats, and cloud drives. PsiDataViz aims to:
 
 1. **Read everything.** Parse and visualize *all* major kinds of experimental and computational
-   scientific data — not just the four techniques supported today.
+   scientific data — ~24 technique families read today, and growing.
 2. **Organize by sample, not just by instrument.** Let a researcher browse their data by the
    **chemical/compound/sample**, gathering every measurement of a molecule in one place — sourced from
    many public locations.
@@ -22,8 +22,9 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
   `.xy`, PANalytical `.csv`/`.xrdml`/`.udf`, `.dat`/`.asc`; 2D detector images via FabIO), **microscopy**
   (SEM/TEM/optical `.tif`/`.jpg`/`.png` micrographs via Pillow + Gatan TEM `.dm3`/`.dm4` via ncempy),
   **electrochemistry** (Gamry `.DTA` CV +
-  **Chemotion** JCAMP-DX `.jdx` exports → Potential × Current), **mass spec** (ChemSpectra JCAMP-DX
-  `MASS SPECTRUM`), **dielectric** (broadband ε′/ε″ vs frequency, log axis), **HPLC** (chromatogram CSV),
+  **Chemotion** JCAMP-DX `.jdx` exports → Potential × Current), **mass spec & SIMS** (ChemSpectra JCAMP-DX
+  `MASS SPECTRUM`, standard MS and secondary-ion MS grouped separately), **dielectric** (broadband ε′/ε″ vs
+  frequency, log axis), **HPLC** (chromatogram CSV + Agilent ChemStation DAD `.D` runs inside `.tar.bz2`),
   **circular dichroism** (`.dcs`), **generic spreadsheets** (`.xlsx`/`.xls` via openpyxl/xlrd — auto-finds
   the data table; used for Mechanical test data), UV-Vis
   (`.txt` / Thorlabs `.csv`), **TGA** (TA Instruments `.txt`), **Brillouin** (multichannel-scaler `.asc`),
@@ -34,24 +35,34 @@ Scientific data is scattered across instruments, formats, and cloud drives. PsiD
   sources, technique **inferred from the filename**.
 - **3D structure viewer** — **3Dmol.js** renders structure files and a computational job's optimized
   geometry beside the data; **vibrational normal modes animate** (pick a mode, or click the spectrum peak).
+- **Molecule viewer everywhere** — type a **SMILES** or a **compound name** (RDKit embeds → 3D; PubChem
+  resolves names) to see any structure; it **auto-shows the compound** when a dataset's name implies one
+  (e.g. a CBD Raman spectrum displays cannabidiol). Shown for any dataset without a computed structure.
+- **Interactive visualization** — **mass spectra** render as stick/peak plots; an **HPLC-DAD wavelength
+  slider** scrubs the time×wavelength matrix to any wavelength; log/linear axis hints per technique.
+- **Editable metadata panel** (Ψ|Data⟩) — under each loaded dataset, sample / instrument / conditions
+  fields pre-filled from the parse, plus tags (condition / instrument / chemical). Stateless for now;
+  the first step of the sample-centric catalog (Lite track).
 - **ΨDataSound** — acoustic `.wav` recordings play in the browser (16-bit PCM re-encode) with a
   waveform / FFT-spectrum toggle.
 - **PsiDataViz app** — FastAPI backend + React/TS frontend, single-image deploy. **QUICK** tab
-  (scan → filter → overlay → compare → convert) and **DATA** tab (multi-source workspace).
+  (scan → filter → overlay → compare → convert) and **DATA** tab (multi-source workspace + metadata).
 - **Open source** — public repo, Apache-2.0, CI (lint + tests + build), issue/PR templates.
 
 ## Next up  ·  *immediate sequence*
 
-1. **More public-source connectors** ([#4](https://github.com/jyarger/PsiDataViz/issues/4)) — **Box** is in
-   (keyless). **Dropbox** lacks a clean keyless path (only a ~700 MB whole-folder zip; per-file listing is
-   CSRF-gated) and **Proton Drive** is E2E-encrypted — both deferred pending a viable approach.
-2. **More parsing breadth & robustness** (§1) — close the highest-count gaps from the live coverage panel:
-   **TGA**, `.gjf`/`.inp` geometries, per-file load-failure reasons, and additional proprietary-format
-   guidance; keep `sniff()` honest.
-3. **Sample-centric catalog** (§2) — deep-parse headers to recover sample *and* instrument regardless of
-   folder layout; browse by compound. (Introduces the first database.)
-4. Then the **advanced ANALYSIS / VISUALIZATION tabs** (§3), **large-dataset handling** (§5), and
-   **VPS deploy + domain** (§6).
+Parsing breadth is now broad (~24 technique families) and the **sample-centric catalog** has begun on the
+**Lite track** ([design doc](design-sample-centric-catalog.md)):
+
+1. **Catalog Lite — phase 2: chemical identity** — wire the metadata panel's SMILES/CAS/name fields to
+   RDKit + PubChem (name → SMILES → formula, structure inline); the `/api/molecule` endpoint already does
+   most of it.
+2. **Catalog Lite — phase 3: enriched export** — feed the edited metadata + tags into the convert endpoint
+   so CSDM / JCAMP-DX downloads carry `##SMILES=`, `##CAS REGISTRY NO=`, conditions, etc.
+3. **Catalog Pro track** — PostgreSQL catalog, multi-user auth (Google/GitHub/email) + admin, browse by
+   sample & instrument, write-back (the `lite|pro` editions).
+4. **More interactivity** (ongoing) — keep adding sliders/linked views; **remaining readers** are minor
+   (Mechanical `.mss` OLE2; the `.xls` already covers it). Then **VPS deploy + Cloudflare domain**.
 
 ## Prioritized plan
 
