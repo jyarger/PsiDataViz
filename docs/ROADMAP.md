@@ -93,6 +93,9 @@ The core mission. PsiDataViz is only as useful as the formats it can read.
   headers/notes to determine the **sample** *and* **instrument** for every dataset regardless of folder
   layout, then let users **browse by sample**.
 - Introduces the project's first **database** + tags/labels for a searchable catalog.
+- **Design/scoping doc:** [design-sample-centric-catalog.md](design-sample-centric-catalog.md) — sample
+  identity (SMILES/InChI/CAS), interactive metadata + enriched re-save (CSDM/JCAMP-DX), the PostgreSQL
+  catalog, browse-by-compound, FAIR-repo sources, and Docker/Cloudflare deployment. Phased rollout inside.
 
 ### 3 — Advanced per-technique analysis & visualization
 
