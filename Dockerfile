@@ -19,9 +19,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Library first, then the backend (its `psidata` dependency is already satisfied locally).
+# Library first (with the [convert] extra so the binary/format readers work in the deployed image:
+# FabIO for .edf/.img/.mccd 2D detector images, h5py for .h5, cclib for .log/.out, brukeropusreader
+# for OPUS .0, pyarrow for Parquet/Feather), then the backend.
 COPY packages/psidata ./packages/psidata
-RUN pip install ./packages/psidata
+RUN pip install "./packages/psidata[convert]"
 COPY apps/backend ./apps/backend
 RUN pip install ./apps/backend
 
