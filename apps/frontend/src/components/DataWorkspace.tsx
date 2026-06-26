@@ -35,6 +35,7 @@ function labelFor(url: string, source: string): { label: string; icon: string } 
 
 export function DataWorkspace() {
   const [input, setInput] = useState("");
+  const [keyword, setKeyword] = useState(""); // optional path keyword to limit a large scan
   const [sources, setSources] = useState<Source[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +58,7 @@ export function DataWorkspace() {
     setBusy(`Scanning ${u} …`);
     setError(null);
     try {
-      const catalog = await api.catalog(u);
+      const catalog = await api.catalog(u, keyword);
       const { label, icon } = labelFor(u, catalog.source);
       setSources((s) => [...s, { url: u, label, icon, catalog }]);
       setInput("");
@@ -141,6 +142,15 @@ export function DataWorkspace() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addSource(input)}
           placeholder="Add a GitHub repo or public Google Drive folder URL"
+        />
+        <input
+          type="text"
+          className="filter kw"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && addSource(input)}
+          placeholder="keyword filter (optional)"
+          title="Only scan files whose path contains this — useful for very large repos"
         />
         <button className="btn" onClick={() => addSource(input)} disabled={!!busy}>
           + Add source

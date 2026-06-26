@@ -43,25 +43,26 @@ def health() -> dict:
 
 
 @app.get("/api/scan")
-def scan(url: str = Query(..., description="GitHub repo URL or owner/repo")) -> dict:
+def scan(url: str = Query(..., description="GitHub repo URL or owner/repo"),
+         filter: str | None = Query(None, description="only include files whose path contains this")) -> dict:
     try:
-        return services.scan_summary(services.scan_repo(url))
+        return services.scan_summary(services.scan_repo(url, keyword=filter))
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f"Could not scan {url!r}: {exc}") from exc
 
 
 @app.get("/api/records")
-def records(url: str, technique: str) -> list[dict]:
-    catalog = services.scan_repo(url)
+def records(url: str, technique: str, filter: str | None = None) -> list[dict]:
+    catalog = services.scan_repo(url, keyword=filter)
     return [services.record_row(r) for r in catalog.record_groups().get(technique, []) if r.supported]
 
 
 @app.get("/api/catalog")
-def catalog(url: str) -> dict:
+def catalog(url: str, filter: str | None = None) -> dict:
     """One source's scan summary plus every supported data record (all techniques) — for the
     multi-source DATA workspace, which merges several catalogs client-side."""
     try:
-        cat = services.scan_repo(url)
+        cat = services.scan_repo(url, keyword=filter)
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f"Could not scan {url!r}: {exc}") from exc
     summary = services.scan_summary(cat)

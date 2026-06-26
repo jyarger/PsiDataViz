@@ -204,3 +204,22 @@ def test_upload_expands_a_single_dropped_zip():
     assert res.status_code == 200
     # the zip is expanded -> the inner .xy becomes a record, not a single .zip record
     assert any(r["name"] == "a.xy" for r in res.json()["records"])
+
+
+@respx.mock
+def test_scan_keyword_filter_limits_files():
+    _listing_cache.clear()
+    respx.get("https://api.github.com/repos/o/r").mock(
+        return_value=httpx.Response(200, json={"default_branch": "main"}))
+    tree = {"tree": [
+        {"path": "Raman/aspirin_532nm.csv", "type": "blob", "size": 10},
+        {"path": "Raman/caffeine_532nm.csv", "type": "blob", "size": 10},
+        {"path": "NMR/aspirin_1H.jdx", "type": "blob", "size": 10},
+    ]}
+    respx.get("https://api.github.com/repos/o/r/git/trees/main").mock(
+        return_value=httpx.Response(200, json=tree))
+    body = client.get("/api/scan", params={"url": "o/r", "filter": "aspirin"}).json()
+    # only the two aspirin files survive the keyword filter
+    assert body["n_files"] == 2
+    techs = {t["technique"] for t in body["techniques"]}
+    assert techs == {"Raman", "NMR"}

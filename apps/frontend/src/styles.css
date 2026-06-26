@@ -405,3 +405,13 @@ input[type="text"].filter {
 .md-idsmiles { color: var(--muted); font-size: 12px; word-break: break-all; }
 .md-chemgrid { padding: 0 !important; }
 .md-iderr { font-size: 13px; color: #ff8787; }
+
+/* PsiViz plot-mode toggle (scatter / line / both) */
+.plot-modes { display: flex; gap: 4px; justify-content: flex-end; padding: 0 4px 6px; }
+.plot-mode { background: var(--bg); border: 1px solid var(--border); color: var(--muted);
+  border-radius: 6px; padding: 3px 10px; font-size: 12px; cursor: pointer; font-family: inherit; }
+.plot-mode:hover { color: var(--text); }
+.plot-mode.active { background: var(--accent); color: #06121f; border-color: var(--accent); font-weight: 600; }
+
+/* keyword scan filter input */
+input[type="text"].kw { width: 210px; min-width: 140px; }

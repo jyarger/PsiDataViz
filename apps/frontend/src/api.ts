@@ -165,12 +165,15 @@ export interface MoleculeData {
   svg?: string | null; // a 2D structure depiction
 }
 
+const flt = (kw?: string) => (kw && kw.trim() ? `&filter=${q(kw.trim())}` : "");
+
 export const api = {
-  scan: (url: string) => get<ScanResult>(`/api/scan?url=${q(url)}`),
+  scan: (url: string, keyword?: string) => get<ScanResult>(`/api/scan?url=${q(url)}${flt(keyword)}`),
   molecule: (query: string) => get<MoleculeData>(`/api/molecule?q=${q(query)}`),
-  catalog: (url: string) => get<CatalogResult>(`/api/catalog?url=${q(url)}`),
-  records: (url: string, technique: string) =>
-    get<RecordRow[]>(`/api/records?url=${q(url)}&technique=${q(technique)}`),
+  catalog: (url: string, keyword?: string) =>
+    get<CatalogResult>(`/api/catalog?url=${q(url)}${flt(keyword)}`),
+  records: (url: string, technique: string, keyword?: string) =>
+    get<RecordRow[]>(`/api/records?url=${q(url)}&technique=${q(technique)}${flt(keyword)}`),
   dataset: (
     url: string,
     name: string,

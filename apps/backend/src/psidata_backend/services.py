@@ -39,7 +39,7 @@ def store_upload(files: dict[str, bytes], label: str) -> str:
     return f"{UPLOAD_SCHEME}{upload_id}"
 
 
-def scan_repo(url: str, *, use_cache: bool = True) -> Catalog:
+def scan_repo(url: str, *, use_cache: bool = True, keyword: str | None = None) -> Catalog:
     payload = _listing_cache.get(url) if use_cache else None
     if payload is None:
         src = make_source(url)
@@ -47,8 +47,11 @@ def scan_repo(url: str, *, use_cache: bool = True) -> Catalog:
             payload = {"label": src.label, "files": [asdict(r) for r in src.list_files()]}
         finally:
             getattr(src, "close", lambda: None)()
-        _listing_cache[url] = payload
+        _listing_cache[url] = payload  # cache the *full* listing; the keyword just filters it in memory
     refs = [FileRef(**f) for f in payload["files"]]
+    if keyword:
+        kw = keyword.strip().lower()
+        refs = [r for r in refs if kw in r.path.lower()]
     return Catalog(source_label=payload["label"], entries=[build_entry(r) for r in refs])
 
 

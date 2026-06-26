@@ -85,6 +85,7 @@ const rid = (r: RecordRow) => r.uid;
 
 function Quick({ onNav }: { onNav: (v: View) => void }) {
   const [repo, setRepo] = useState(DEFAULT_REPO);
+  const [keyword, setKeyword] = useState(""); // optional path keyword to limit a large scan
   const [src, setSrc] = useState(DEFAULT_REPO); // the source URL backing the current scan
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [technique, setTechnique] = useState<string | null>(null);
@@ -125,7 +126,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
     setTechnique(null);
     setRecords([]);
     clearSelection();
-    const result = await run("Scanning data source…", () => api.scan(url));
+    const result = await run("Scanning data source…", () => api.scan(url, keyword));
     if (result) {
       setScan(result);
       const first = result.techniques.find((t) => t.n_supported > 0)?.technique;
@@ -136,7 +137,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
   async function pickTechnique(t: string, source: string = src) {
     setTechnique(t);
     clearSelection();
-    const rows = await run("Loading datasets…", () => api.records(source, t));
+    const rows = await run("Loading datasets…", () => api.records(source, t, keyword));
     if (rows) setRecords(rows);
   }
 
@@ -224,6 +225,15 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
           onChange={(e) => setRepo(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && doScan()}
           placeholder="GitHub repo (owner/repo) or a public Google Drive folder URL"
+        />
+        <input
+          type="text"
+          className="filter kw"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && doScan()}
+          placeholder="keyword filter (optional)"
+          title="Only scan files whose path contains this — useful for very large repos"
         />
         <button className="btn" onClick={() => doScan()} disabled={!!busy}>
           Scan

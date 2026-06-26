@@ -1,6 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Plotly from "plotly.js-dist-min";
 import type { DatasetData } from "../api";
+
+type PlotMode = "lines" | "markers" | "lines+markers";
+const MODE_LABEL: Record<PlotMode, string> = {
+  lines: "Line",
+  markers: "Points",
+  "lines+markers": "Line + points",
+};
 
 const PALETTE = ["#4aa3ff", "#ff6b6b", "#51cf66", "#fcc419", "#b197fc", "#ff8787", "#22b8cf", "#a9e34b"];
 
@@ -34,6 +41,9 @@ export function SpectrumPlot({
   onPeakClick?: (wavenumber: number, label: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [mode, setMode] = useState<PlotMode>("lines");
+  // mass spectra are sticks; the line/points toggle only applies to ordinary traces
+  const showModes = datasets.some((d) => !STICK.has(d.technique));
 
   useEffect(() => {
     if (!ref.current || datasets.length === 0) return;
@@ -65,8 +75,9 @@ export function SpectrumPlot({
           };
         }
         return {
-          x: xs, y: ys, type: "scattergl", mode: "lines", name,
+          x: xs, y: ys, type: "scattergl", mode, name,
           line: { color: clr, width: 1.4 },
+          marker: { color: clr, size: 5 },
         };
       });
     });
@@ -118,7 +129,24 @@ export function SpectrumPlot({
         if (p) onPeakClick(p.x, traceLabels[p.curveNumber] ?? "");
       });
     }
-  }, [datasets, normalize, onPeakClick]);
+  }, [datasets, normalize, onPeakClick, mode]);
 
-  return <div ref={ref} style={{ width: "100%", height: 480 }} />;
+  return (
+    <div>
+      {showModes && (
+        <div className="plot-modes">
+          {(Object.keys(MODE_LABEL) as PlotMode[]).map((m) => (
+            <button
+              key={m}
+              className={"plot-mode" + (mode === m ? " active" : "")}
+              onClick={() => setMode(m)}
+            >
+              {MODE_LABEL[m]}
+            </button>
+          ))}
+        </div>
+      )}
+      <div ref={ref} style={{ width: "100%", height: 480 }} />
+    </div>
+  );
 }
