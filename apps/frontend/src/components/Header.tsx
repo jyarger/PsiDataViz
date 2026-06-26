@@ -1,8 +1,8 @@
 export type View = "QUICK" | "DATA" | "VIZ";
 
-// The two advanced tabs use Dirac bracket-ket wordmarks: Ψ|Data⟩ and Ψ|Viz⟩.
+// The advanced tabs use Dirac bracket-ket wordmarks: Ψ|Data⟩ and Ψ|Viz⟩.
+// (QUICK is the home page — reached via the logo, not a nav item.)
 const ITEMS: { id: View; label: string; ket?: string }[] = [
-  { id: "QUICK", label: "QUICK" },
   { id: "DATA", label: "Data", ket: "|Data⟩" },
   { id: "VIZ", label: "Viz", ket: "|Viz⟩" },
 ];
@@ -10,9 +10,9 @@ const ITEMS: { id: View; label: string; ket?: string }[] = [
 export function Header({ view, onNav }: { view: View; onNav: (v: View) => void }) {
   return (
     <header className="header">
-      <div className="brand" onClick={() => onNav("QUICK")} role="button" tabIndex={0}>
-        <span className="psi">Ψ</span>
-        <span className="brand-ket">|DataViz⟩</span>
+      <div className="brand" onClick={() => onNav("QUICK")} role="button" tabIndex={0}
+        title="Home">
+        <span className="psi">Ψ</span>DataViz
         <small>Scientific Data Visualization</small>
       </div>
       <nav className="nav">
