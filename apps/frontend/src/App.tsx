@@ -72,19 +72,32 @@ function Coming({ view }: { view: View }) {
   );
 }
 
-const PRESETS: { label: string; provider: string; url: string }[] = [
-  { label: "yargerlab/Data", provider: "github", url: "https://github.com/yargerlab/Data" },
+type Preset = { label: string; provider: string; url: string };
+// Two ways to bring data in: storage you host yourself, vs. open FAIR repositories you access (and could
+// publish into). See https://www.go-fair.org / https://fairsharing.org for the FAIR principles.
+const SOURCE_GROUPS: { key: string; title: string; blurb: string; presets: Preset[] }[] = [
   {
-    label: "Google Drive — Psi_Data",
-    provider: "gdrive",
-    url: "https://drive.google.com/drive/folders/16VQhcRbCHkzhH2cq8T5DwyhTUBj2BrO4",
+    key: "host",
+    title: "Host your own data",
+    blurb: "Point PsiDataViz at a public folder you control.",
+    presets: [
+      { label: "yargerlab/Data", provider: "github", url: "https://github.com/yargerlab/Data" },
+      {
+        label: "Google Drive — Psi_Data",
+        provider: "gdrive",
+        url: "https://drive.google.com/drive/folders/16VQhcRbCHkzhH2cq8T5DwyhTUBj2BrO4",
+      },
+      { label: "Codeberg — PsiData", provider: "codeberg", url: "https://codeberg.org/jyarger/PsiData" },
+      { label: "Box — PsiData", provider: "box", url: "https://app.box.com/s/yigbg0fd5xj5n1hkxf8rcsemrkz7qgsx" },
+    ],
   },
-  { label: "Codeberg — PsiData", provider: "codeberg", url: "https://codeberg.org/jyarger/PsiData" },
-  { label: "Box — PsiData", provider: "box", url: "https://app.box.com/s/yigbg0fd5xj5n1hkxf8rcsemrkz7qgsx" },
   {
-    label: "Chemotion — published data",
-    provider: "chemotion",
-    url: "https://www.chemotion-repository.net/",
+    key: "repo",
+    title: "Open FAIR repositories",
+    blurb: "Visualize published, DOI-minted data from open repositories.",
+    presets: [
+      { label: "Chemotion — published data", provider: "chemotion", url: "https://www.chemotion-repository.net/" },
+    ],
   },
 ];
 
@@ -312,28 +325,42 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
           Scan
         </button>
       </div>
-      <div className="presets">
-        <span className="muted">Try:</span>
-        {PRESETS.map((p) => (
-          <button
-            key={p.url}
-            className="src-chip"
-            onClick={() => doScan(p.url)}
-            disabled={!!busy}
-            title={p.url}
-          >
-            <ProviderIcon id={p.provider} size={18} />
-            {p.label}
-          </button>
+      <div className="source-groups">
+        {SOURCE_GROUPS.map((g) => (
+          <div className="source-group" key={g.key}>
+            <div className="source-group-head">
+              <b>{g.title}</b>
+              <span className="muted">{g.blurb}</span>
+            </div>
+            <div className="presets">
+              {g.presets.map((p) => (
+                <button
+                  key={p.url}
+                  className="src-chip"
+                  onClick={() => doScan(p.url)}
+                  disabled={!!busy}
+                  title={p.url}
+                >
+                  <ProviderIcon id={p.provider} size={18} />
+                  {p.label}
+                </button>
+              ))}
+              {g.key === "host" && (
+                <a className="link" style={{ marginLeft: "auto" }} onClick={() => setShowGuide(true)}>
+                  How to share a public link?
+                </a>
+              )}
+            </div>
+          </div>
         ))}
-        <a className="link" style={{ marginLeft: "auto" }} onClick={() => setShowGuide(true)}>
-          How to share a public link?
-        </a>
       </div>
       <p className="tested-note">
-        Tested public storage: <b>GitHub</b>, <b>Codeberg</b>, <b>Google Drive</b>, <b>Box</b>, and the{" "}
-        <b>Chemotion</b> repository.{" "}
-        <span className="muted">More public &amp; private sources are in the works.</span>
+        PsiDataViz promotes <b>FAIR</b> data (Findable, Accessible, Interoperable, Reusable) — browse
+        repositories and resources at{" "}
+        <a className="link" href="https://fairsharing.org/" target="_blank" rel="noreferrer">
+          fairsharing.org
+        </a>
+        . <span className="muted">More open repositories &amp; private sources are in the works.</span>
       </p>
 
       {busy && <p className="spinner">{busy}</p>}

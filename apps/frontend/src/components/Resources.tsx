@@ -22,6 +22,36 @@ export function Resources({ onClose }: { onClose: () => void }) {
         </section>
 
         <section>
+          <h3>FAIR data &amp; open repositories</h3>
+          <p>
+            PsiDataViz follows the <b>FAIR</b> principles — data should be{" "}
+            <b>Findable</b>, <b>Accessible</b>, <b>Interoperable</b>, and <b>Reusable</b>. There are two
+            ways to bring data in:
+          </p>
+          <ul>
+            <li>
+              <b>Host your own data</b> — point the app at a public folder you control (GitHub, Google
+              Drive, Codeberg, Box).
+            </li>
+            <li>
+              <b>Open FAIR repositories</b> — access published, DOI-minted datasets from open
+              repositories (e.g. the <b>Chemotion</b> repository), with more on the way.
+            </li>
+          </ul>
+          <p>
+            Discover FAIR-aligned databases, repositories, and standards at{" "}
+            <a href="https://fairsharing.org/" target="_blank" rel="noreferrer">
+              fairsharing.org
+            </a>{" "}
+            and read the principles at{" "}
+            <a href="https://www.go-fair.org/fair-principles/" target="_blank" rel="noreferrer">
+              go-fair.org
+            </a>
+            .
+          </p>
+        </section>
+
+        <section>
           <h3>Supported formats</h3>
           <ul>
             <li><b>DSC</b> — TA Trios <code>.txt</code> / <code>.csv</code></li>
@@ -50,6 +80,12 @@ export function Resources({ onClose }: { onClose: () => void }) {
               </a>{" "}
               — shared example folder, scannable directly (no API key needed).
             </li>
+            <li>
+              <a href="https://www.chemotion-repository.net/" target="_blank" rel="noreferrer">
+                Chemotion repository
+              </a>{" "}
+              — an open FAIR repository of published chemistry data (NMR, IR, MS).
+            </li>
           </ul>
         </section>
 
@@ -57,7 +93,9 @@ export function Resources({ onClose }: { onClose: () => void }) {
           <h3>Convert &amp; export</h3>
           <p>
             Any dataset can be downloaded as <b>CSDM</b>, <b>HDF5</b>, <b>CSV</b>, <b>Parquet</b>,{" "}
-            <b>Feather</b>, or per-signal <b>CSV (zip)</b> from the plot's <b>Convert</b> menu.
+            <b>Feather</b>, or per-signal <b>CSV (zip)</b> from the plot's <b>Convert</b> menu — or taken
+            into a notebook for advanced analysis with <b>Open in… → Colab / marimo</b>, which generates a
+            runnable notebook that re-fetches and re-plots your selection with <code>psidata</code>.
           </p>
         </section>
 

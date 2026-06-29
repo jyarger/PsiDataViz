@@ -3,6 +3,23 @@
 PsiDataViz reads data from **public** locations with **no account and no API key**. You give it a public
 link; it lists the files, groups them into datasets, and parses them on demand.
 
+## FAIR data: two kinds of source
+
+PsiDataViz is built around the **FAIR** principles — research data should be **F**indable,
+**A**ccessible, **I**nteroperable, and **R**eusable ([go-fair.org](https://www.go-fair.org/fair-principles/)).
+There are two distinct ways to bring data into the app:
+
+1. **Host your own data** — point PsiDataViz at a public folder *you* control (GitHub, Google Drive,
+   Codeberg, Box). This is for sharing and visualizing your group's own data.
+2. **Open FAIR repositories** — access *published*, DOI-minted datasets from open repositories such as
+   the [**Chemotion**](https://www.chemotion-repository.net/) repository. These are community resources
+   you can search, visualize, and (in future) deposit into.
+
+For a catalog of FAIR-aligned databases, repositories, standards, and policies across disciplines, see
+**[fairsharing.org](https://fairsharing.org/)**. Hosting your data in a FAIR repository (with a DOI and
+open licence) is the most reusable option; the self-hosting services below are a lightweight middle
+ground for data that isn't yet deposited.
+
 ## Where to host data for PsiDataViz
 
 > **TL;DR — use GitHub, Google Drive, Codeberg, or Box.** These let PsiDataViz list and read your files
