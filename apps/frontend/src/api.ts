@@ -143,6 +143,26 @@ export interface CompareResult {
   summary?: string;
 }
 
+// A search hit from an open data repository (Zenodo, …) — shown before any files are downloaded.
+export interface RepoRecord {
+  id: string;
+  title: string;
+  authors: string[];
+  doi: string | null;
+  published: string | null;
+  description: string | null;
+  url: string | null;
+  n_files: number;
+  keywords: string[];
+  resource_type: string | null;
+}
+export interface RepoSearchResult {
+  total: number;
+  page: number;
+  per_page: number;
+  records: RepoRecord[];
+}
+
 const BASE = import.meta.env.VITE_API_BASE ?? "";
 
 async function get<T>(path: string): Promise<T> {
@@ -184,6 +204,8 @@ const flt = (kw?: string) => (kw && kw.trim() ? `&filter=${q(kw.trim())}` : "");
 
 export const api = {
   scan: (url: string, keyword?: string) => get<ScanResult>(`/api/scan?url=${q(url)}${flt(keyword)}`),
+  repoSearch: (repo: string, query: string, page = 1) =>
+    get<RepoSearchResult>(`/api/repo/search?repo=${q(repo)}&q=${q(query)}&page=${page}&per_page=20`),
   molecule: (query: string) => get<MoleculeData>(`/api/molecule?q=${q(query)}`),
   catalog: (url: string, keyword?: string) =>
     get<CatalogResult>(`/api/catalog?url=${q(url)}${flt(keyword)}`),

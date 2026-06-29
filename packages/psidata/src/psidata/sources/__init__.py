@@ -17,10 +17,27 @@ from .records import (
     classify_format,
     record_key,
 )
+from .repository import FileListSource, RepoRecord, RepoSearchResult, Repository
+from .zenodo import ZenodoError, ZenodoRepository
+
+#: open data repositories, keyed by their URL scheme (``<scheme>:<record-id>``)
+_REPOSITORIES = {"zenodo": ZenodoRepository}
+
+
+def make_repository(name: str, **kwargs) -> Repository:
+    """A searchable :class:`Repository` by scheme/name (e.g. ``"zenodo"``)."""
+    cls = _REPOSITORIES.get(name.lower())
+    if cls is None:
+        raise ValueError(f"Unknown repository {name!r}; known: {sorted(_REPOSITORIES)}")
+    return cls(**kwargs)
 
 
 def make_source(url: str, **kwargs) -> DataSource:
-    """Pick the right :class:`DataSource` for a URL (Chemotion / Google Drive / Codeberg / Box / GitHub)."""
+    """Pick the right :class:`DataSource` for a URL — a repository record (``zenodo:<id>``), Chemotion,
+    Google Drive, Codeberg, Box, or GitHub."""
+    scheme, _, rest = url.partition(":")
+    if rest and scheme.lower() in _REPOSITORIES:  # a single repository record -> its files
+        return make_repository(scheme).record_source(rest)
     if "chemotion" in url.lower():
         return ChemotionSource(url, **kwargs)
     if "drive.google.com" in url:
@@ -43,11 +60,17 @@ __all__ = [
     "CodebergSource",
     "DataRecord",
     "DataSource",
+    "FileListSource",
     "FileRef",
     "FormatInfo",
     "FormatVariant",
     "GitHubError",
     "GitHubSource",
+    "RepoRecord",
+    "RepoSearchResult",
+    "Repository",
+    "ZenodoError",
+    "ZenodoRepository",
     "GoogleDriveError",
     "GoogleDriveSource",
     "RepoRef",
@@ -55,6 +78,7 @@ __all__ = [
     "build_records",
     "canonical_technique",
     "classify_format",
+    "make_repository",
     "make_source",
     "parse_box_url",
     "parse_chemotion_url",

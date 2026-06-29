@@ -14,7 +14,7 @@ import httpx
 import numpy as np
 from psidata import Candidate, Dataset, archive_datasets, is_archive, read, read_archive
 from psidata.readers.raman_text import parse_spec_sidecar
-from psidata.sources import Catalog, FileRef, make_source
+from psidata.sources import Catalog, FileRef, make_repository, make_source
 from psidata.sources.catalog import _technique_has_reader, build_entry, detect_organization
 from psidata.sources.chemotion import ZIP_MEMBER_SEP
 from psidata.sources.gdrive import download_drive
@@ -97,6 +97,18 @@ def _fetch_archive(url: str) -> bytes:
     """Whole-archive bytes, process-cached so switching between datasets inside a multi-dataset zip
     (e.g. a numbered-subfolder Bruker NMR archive) doesn't re-download the archive each time."""
     return _fetch_bytes(url)
+
+
+def search_repository(repo: str, query: str, *, page: int = 1, per_page: int = 20) -> dict:
+    """Search an open data repository (e.g. Zenodo) and return record summaries — no downloads. Each
+    result can then be scanned via ``url=<repo>:<id>`` through the normal scan/catalog pipeline."""
+    repository = make_repository(repo)
+    try:
+        return repository.search(query, page=page, per_page=per_page).summary()
+    finally:
+        close = getattr(repository, "close", None)
+        if close:
+            close()
 
 
 def load_dataset(name: str, url: str, *, technique: str | None = None,

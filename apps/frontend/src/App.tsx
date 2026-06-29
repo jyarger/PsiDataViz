@@ -14,6 +14,7 @@ import { Heatmap } from "./components/Heatmap";
 import { MatrixSliceViewer } from "./components/MatrixSliceViewer";
 import { NMRPanel } from "./components/NMRPanel";
 import { NotebookMenu } from "./components/NotebookMenu";
+import { RepoSearch } from "./components/RepoSearch";
 import { LayoutTabs } from "./components/LayoutTabs";
 import { MoleculeViewer } from "./components/MoleculeViewer";
 import { CompoundViewer } from "./components/CompoundViewer";
@@ -362,6 +363,14 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
         </a>
         . <span className="muted">More open repositories &amp; private sources are in the works.</span>
       </p>
+
+      <div className="card repo-search-card">
+        <div className="repo-search-head">
+          <b>🔎 Search open FAIR repositories</b>
+          <span className="muted">Find published, DOI-minted datasets and visualize them directly.</span>
+        </div>
+        <RepoSearch onPick={(url) => doScan(url)} busy={!!busy} />
+      </div>
 
       {busy && <p className="spinner">{busy}</p>}
       {error && <p className="error">{error}</p>}

@@ -201,6 +201,20 @@ def convert_enriched(payload: dict = Body(...)):
     )
 
 
+@app.get("/api/repo/search")
+def repo_search(repo: str, q: str, page: int = 1, per_page: int = 20) -> dict:
+    """Search an open data repository (Zenodo, …) for published records — summaries only, no downloads.
+    Pick a result and scan it with ``/api/scan?url=<repo>:<id>``."""
+    if not q.strip():
+        raise HTTPException(status_code=422, detail="a search query (q) is required")
+    try:
+        return services.search_repository(repo, q, page=page, per_page=min(per_page, 50))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"repository search failed: {exc}") from exc
+
+
 @app.post("/api/notebook")
 def notebook_endpoint(payload: dict = Body(...)):
     """Build a self-contained Colab (.ipynb) or marimo (.py) notebook that re-fetches and re-plots the
