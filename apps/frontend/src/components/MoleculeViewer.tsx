@@ -19,10 +19,12 @@ export function MoleculeViewer({
   const viewerRef = useRef<any>(null);
   const [mode, setMode] = useState(-1); // -1 = static (no animation)
   const [spin, setSpin] = useState(false);
+  const [packing, setPacking] = useState(false); // crystals: replicate the unit cell 2×2×2
   const [error, setError] = useState(false);
   const modes = structure.modes ?? [];
+  const isCrystal = structure.format === "cif";
 
-  // (Re)draw the molecule; if modeIndex >= 0, animate that normal mode.
+  // (Re)draw the structure; if modeIndex >= 0, animate that normal mode.
   const draw = (modeIndex: number) => {
     const viewer = viewerRef.current;
     if (!viewer) return;
@@ -32,8 +34,20 @@ export function MoleculeViewer({
       /* noop */
     }
     viewer.removeAllModels();
-    const model = viewer.addModel(structure.data, structure.format);
+    viewer.removeAllShapes();
+    // for a crystal, apply the space-group symmetry so the unit cell is filled, then draw the cell box
+    const model = isCrystal
+      ? viewer.addModel(structure.data, "cif", {
+          doAssembly: true,
+          duplicateAssemblyAtoms: true,
+          normalizeAssembly: true,
+        })
+      : viewer.addModel(structure.data, structure.format);
     viewer.setStyle({}, { stick: { radius: 0.13 }, sphere: { scale: 0.27 } });
+    if (isCrystal) {
+      if (packing) viewer.replicateUnitCell(2, 2, 2, model);
+      viewer.addUnitCell(model, { box: { color: "#6e7681" } });
+    }
     viewer.zoomTo();
     const m = modeIndex >= 0 ? modes[modeIndex] : null;
     if (m) {
@@ -104,14 +118,37 @@ export function MoleculeViewer({
     setSpin(next);
     viewerRef.current?.spin(next ? "y" : false);
   }
+  function togglePacking() {
+    setPacking((p) => {
+      const next = !p;
+      // redraw with the new packing on the next tick (state hasn't flushed yet, so draw reads `next`)
+      const viewer = viewerRef.current;
+      if (viewer) {
+        viewer.removeAllModels();
+        viewer.removeAllShapes();
+        const model = viewer.addModel(structure.data, "cif", {
+          doAssembly: true,
+          duplicateAssemblyAtoms: true,
+          normalizeAssembly: true,
+        });
+        viewer.setStyle({}, { stick: { radius: 0.13 }, sphere: { scale: 0.27 } });
+        if (next) viewer.replicateUnitCell(2, 2, 2, model);
+        viewer.addUnitCell(model, { box: { color: "#6e7681" } });
+        viewer.zoomTo();
+        viewer.spin(spin ? "y" : false);
+        viewer.render();
+      }
+      return next;
+    });
+  }
 
   return (
     <div className="mol-card">
       <div className="mol-head">
         <span className="mol-title">
-          🧬 {title}
+          {isCrystal ? "💎" : "🧬"} {title}
           {structure.n_atoms != null && <span className="mol-meta"> · {structure.n_atoms} atoms</span>}
-          <span className="mol-meta"> · {structure.format.toUpperCase()}</span>
+          <span className="mol-meta"> · {isCrystal ? "crystal (unit cell)" : structure.format.toUpperCase()}</span>
         </span>
         {!error &&
           (modes.length > 0 ? (
@@ -127,9 +164,20 @@ export function MoleculeViewer({
               </select>
             </label>
           ) : (
-            <button className="mol-spin" onClick={toggleSpin}>
-              {spin ? "Stop" : "Spin"}
-            </button>
+            <span className="mol-controls">
+              {isCrystal && (
+                <button
+                  className={"mol-spin" + (packing ? " active" : "")}
+                  onClick={togglePacking}
+                  title="Replicate the unit cell 2×2×2 to show crystal packing"
+                >
+                  {packing ? "Single cell" : "Packing 2×2×2"}
+                </button>
+              )}
+              <button className="mol-spin" onClick={toggleSpin}>
+                {spin ? "Stop" : "Spin"}
+              </button>
+            </span>
           ))}
       </div>
       {error ? (

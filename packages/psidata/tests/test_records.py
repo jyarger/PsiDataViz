@@ -127,3 +127,9 @@ def test_flat_repository_file_resolves_technique_by_extension():
     # ambiguous extensions (.jdx is NMR/IR/MS, .csv is anything) are NOT force-mapped
     amb = build_entry(FileRef(path="mystery.jdx", size=4096))
     assert amb.technique == "(root)"
+
+
+def test_single_technique_extension_overrides_folder():
+    # a .cif crystal structure stays a structure even inside an XRD folder (whose readers don't do .cif)
+    e = build_entry(FileRef(path="XRD/CrystalDiffract/NIF_Beta.cif", size=7000))
+    assert e.reader_name == "structure_file" and e.supported and e.technique != "XRD"
