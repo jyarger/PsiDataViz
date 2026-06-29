@@ -246,3 +246,27 @@ export async function exportEnriched(payload: {
 export function audioSrc(ds: DatasetData): string | null {
   return ds.audio_url ? `${BASE}${ds.audio_url}` : null;
 }
+
+// Build a runnable Colab (.ipynb) or marimo (.py) notebook that re-fetches + re-plots the selected
+// datasets, for advanced analysis. Returns the notebook file as a Blob (the caller triggers download).
+export interface NotebookDataset {
+  name: string;
+  url: string;
+  technique: string;
+  member?: string | null;
+}
+export async function exportNotebook(payload: {
+  datasets: NotebookDataset[];
+  fmt: "colab" | "marimo";
+}): Promise<Blob> {
+  const res = await fetch(`${BASE}/api/notebook`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const b = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(b.detail ?? res.statusText);
+  }
+  return res.blob();
+}

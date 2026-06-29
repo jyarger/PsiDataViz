@@ -3,6 +3,7 @@ import { api, type CatalogResult, type DatasetData, type RecordRow } from "../ap
 import { SpectrumPlot } from "./SpectrumPlot";
 import { Heatmap } from "./Heatmap";
 import { NMRPanel } from "./NMRPanel";
+import { NotebookMenu } from "./NotebookMenu";
 import { LayoutTabs } from "./LayoutTabs";
 import { MoleculeViewer } from "./MoleculeViewer";
 import { CompoundViewer } from "./CompoundViewer";
@@ -145,6 +146,12 @@ export function DataWorkspace() {
       guessCompound(
         ((selectedDatasets[0]?.metadata.sample_name as string) ?? selectedDatasets[0]?.filename ?? ""),
       );
+  const notebookDatasets = selected
+    .map((k) => {
+      const r = rows.find((x) => x.ckey === k);
+      return r ? { name: r.name, url: r.url, technique: r.technique, member: datasets[k]?.bundle?.current } : null;
+    })
+    .filter((d): d is NonNullable<typeof d> => !!d);
 
   return (
     <>
@@ -310,6 +317,7 @@ export function DataWorkspace() {
                 />
                 Normalize
               </label>
+              <NotebookMenu datasets={notebookDatasets} />
               <button
                 className="btn ghost"
                 onClick={() => {

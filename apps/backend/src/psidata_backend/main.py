@@ -18,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from psidata import __version__, compare_record_formats, get_readers
 from psidata.convert import convert as run_convert
+from psidata.export import ExportItem, to_colab, to_marimo
 from starlette.background import BackgroundTask
 
 from . import molecule as molecule_service
@@ -198,6 +199,27 @@ def convert_enriched(payload: dict = Body(...)):
         payload["url"], payload["name"], payload.get("technique"), payload.get("fmt", "jcamp"),
         member=payload.get("member"), metadata=payload.get("metadata"),
     )
+
+
+@app.post("/api/notebook")
+def notebook_endpoint(payload: dict = Body(...)):
+    """Build a self-contained Colab (.ipynb) or marimo (.py) notebook that re-fetches and re-plots the
+    selected datasets — a runnable starting point for advanced analysis, not a screenshot."""
+    items = [
+        ExportItem(name=d["name"], url=d["url"], technique=d.get("technique"), member=d.get("member"))
+        for d in payload.get("datasets", [])
+        if d.get("name") and d.get("url")
+    ]
+    if not items:
+        raise HTTPException(status_code=422, detail="no datasets to export")
+    x_quantity = payload.get("x_quantity", "temperature")
+    if payload.get("fmt") == "marimo":
+        body = to_marimo(items, x_quantity=x_quantity).encode("utf-8")
+        return Response(content=body, media_type="text/x-python",
+                        headers={"Content-Disposition": 'attachment; filename="psidata_export.py"'})
+    return Response(content=to_colab(items, x_quantity=x_quantity),
+                    media_type="application/x-ipynb+json",
+                    headers={"Content-Disposition": 'attachment; filename="psidata_export.ipynb"'})
 
 
 @app.get("/api/molecule")

@@ -1,8 +1,9 @@
 """Export a selection of datasets to a runnable marimo app or a Colab notebook.
 
-Both artifacts are self-contained: they ``pip install`` psidata, fetch the exact source files by
-URL, parse them with the same readers, and rebuild an equivalent Plotly figure. This makes the
-"Open in marimo / Colab" feature reproducible rather than a screenshot.
+Both artifacts are self-contained: they ``pip install`` psidata, fetch the exact source files by URL
+(handling archives and files packaged inside a published BagIt/zip), parse them with the same readers,
+and rebuild an equivalent Plotly figure. "Open in marimo / Colab" is therefore reproducible — a live
+starting point for analysis, not a screenshot.
 """
 
 from __future__ import annotations
@@ -12,38 +13,56 @@ from dataclasses import dataclass
 
 import nbformat
 
-#: Package spec the generated notebooks install. Override once psidata is published to PyPI or
-#: pin to a git URL, e.g. "psidata @ git+https://github.com/yargerlab/psidata".
-PACKAGE_SPEC = "psidata"
+#: Package spec the generated notebooks install. psidata isn't on PyPI yet, so install it straight from
+#: the public repo's subdirectory (the ``[convert]`` extra pulls the binary/format readers).
+PACKAGE_SPEC = (
+    "psidata[convert] @ git+https://github.com/jyarger/PsiDataViz.git#subdirectory=packages/psidata"
+)
 
 
 @dataclass(frozen=True)
 class ExportItem:
-    """One dataset to reproduce: a display name, the raw URL, and the technique hint."""
+    """One dataset to reproduce: a display name, the raw URL, the technique hint, and (for a dataset
+    inside a multi-dataset archive) the member to load."""
 
     name: str
     url: str
     technique: str | None = None
+    member: str | None = None
 
 
 def _items_literal(items: list[ExportItem]) -> str:
-    return json.dumps([[it.name, it.url, it.technique] for it in items], indent=4)
+    return json.dumps([[it.name, it.url, it.technique, it.member] for it in items], indent=4)
 
 
 # --- shared body that loads + plots, embedded into both artifacts -----------------------------
 def _plot_body(items: list[ExportItem], x_quantity: str) -> str:
-    return f'''import httpx
-import plotly.graph_objects as go
-from psidata import Candidate, read
+    return f'''import io
+import os
+import zipfile
 
-# (display name, raw file URL, technique hint) for each selected dataset
+import httpx
+import plotly.graph_objects as go
+from psidata import Candidate, is_archive, read, read_archive
+
+# (display name, raw file URL, technique hint, archive member) for each selected dataset
 DATASETS = {_items_literal(items)}
 X_QUANTITY = {x_quantity!r}  # "temperature" or "time" (DSC only)
 
 
-def load(name, url, technique):
-    text = httpx.get(url, follow_redirects=True, timeout=60).text
-    return read(Candidate(filename=name, text=text, uri=url, technique_hint=technique))
+def fetch(url):
+    return httpx.get(url, follow_redirects=True, timeout=120).content
+
+
+def load(name, url, technique, member=None):
+    if ".zip!" in url:  # a file packaged inside a published archive (e.g. a Chemotion BagIt zip)
+        zip_url, inner = url.split(".zip!", 1)
+        data = zipfile.ZipFile(io.BytesIO(fetch(zip_url + ".zip"))).read(inner)
+        return read(Candidate(filename=os.path.basename(inner), content=data, technique_hint=technique))
+    content = fetch(url)
+    if is_archive(name) or is_archive(url):
+        return read_archive(name, content, technique_hint=technique, member=member)
+    return read(Candidate(filename=name, content=content, uri=url, technique_hint=technique))
 
 
 def x_column(signal):
@@ -57,8 +76,10 @@ def x_column(signal):
 fig = go.Figure()
 x_title = y_title = ""
 reverse_x = False
-for name, url, technique in DATASETS:
-    ds = load(name, url, technique)
+datasets = []
+for name, url, technique, member in DATASETS:
+    ds = load(name, url, technique, member)
+    datasets.append(ds)  # keep the parsed datasets around (ds.images holds 2D NMR / detector maps)
     sample = ds.metadata.sample_name or name
     if ds.technique in ("NMR", "FTIR"):
         reverse_x = True  # NMR/FTIR convention: abscissa decreases left->right
@@ -76,10 +97,19 @@ fig'''
 
 
 def to_marimo(items: list[ExportItem], x_quantity: str = "temperature") -> str:
-    """Return the source of a runnable marimo app (``.py``) reproducing the figure."""
+    """Return the source of a runnable marimo app (``.py``) reproducing the figure. The PEP 723 script
+    header lets ``marimo edit --sandbox`` (and molab) install the dependencies automatically."""
     body = _plot_body(items, x_quantity)
     indented = "\n".join("    " + line if line else "" for line in body.splitlines())
-    return f'''import marimo
+    return f'''# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "{PACKAGE_SPEC}",
+#     "plotly",
+#     "httpx",
+# ]
+# ///
+import marimo
 
 app = marimo.App(width="medium")
 
@@ -107,10 +137,10 @@ def to_colab(items: list[ExportItem], x_quantity: str = "temperature") -> bytes:
     nb.cells = [
         nbformat.v4.new_markdown_cell(
             "# PsiData export\n\n"
-            f"Interactive view of {len(items)} dataset(s), generated by PsiData. "
+            f"Interactive view of {len(items)} dataset(s), generated by PsiDataViz. "
             "Run the cells top to bottom."
         ),
-        nbformat.v4.new_code_cell(f"!pip install -q {PACKAGE_SPEC} plotly httpx"),
+        nbformat.v4.new_code_cell(f'!pip install -q "{PACKAGE_SPEC}" plotly httpx'),
         nbformat.v4.new_code_cell(_plot_body(items, x_quantity)),
     ]
     nb.metadata["language_info"] = {"name": "python"}

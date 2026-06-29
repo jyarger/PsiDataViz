@@ -223,3 +223,24 @@ def test_scan_keyword_filter_limits_files():
     assert body["n_files"] == 2
     techs = {t["technique"] for t in body["techniques"]}
     assert techs == {"Raman", "NMR"}
+
+
+def test_notebook_endpoint_builds_colab_and_marimo():
+    payload = {"datasets": [{"name": "x.jdx", "url": "https://example/NMR/x.jdx", "technique": "NMR"}]}
+    import json
+
+    colab = client.post("/api/notebook", json={**payload, "fmt": "colab"})
+    assert colab.status_code == 200
+    assert "ipynb" in colab.headers["content-disposition"]
+    nb = json.loads(colab.content)  # valid notebook JSON with an install + a load/plot cell
+    src = "\n".join("".join(c["source"]) if isinstance(c["source"], list) else c["source"] for c in nb["cells"])
+    assert "pip install" in src and "git+https://github.com/jyarger/PsiDataViz" in src
+    assert "https://example/NMR/x.jdx" in src
+
+    marimo = client.post("/api/notebook", json={**payload, "fmt": "marimo"})
+    assert marimo.status_code == 200 and marimo.text.startswith("# /// script")
+    assert "import marimo" in marimo.text
+
+
+def test_notebook_endpoint_requires_datasets():
+    assert client.post("/api/notebook", json={"datasets": [], "fmt": "colab"}).status_code == 422

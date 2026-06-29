@@ -13,6 +13,7 @@ import { SpectrumPlot } from "./components/SpectrumPlot";
 import { Heatmap } from "./components/Heatmap";
 import { MatrixSliceViewer } from "./components/MatrixSliceViewer";
 import { NMRPanel } from "./components/NMRPanel";
+import { NotebookMenu } from "./components/NotebookMenu";
 import { LayoutTabs } from "./components/LayoutTabs";
 import { MoleculeViewer } from "./components/MoleculeViewer";
 import { CompoundViewer } from "./components/CompoundViewer";
@@ -251,6 +252,16 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
             (signalDatasets[0] ?? imageDatasets[0] ?? selectedDatasets[0])?.filename ??
             "",
         );
+  // datasets to reproduce in a notebook: each selected record's source URL + name + technique (+ the
+  // current archive member, for a multi-dataset zip)
+  const notebookDatasets = selected
+    .map((id) => {
+      const r = records.find((x) => rid(x) === id);
+      return r
+        ? { name: r.name, url: r.url, technique: r.technique, member: datasets[id]?.bundle?.current }
+        : null;
+    })
+    .filter((d): d is NonNullable<typeof d> => !!d);
   const soleRecord = selected.length === 1 ? records.find((r) => rid(r) === selected[0]) : null;
   const canCompare = !!soleRecord && soleRecord.formats.length > 1;
   const needle = filter.trim().toLowerCase();
@@ -482,6 +493,7 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
                   Compare formats
                 </button>
               )}
+              <NotebookMenu datasets={notebookDatasets} />
               <button className="btn ghost" onClick={clearSelection}>
                 Clear
               </button>
