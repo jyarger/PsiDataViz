@@ -18,6 +18,9 @@ class FileRef:
     path: str  # full path within the source, e.g. "DSC/2023_06_14_Indium_wire_std.txt"
     size: int | None = None
     download_url: str | None = None  # direct URL to raw bytes, when available
+    # extra source-supplied metadata a repository already knows about the file (e.g. a published
+    # molecule's smiles / inchikey / formula from a Chemotion record) — propagated to the catalog.
+    meta: dict | None = None
 
     @property
     def name(self) -> str:

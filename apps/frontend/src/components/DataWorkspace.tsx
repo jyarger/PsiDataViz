@@ -5,6 +5,8 @@ import { Heatmap } from "./Heatmap";
 import { NMRPanel } from "./NMRPanel";
 import { LayoutTabs } from "./LayoutTabs";
 import { MoleculeViewer } from "./MoleculeViewer";
+import { CompoundViewer } from "./CompoundViewer";
+import { guessCompound } from "../compound";
 import { WaveformPlayer } from "./WaveformPlayer";
 import { DropZone } from "./DropZone";
 import { MetadataPanel } from "./MetadataPanel";
@@ -133,6 +135,16 @@ export function DataWorkspace() {
     (d) => d.signals?.length > 0 && !d.audio && d.technique !== "NMR",
   );
   const imageDatasets = selectedDatasets.filter((d) => d.images?.length > 0 && d.technique !== "NMR");
+  // seed the molecule viewer with a source-known SMILES (e.g. a Chemotion molecule), else guess
+  const knownSmiles = selected
+    .map((k) => rows.find((r) => r.ckey === k)?.smiles)
+    .find((s): s is string => !!s);
+  const compoundSeed = selectedDatasets.some((d) => d.structure)
+    ? ""
+    : knownSmiles ??
+      guessCompound(
+        ((selectedDatasets[0]?.metadata.sample_name as string) ?? selectedDatasets[0]?.filename ?? ""),
+      );
 
   return (
     <>
@@ -340,6 +352,9 @@ export function DataWorkspace() {
                 peak={peak}
               />
             ))}
+          {!selectedDatasets.some((d) => d.structure) && selectedDatasets.length > 0 && (
+            <CompoundViewer key={`cmp-${compoundSeed}`} initialQuery={compoundSeed} />
+          )}
           {audioDatasets.map((ds) => (
             <WaveformPlayer key={`wav-${ds.filename}`} dataset={ds} />
           ))}

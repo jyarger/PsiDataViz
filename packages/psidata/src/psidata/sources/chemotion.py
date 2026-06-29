@@ -175,11 +175,19 @@ class ChemotionSource(DataSource):
         refs: list[FileRef] = []
         for mid in self._molecule_ids():
             detail = self._get_json(f"/molecule?id={mid}")
+            mol = detail.get("molecule") or {}
+            # the published molecule's identity — attached to every dataset so the app can show its
+            # real structure (via SMILES) without guessing from the filename
+            chem = {k: v for k, v in {
+                "smiles": mol.get("cano_smiles"),
+                "inchikey": mol.get("inchikey"),
+                "formula": mol.get("sum_formular"),
+            }.items() if v}
             for sample in detail.get("published_samples", []):
-                refs.extend(self._sample_refs(sample))
+                refs.extend(self._sample_refs(sample, chem))
         return refs
 
-    def _sample_refs(self, sample: dict) -> list[FileRef]:
+    def _sample_refs(self, sample: dict, chem: dict | None = None) -> list[FileRef]:
         zip_url = sample.get("zip_download_url")
         if not zip_url:
             return []
@@ -212,6 +220,7 @@ class ChemotionSource(DataSource):
                 path=path,
                 size=zf.getinfo(inner).file_size,
                 download_url=f"{zip_url}{ZIP_MEMBER_SEP}{inner}",
+                meta=chem or None,
             ))
         return refs
 

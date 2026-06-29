@@ -73,7 +73,8 @@ def _bagit_zip() -> bytes:
 def test_chemotion_source_lists_and_opens():
     zip_url = "https://www.chemotion-repository.net/zip/samples/publication_Sample_1.zip"
     detail = {
-        "molecule": {"id": 42, "sum_formular": "C2H6O"},
+        "molecule": {"id": 42, "sum_formular": "C2H6O", "cano_smiles": "CCO",
+                     "inchikey": "LFQSCWFLJHTTHZ-UHFFFAOYSA-N"},
         "published_samples": [{
             "short_label": "TST-1",
             "zip_download_url": zip_url,
@@ -91,4 +92,5 @@ def test_chemotion_source_lists_and_opens():
         ref = refs[0]
         assert ref.path == "FTIR/TST-1 IR.jdx"  # technique folder + sample label + analysis name
         assert ref.download_url == f"{zip_url}!data/sample_1/analysis_111/dataset_1/test.edit.jdx"
+        assert ref.meta == {"smiles": "CCO", "inchikey": "LFQSCWFLJHTTHZ-UHFFFAOYSA-N", "formula": "C2H6O"}
         assert src.open_bytes(ref) == JDX

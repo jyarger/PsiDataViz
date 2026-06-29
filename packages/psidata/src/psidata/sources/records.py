@@ -210,6 +210,15 @@ class DataRecord:
         directory = os.path.dirname(self.variants[0].file.path) if self.variants else ""
         return compound_for(directory, self.key)
 
+    @property
+    def chem(self) -> dict:
+        """Source-supplied chemical identity (``smiles`` / ``inchikey`` / ``formula``), when a repository
+        already knows it (e.g. a published Chemotion molecule) — used to show the real structure."""
+        for variant in self.variants:
+            if variant.file.meta:
+                return variant.file.meta
+        return {}
+
     def summary(self) -> dict:
         return {
             "key": self.key,

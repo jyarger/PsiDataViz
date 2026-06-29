@@ -237,12 +237,20 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
   const imageDatasets = selectedDatasets.filter((d) => d.images?.length > 0 && d.technique !== "NMR");
   const structureDatasets = selectedDatasets.filter((d) => d.structure);
   // datasets without a computed 3D structure can still get a molecule view from a guessed compound
-  const compoundSeed = structureDatasets.length === 0
-    ? guessCompound(
-        (signalDatasets[0] ?? imageDatasets[0] ?? selectedDatasets[0])?.metadata.sample_name as string
-        ?? (signalDatasets[0] ?? imageDatasets[0] ?? selectedDatasets[0])?.filename ?? "",
-      )
-    : "";
+  // Prefer a structure the source already knows (e.g. a Chemotion molecule's SMILES) over guessing
+  // the compound from the filename — so every repository dataset shows its real structure.
+  const knownSmiles = selected
+    .map((id) => records.find((r) => rid(r) === id)?.smiles)
+    .find((s): s is string => !!s);
+  const compoundSeed =
+    structureDatasets.length > 0
+      ? ""
+      : knownSmiles ??
+        guessCompound(
+          ((signalDatasets[0] ?? imageDatasets[0] ?? selectedDatasets[0])?.metadata.sample_name as string) ??
+            (signalDatasets[0] ?? imageDatasets[0] ?? selectedDatasets[0])?.filename ??
+            "",
+        );
   const soleRecord = selected.length === 1 ? records.find((r) => rid(r) === selected[0]) : null;
   const canCompare = !!soleRecord && soleRecord.formats.length > 1;
   const needle = filter.trim().toLowerCase();

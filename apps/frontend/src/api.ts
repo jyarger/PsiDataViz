@@ -53,6 +53,7 @@ export interface RecordRow {
   uid: string;
   technique: string;
   compound: string;
+  smiles?: string | null; // source-known structure (e.g. a published Chemotion molecule)
   date: string | null;
   description: string;
   formats: string[];

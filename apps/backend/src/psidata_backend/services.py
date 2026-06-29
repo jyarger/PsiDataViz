@@ -262,6 +262,7 @@ def record_row(record) -> dict:
         "uid": record.uid,
         "technique": record.technique,
         "compound": record.compound,
+        "smiles": record.chem.get("smiles"),  # source-known structure (e.g. a Chemotion molecule)
         "date": record.parsed.date.isoformat() if record.parsed.date else None,
         "description": record.parsed.description,
         "formats": data_exts,
