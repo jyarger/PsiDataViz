@@ -116,3 +116,14 @@ def test_record_uid_unique_across_subfolders():
     assert len(recs) == 3
     assert len({r.uid for r in recs}) == 3
     assert all(r.key == "min" for r in recs)  # the display key is still the base name
+
+
+def test_flat_repository_file_resolves_technique_by_extension():
+    # a repository record is flat (no technique folder); a single-technique extension still resolves
+    ftir = build_entry(FileRef(path="Compound 4 - AnM293 IR spectrum.dpt", size=44000))
+    assert ftir.technique == "FTIR" and ftir.supported
+    tem = build_entry(FileRef(path="grain_overview.dm3", size=4096))
+    assert tem.technique == "TEM"
+    # ambiguous extensions (.jdx is NMR/IR/MS, .csv is anything) are NOT force-mapped
+    amb = build_entry(FileRef(path="mystery.jdx", size=4096))
+    assert amb.technique == "(root)"

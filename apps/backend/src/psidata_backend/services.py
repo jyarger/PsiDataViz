@@ -87,9 +87,34 @@ def _fetch_bytes(url: str) -> bytes:
     token = os.environ.get("GITHUB_TOKEN")
     if token and "githubusercontent" in url:
         headers["Authorization"] = f"Bearer {token}"
-    resp = httpx.get(url, follow_redirects=True, timeout=120.0, headers=headers)
-    resp.raise_for_status()
-    return resp.content
+    return _fetch_capped(url, headers)
+
+
+#: cap on a single downloaded file for a browser quick-look — open repositories sometimes hold very
+#: large files (e.g. a 475 MB CSV) that would hang or exhaust memory. Configurable; download those
+#: directly instead.
+MAX_DOWNLOAD_BYTES = int(os.environ.get("PSIDATA_MAX_DOWNLOAD_MB", "200")) * 1024 * 1024
+
+
+def _fetch_capped(url: str, headers: dict) -> bytes:
+    """Stream a download, aborting early if it exceeds :data:`MAX_DOWNLOAD_BYTES` (so an oversized file
+    fails fast with a clear message instead of hanging the parse)."""
+    limit_mb = MAX_DOWNLOAD_BYTES // 1024 // 1024
+    too_big = (f"This file is too large to visualize in the browser (limit {limit_mb} MB). "
+               "Download it directly instead.")
+    with httpx.stream("GET", url, follow_redirects=True, timeout=120.0, headers=headers) as resp:
+        resp.raise_for_status()
+        declared = resp.headers.get("content-length")
+        if declared and int(declared) > MAX_DOWNLOAD_BYTES:
+            raise ValueError(too_big)
+        chunks: list[bytes] = []
+        total = 0
+        for chunk in resp.iter_bytes():
+            total += len(chunk)
+            if total > MAX_DOWNLOAD_BYTES:
+                raise ValueError(too_big)
+            chunks.append(chunk)
+    return b"".join(chunks)
 
 
 @lru_cache(maxsize=3)

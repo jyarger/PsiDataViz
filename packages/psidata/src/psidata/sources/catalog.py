@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from dataclasses import dataclass
+from functools import lru_cache
 
 from ..archive import is_archive
 from ..filename import ParsedName, parse_filename
@@ -170,6 +171,20 @@ def infer_technique(filename: str) -> str | None:
     return None
 
 
+@lru_cache(maxsize=1)
+def _ext_technique_map() -> dict[str, str]:
+    """Extensions claimed by *exactly one* technique-specific reader → that technique. Lets a **flat**
+    repository file (no technique folder, no keyword in its name) still resolve — e.g. a bare ``.dpt``
+    → FTIR. Ambiguous extensions (``.jdx`` is NMR/IR/MS, ``.csv`` is anything) are left out on purpose."""
+    by_ext: dict[str, set[str]] = defaultdict(set)
+    for reader in get_readers():
+        if reader.technique == "*":  # generic readers don't pin a technique
+            continue
+        for ext in reader.extensions:
+            by_ext[ext].add(reader.technique)
+    return {ext: next(iter(techs)) for ext, techs in by_ext.items() if len(techs) == 1}
+
+
 # Tokens that mark the end of the compound part of a name (techniques, instruments, conditions, solvents).
 _COMPOUND_STOP = {
     "ms", "sims", "dsc", "nmr", "ir", "ftir", "raman", "xrd", "pxrd", "saxs", "waxs", "hplc", "dad",
@@ -271,8 +286,9 @@ def _refine_subtechnique(technique: str, filename: str) -> str:
 def build_entry(ref: FileRef) -> CatalogEntry:
     technique = canonical_technique(ref.top_dir)
     if not _technique_has_reader(technique):
-        # sample-organized source (the top folder is a compound): infer technique from the filename
-        technique = infer_technique(ref.name) or technique
+        # sample-organized or flat (repository) source: infer the technique from the filename keywords,
+        # then from a single-technique extension (e.g. a bare `.dpt` -> FTIR)
+        technique = infer_technique(ref.name) or _ext_technique_map().get(ref.ext) or technique
     technique = _refine_subtechnique(technique, ref.name)
     reader = _match_reader(technique, ref.ext)
     supported = reader is not None
