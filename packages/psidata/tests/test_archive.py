@@ -201,3 +201,38 @@ def test_bagit_bundle_expands_to_clean_content_typed_labels():
     keys = sorted(d["key"] for d in ds)
     # labelled by nucleus + content-detected technique, NOT the filename ("...IR...") or "1H_25.peak"
     assert keys == ["13C NMR", "1H NMR"]
+
+
+def test_archive_technique_detects_dominant_from_content():
+    from psidata.archive import archive_technique
+    content = _zip({
+        "bagit.txt": "BagIt-Version: 1.0\n",
+        "data/sample_1/analysis_1/dataset_1/1H_25.jdx": _NMR_JDX,
+        "data/sample_1/analysis_2/dataset_2/13C_25.jdx": _NMR_JDX,
+    })
+    # named "_IR_" but the content is NMR -> dominant technique is NMR
+    assert archive_technique("Compound_IR_Standard.zip", content) == "NMR"
+
+
+def test_scan_peeks_archive_to_correct_technique():
+    from psidata.sources import scan
+    from psidata.sources.base import DataSource, FileRef
+    content = _zip({
+        "bagit.txt": "BagIt-Version: 1.0\n",
+        "data/sample_1/analysis_1/dataset_1/1H_25.jdx": _NMR_JDX,
+    })
+
+    class FakeSource(DataSource):
+        label = "fake"
+
+        def list_files(self):  # a sample-organized layout: compound folder, misleading "_IR_" name
+            return [FileRef(path="Gonanes/mol_IR_Standard.zip", size=len(content), download_url="x")]
+
+        def open_bytes(self, ref):
+            return content
+
+        def open_text(self, ref):
+            return content.decode("latin1", "replace")
+
+    entry = scan(FakeSource()).entries[0]
+    assert entry.technique == "NMR"  # corrected from the "_IR_" filename guess by peeking content

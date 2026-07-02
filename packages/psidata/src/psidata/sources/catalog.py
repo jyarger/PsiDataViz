@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import lru_cache
 
-from ..archive import is_archive
+from ..archive import archive_technique, is_archive
 from ..filename import ParsedName, parse_filename
 from ..registry import get_readers
 from .base import DataSource, FileRef
@@ -313,7 +313,37 @@ def build_entry(ref: FileRef) -> CatalogEntry:
     )
 
 
+#: don't download an archive just to type it if it's larger than this (fall back to the name guess)
+_MAX_PEEK_BYTES = 60 * 1024 * 1024
+
+
 def scan(source: DataSource) -> Catalog:
-    """List a source and build a grouped, summarized catalog (no file contents fetched)."""
-    entries = [build_entry(ref) for ref in source.list_files()]
+    """List a source and build a grouped, summarized catalog. File names carry the technique for
+    technique-organized repos; for sample-organized/flat sources we *peek inside archives* to type them
+    by content (a filename can lie — a ``_IR_`` zip may hold NMR data)."""
+    entries = [peeked_entry(ref, source.open_bytes) for ref in source.list_files()]
     return Catalog(source_label=source.label, entries=entries)
+
+
+def _should_peek(ref: FileRef) -> bool:
+    """Peek inside an archive only when its technique is *uncertain* — the top folder isn't itself a
+    known technique (a sample/compound folder or a flat repo), so the guess came from the filename and
+    may be wrong. Technique-organized repos keep the fast name-only path."""
+    return (is_archive(ref.name)
+            and not _technique_has_reader(canonical_technique(ref.top_dir))
+            and (ref.size or 0) <= _MAX_PEEK_BYTES)
+
+
+def peeked_entry(ref: FileRef, fetch) -> CatalogEntry:
+    """:func:`build_entry`, but for an uncertain archive correct the technique from its **content**,
+    fetched via ``fetch(ref) -> bytes`` (the caller supplies a cached/capped fetcher)."""
+    entry = build_entry(ref)
+    if _should_peek(ref):
+        try:
+            content_technique = archive_technique(ref.name, fetch(ref))
+        except Exception:  # noqa: BLE001  a peek failure must never break the scan
+            content_technique = None
+        if content_technique and content_technique != entry.technique:
+            return replace(entry, technique=content_technique, supported=True,
+                           reader_name=entry.reader_name or "archive")
+    return entry

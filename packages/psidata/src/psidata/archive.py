@@ -279,6 +279,33 @@ def _bagit_datasets(zf: zipfile.ZipFile, members: list[str], hint: str | None) -
     return out
 
 
+def archive_technique(filename: str, content: bytes, *, technique_hint: str | None = None) -> str | None:
+    """The dominant technique of an archive's parseable datasets, detected from **content** — used to
+    correct a name-based guess for a bundle whose filename lies (e.g. a ``_IR_`` zip of NMR data)."""
+    low = filename.lower()
+    if low.endswith(_TAR_SUFFIXES):
+        try:
+            content = _tar_to_zip(content)
+        except Exception:  # noqa: BLE001
+            return None
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(content))
+    except zipfile.BadZipFile:
+        return None
+    members = _members(zf)
+    if not members:
+        return None
+    if looks_like_bruker(members) or _find(members, "spectrum_processed.csv") or _find(members, "spectrum.csv"):
+        return "NMR"  # Bruker / SpinSolve vendor zips are NMR
+    counts: dict[str, int] = {}
+    for dataset in zip_datasets(filename, content, technique_hint=technique_hint):
+        member = dataset.get("member")
+        tech = _member_technique(zf, member, technique_hint) if member else None
+        if tech:
+            counts[tech] = counts.get(tech, 0) + 1
+    return max(counts, key=counts.get) if counts else None  # dominant technique
+
+
 def _dataset_key(member: str, stem: str) -> str:
     """A human label for a dataset inside an archive — the run folder when the filename is a generic
     instrument export (e.g. an Agilent ``ba_1.D/DAD1.CSV`` lists as ``ba_1``, not ``DAD1``)."""

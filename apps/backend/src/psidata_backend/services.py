@@ -15,7 +15,7 @@ import numpy as np
 from psidata import Candidate, Dataset, archive_datasets, is_archive, read, read_archive
 from psidata.readers.raman_text import parse_spec_sidecar
 from psidata.sources import Catalog, FileRef, make_repository, make_source
-from psidata.sources.catalog import _technique_has_reader, build_entry, detect_organization
+from psidata.sources.catalog import _technique_has_reader, detect_organization, peeked_entry
 from psidata.sources.chemotion import ZIP_MEMBER_SEP
 from psidata.sources.gdrive import download_drive
 from psidata.sources.records import IMAGE
@@ -57,7 +57,10 @@ def scan_repo(url: str, *, use_cache: bool = True, keyword: str | None = None) -
     if keyword:
         kw = keyword.strip().lower()
         refs = [r for r in refs if kw in r.path.lower()]
-    return Catalog(source_label=payload["label"], entries=[build_entry(r) for r in refs])
+    # peek inside uncertain archives to type them by content; fetch via the cached, size-capped
+    # downloader so the peek is shared with the later dataset load
+    entries = [peeked_entry(r, lambda x: _fetch_archive(x.download_url)) for r in refs]
+    return Catalog(source_label=payload["label"], entries=entries)
 
 
 @lru_cache(maxsize=6)
