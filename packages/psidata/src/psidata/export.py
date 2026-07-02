@@ -8,7 +8,6 @@ starting point for analysis, not a screenshot.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 
 import nbformat
@@ -32,7 +31,10 @@ class ExportItem:
 
 
 def _items_literal(items: list[ExportItem]) -> str:
-    return json.dumps([[it.name, it.url, it.technique, it.member] for it in items], indent=4)
+    # a *Python* literal embedded in the notebook body — repr() renders None correctly (json.dumps would
+    # emit `null`, which isn't valid Python and broke the generated Colab cell)
+    rows = ",\n    ".join(repr((it.name, it.url, it.technique, it.member)) for it in items)
+    return f"[\n    {rows},\n]"
 
 
 # --- shared body that loads + plots, embedded into both artifacts -----------------------------

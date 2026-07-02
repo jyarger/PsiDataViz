@@ -375,12 +375,6 @@ function Quick({ onNav }: { onNav: (v: View) => void }) {
       {busy && <p className="spinner">{busy}</p>}
       {error && <p className="error">{error}</p>}
 
-      {!scan && !busy && (
-        <div className="card">
-          <ConnectGuide onTryExample={(url) => doScan(url)} />
-        </div>
-      )}
-
       {showGuide && (
         <div className="modal-overlay" onClick={() => setShowGuide(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
