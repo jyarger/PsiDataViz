@@ -133,3 +133,12 @@ def test_single_technique_extension_overrides_folder():
     # a .cif crystal structure stays a structure even inside an XRD folder (whose readers don't do .cif)
     e = build_entry(FileRef(path="XRD/CrystalDiffract/NIF_Beta.cif", size=7000))
     assert e.reader_name == "structure_file" and e.supported and e.technique != "XRD"
+
+
+def test_extension_beats_filename_keyword():
+    # a Gaussian file computing IR/Raman is Computational — the ".gjf/.log" extension is a hard signal
+    # that must win over the "IR"/"Raman" keyword in the filename (a real Box mislabel: FTIR)
+    for name in ("Salicylic_Acid/DFT_321g_Freq_IR_Raman_Anharm.gjf",
+                 "Salicylic_Acid/Dimer_DFT_321G_Freq_IR_Raman.log"):
+        e = build_entry(FileRef(path=name, size=5000))
+        assert e.technique == "Computational", f"{name} -> {e.technique}"

@@ -287,9 +287,10 @@ def build_entry(ref: FileRef) -> CatalogEntry:
     technique = canonical_technique(ref.top_dir)
     ext_tech = _ext_technique_map().get(ref.ext)  # extension claimed by exactly one technique's reader
     if not _technique_has_reader(technique):
-        # sample-organized or flat (repository) source: infer the technique from the filename keywords,
-        # then from a single-technique extension (e.g. a bare `.dpt` -> FTIR)
-        technique = infer_technique(ref.name) or ext_tech or technique
+        # sample-organized or flat (repository) source: a single-technique extension is a *hard* signal
+        # (a `.gjf`/`.log` is a computation, a `.dpt` is FTIR) and wins over a filename keyword, which is
+        # only a hint and misfires (e.g. "..._Freq_IR_Raman.gjf" is Computational, not FTIR)
+        technique = ext_tech or infer_technique(ref.name) or technique
     elif ext_tech and _match_reader(technique, ref.ext) is None:
         # the folder's technique has a reader, but not for this extension: a single-technique extension
         # is authoritative — a `.cif` crystal structure stays a structure even inside an XRD folder
