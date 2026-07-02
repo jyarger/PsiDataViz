@@ -30,7 +30,7 @@ from .model import Axis, Dataset, Image2D, Signal, SourceInfo
 from .readers._tabular import parse_numeric_table
 from .readers.base import Candidate
 from .readers.nmr_jcamp import NMRMetadata
-from .registry import DETECT_THRESHOLD, read, score_readers
+from .registry import DETECT_THRESHOLD, detect, read, score_readers
 
 _BRUKER_MARKERS = {"acqus", "acqu", "fid", "ser", "pulseprogram", "procs"}
 _MAX_ZIP_DEPTH = 3  # guard against deeply-nested or self-referential archives
@@ -200,6 +200,11 @@ def zip_datasets(filename: str, content: bytes, *, technique_hint: str | None = 
                     for path, label in experiments]
         return [{"key": _stem(filename), "member": None, "formats": _exts(members)}]
 
+    if _is_bagit(members):  # a BagIt bundle (Chemotion export etc.) -> one dataset per analysis
+        bagit = _bagit_datasets(zf, members, technique_hint)
+        if len(bagit) > 1:
+            return bagit
+
     groups: dict[tuple[str, str], list[str]] = {}
     for m in members:
         groups.setdefault((os.path.dirname(m), _stem(m)), []).append(m)
@@ -212,6 +217,66 @@ def zip_datasets(filename: str, content: bytes, *, technique_hint: str | None = 
         datasets.append({"key": _dataset_key(pick[1], base), "member": pick[1],
                          "formats": _exts(group_members)})
     return datasets
+
+
+# --- BagIt bundles (IETF packaging used by Chemotion & FAIR repositories) --------------------
+_NUCLEUS_RE = re.compile(r"^\d{1,3}(?:H|C|N|F|P|B|Si)$", re.IGNORECASE)
+
+
+def _nucleus(stem: str) -> str | None:
+    """A leading NMR nucleus token in a filename stem (``1H_25`` -> ``1H``, ``13C`` -> ``13C``)."""
+    token = re.split(r"[_\s.\-]", stem, maxsplit=1)[0]
+    if not _NUCLEUS_RE.match(token):
+        return None
+    return token[:-2].upper() + token[-2:] if token[-2:].lower() == "si" else token[:-1] + token[-1].upper()
+
+
+def _is_bagit(members: list[str]) -> bool:
+    """A BagIt package: a ``bagit.txt`` tag file beside a ``data/`` payload."""
+    names = {os.path.basename(m) for m in members}
+    return "bagit.txt" in names and any(m.startswith("data/") or "/data/" in m for m in members)
+
+
+def _member_technique(zf: zipfile.ZipFile, member: str, hint: str | None) -> str | None:
+    """The technique of one archive member, from its *content* (reader detection) — not its name."""
+    try:
+        reader = detect(Candidate(filename=os.path.basename(member), content=zf.read(member),
+                                  technique_hint=hint))
+    except Exception:  # noqa: BLE001
+        return None
+    return reader.technique if reader else None
+
+
+def _bagit_label(member: str, technique: str | None) -> str:
+    """A clean, human dataset label for a BagIt analysis — e.g. ``1H NMR`` / ``13C NMR`` / ``Mass Spec``,
+    from the member's nucleus (filename) + its content-detected technique."""
+    tech = technique or "data"
+    nuc = _nucleus(_stem(member))
+    if nuc and tech == "NMR":
+        return f"{nuc} NMR"
+    return tech
+
+
+def _bagit_datasets(zf: zipfile.ZipFile, members: list[str], hint: str | None) -> list[dict]:
+    """Expand a BagIt bundle into one entry per analysis (``data/.../analysis_*/dataset_*/``), each typed
+    by the *content* of its best member and labelled cleanly (not ``1H_25.peak``)."""
+    by_dir: dict[str, list[str]] = {}
+    for m in members:
+        if "/analysis_" in m or "/dataset_" in m:
+            by_dir.setdefault(os.path.dirname(m), []).append(m)
+    out: list[dict] = []
+    seen: dict[str, int] = {}
+    for _dir, group in sorted(by_dir.items()):
+        pick = _best_member(zf, group, hint)
+        if pick is None or (pick[0] != "zip" and pick[2] < DETECT_THRESHOLD):
+            continue
+        member = pick[1]
+        label = _bagit_label(member, _member_technique(zf, member, hint))
+        seen[label] = seen.get(label, 0) + 1
+        if seen[label] > 1:
+            label = f"{label} ({seen[label]})"
+        out.append({"key": label, "member": member, "formats": _exts(group)})
+    return out
 
 
 def _dataset_key(member: str, stem: str) -> str:

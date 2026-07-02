@@ -172,3 +172,32 @@ def test_single_experiment_bruker_zip_stays_one_dataset():
     assert len(datasets) == 1 and datasets[0]["member"] is None  # no member selector for a single experiment
     ds = read_zip("NMR_AcAc.zip", content, technique_hint="NMR")
     assert ds.signals and ds.signals[0].npoints == 4
+
+
+# minimal JCAMP spectra that the registry detects (NMR / MS), for a synthetic BagIt bundle
+_NMR_JDX = ("##TITLE=t\n##JCAMP-DX=5.01\n##DATA TYPE=NMR SPECTRUM\n##.OBSERVE NUCLEUS=^1H\n"
+            "##XUNITS=PPM\n##YUNITS=ARBITRARY\n##FIRSTX=3\n##LASTX=1\n##NPOINTS=3\n##XFACTOR=1\n"
+            "##YFACTOR=1\n##XYDATA=(X++(Y..Y))\n3 1 2 3\n##END=\n")
+
+
+def test_nucleus_and_bagit_detection():
+    from psidata.archive import _is_bagit, _nucleus
+    assert _nucleus("1H_25.peak") == "1H"
+    assert _nucleus("13C_25") == "13C"
+    assert _nucleus("hk040f3") is None
+    assert _is_bagit(["bagit.txt", "data/sample_1/x.jdx"]) is True
+    assert _is_bagit(["export.json", "attachments/x.jdx"]) is False  # Chemotion ELN export, not BagIt
+
+
+def test_bagit_bundle_expands_to_clean_content_typed_labels():
+    content = _zip({
+        "bagit.txt": "BagIt-Version: 1.0\n",
+        "data/README.txt": "readme",
+        "data/sample_9/analysis_1/dataset_1/1H_25.jdx": _NMR_JDX,
+        "data/sample_9/analysis_1/dataset_1/1H_25.peak.png": b"\x89PNG",
+        "data/sample_9/analysis_2/dataset_2/13C_25.jdx": _NMR_JDX,
+    })
+    ds = zip_datasets("SomeCompound_IR_Standard.zip", content)
+    keys = sorted(d["key"] for d in ds)
+    # labelled by nucleus + content-detected technique, NOT the filename ("...IR...") or "1H_25.peak"
+    assert keys == ["13C NMR", "1H NMR"]
